@@ -481,6 +481,84 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Brands Section - Infinite Scroll */}
+      <section className="py-12 md:py-16 lg:py-20 bg-gradient-to-br from-gray-50 via-white to-gray-50 overflow-hidden">
+        <div className="max-w-[1600px] mx-auto px-6 lg:px-12 mb-8 md:mb-12">
+          {/* Section Header */}
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-3 mb-3">
+              <div className="h-1 w-12 bg-gradient-to-r from-burgundy to-plum" />
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-charcoal mb-3">
+              Our Brands
+            </h2>
+            <p className="text-sm md:text-base text-charcoal/60 whitespace-nowrap">
+              Featuring the world's most prestigious luxury brands
+            </p>
+          </div>
+        </div>
+
+        {/* Infinite Scroll Container */}
+        <div className="relative">
+          {/* Gradient Overlays */}
+          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+          {/* Scrolling Brands Track */}
+          <div className="flex gap-8 animate-scroll-brands">
+            {/* First set of brands */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((num) => (
+              <div
+                key={`brand-1-${num}`}
+                className="group relative flex-shrink-0 w-[180px] h-[120px] bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-burgundy hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:z-20"
+              >
+                <Image
+                  src={`/Brands/${num}.jpg`}
+                  alt={`Brand ${num}`}
+                  width={180}
+                  height={120}
+                  className="w-full h-full object-contain p-4 grayscale group-hover:grayscale-0 transition-all duration-300"
+                />
+                {/* Hover Effect Glow */}
+                <div className="absolute inset-0 bg-gradient-to-t from-burgundy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+
+            {/* Duplicate set for seamless loop */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].map((num) => (
+              <div
+                key={`brand-2-${num}`}
+                className="group relative flex-shrink-0 w-[180px] h-[120px] bg-white border-2 border-gray-200 rounded-lg overflow-hidden hover:border-burgundy hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:z-20"
+              >
+                <Image
+                  src={`/Brands/${num}.jpg`}
+                  alt={`Brand ${num}`}
+                  width={180}
+                  height={120}
+                  className="w-full h-full object-contain p-4 grayscale group-hover:grayscale-0 transition-all duration-300"
+                />
+                {/* Hover Effect Glow */}
+                <div className="absolute inset-0 bg-gradient-to-t from-burgundy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* View All Brands CTA */}
+        <div className="text-center mt-10 md:mt-12">
+          <Button
+            asChild
+            variant="outline"
+            className="group border-2 border-burgundy text-burgundy hover:bg-burgundy hover:text-white font-medium px-8 py-6 rounded-none transition-all duration-500"
+          >
+            <Link href="/brands" className="flex items-center gap-2">
+              Explore All Brands
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+        </div>
+      </section>
+
       {/* Features Grid - Asymmetric Editorial Layout */}
       <section className="py-24 bg-[#FAF9F6]">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-12">
@@ -688,6 +766,23 @@ export default function Home() {
           to {
             opacity: 1;
           }
+        }
+
+        @keyframes scroll-brands {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        .animate-scroll-brands {
+          animation: scroll-brands 40s linear infinite;
+        }
+
+        .animate-scroll-brands:hover {
+          animation-play-state: paused;
         }
       `}</style>
     </div>

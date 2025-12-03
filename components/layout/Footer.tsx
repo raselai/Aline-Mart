@@ -106,11 +106,11 @@ export default function Footer() {
           <div className="col-span-2">
             <Link href="/" className="inline-block mb-6">
               <Image
-                src="/12.jpg"
+                src="/Logo.png"
                 alt="Aline Mart"
-                width={180}
-                height={64}
-                className="h-12 md:h-16 w-auto"
+                width={220}
+                height={78}
+                className="h-16 md:h-20 w-auto"
               />
             </Link>
             {/* Contact Info */}

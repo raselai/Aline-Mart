@@ -41,16 +41,16 @@ export default function Header() {
       {/* Top Tier - Primary Header Bar */}
       <div className="bg-white">
         <div className="w-full px-4 sm:px-6 lg:px-12">
-          <div className="flex items-center justify-between py-3 lg:py-4">
+          <div className="flex items-center justify-between py-1 lg:py-1">
             {/* Left: Logo */}
             <div className="flex-shrink-0 lg:w-[180px]">
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/12.jpg"
+                  src="/Logo.png"
                   alt="Aline Mart"
-                  width={200}
-                  height={60}
-                  className="h-10 lg:h-14 w-auto"
+                  width={240}
+                  height={72}
+                  className="h-14 lg:h-20 w-auto"
                   priority
                 />
               </Link>
@@ -126,11 +126,11 @@ export default function Header() {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         <Image
-                          src="/12.jpg"
+                          src="/Logo.png"
                           alt="Aline Mart"
-                          width={120}
-                          height={43}
-                          className="h-10 w-auto"
+                          width={160}
+                          height={57}
+                          className="h-14 w-auto"
                         />
                       </Link>
                     </div>
