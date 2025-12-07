@@ -8,15 +8,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- **Framework:** Next.js 14+ (App Router, TypeScript)
-- **Styling:** Tailwind CSS 4 with custom configuration
+- **Framework:** Next.js 16 (App Router, TypeScript)
+- **Styling:** Tailwind CSS 4 with custom configuration (CSS-only config)
 - **UI Components:** shadcn/ui (heavily customized)
-- **State Management:** Zustand
-- **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** NextAuth.js v5 (email/password only)
-- **Payment:** Stripe (Checkout & Payment Intents)
+- **State Management:** Zustand (cart & wishlist with localStorage persistence)
+- **Database:** PostgreSQL via Supabase (Direct Supabase JS Client - NOT Prisma)
+- **Authentication:** NextAuth.js v5 + Google OAuth (planned)
+- **Payment:** Stripe (planned)
 - **Forms:** React Hook Form + Zod validation
-- **Animations:** Framer Motion (subtle, luxury-appropriate)
+- **Animations:** Framer Motion + CSS transitions
 
 ## Development Commands
 
@@ -33,15 +33,31 @@ npm start
 # Run linting
 npm run lint
 
-# Database commands
-npx prisma generate      # Generate Prisma client
-npx prisma migrate dev   # Run migrations in development
-npx prisma db push       # Push schema changes without migration
-npx prisma db seed       # Seed database (if seed file exists)
-npx prisma studio        # Open Prisma Studio GUI
+# TypeScript checking
+npx tsc --noEmit --skipLibCheck
+
+# Database utilities (Node.js scripts in scripts/)
+node scripts/check-db.js              # Verify database connection and view data summary
+node scripts/create-tables.js         # Create database tables (if needed)
+node scripts/test-api.js              # Test API routes
+node scripts/test-brands.js           # Test brand data and logos
+node scripts/update-brands-with-logos.js  # Update brand logos in database
+
+# Environment setup
+# Ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in .env
 ```
 
 ## Architecture Overview
+
+### Tailwind CSS 4 Configuration
+
+This project uses **Tailwind CSS v4** (next-generation with PostCSS plugin):
+- Configuration is in `app/globals.css` using `@theme inline` directive
+- Custom colors, fonts, and design tokens defined as CSS variables
+- Import order matters: `@import "tailwindcss"` must come first
+- Uses `tw-animate-css` for additional animation utilities
+- No traditional `tailwind.config.js` file - all config in CSS
+- Custom variants like `dark` are defined with `@custom-variant`
 
 ### Design Philosophy
 
@@ -67,35 +83,62 @@ The brand uses a **strict color palette** that must be followed exactly:
 --charcoal: #2C2C2C (body text)
 --light-gray: #F5F5F5 (subtle backgrounds)
 --gold-accent: #D4AF37 (use sparingly for premium touches)
+--text-secondary: #6B7280 (secondary text)
 ```
 
-These colors are defined in `app/globals.css` and should be referenced via Tailwind classes or CSS variables.
+These colors are defined in `app/globals.css` as both CSS variables and Tailwind theme tokens. Access them in components via:
+- CSS variables: `var(--burgundy)`, `var(--gradient-primary)`
+- Tailwind classes: `text-burgundy`, `bg-plum`, `bg-light-gray`
+- Utility classes: `.gradient-primary`, `.gradient-hover`, `.text-gradient`
 
 ### Typography
 
-- **Headings:** Serif fonts (Playfair Display) for luxury feel
-- **Body:** Sans-serif (Inter) for readability
-- All typography scales are defined in the design system
-- Follow the scales strictly to maintain visual consistency
+- **Headings:** Serif fonts (Playfair Display via `--font-serif`) for luxury feel
+- **Body:** Sans-serif (Inter via `--font-sans`) for readability
+- Font variables are defined in `app/layout.tsx` and referenced in `app/globals.css`
+- Typography scales defined in globals.css:
+  - Headings: `--font-size-hero` (4.5rem), `--font-size-h1` (3rem), `--font-size-h2` (2.25rem), etc.
+  - Body: `--font-size-large` (1.125rem), `--font-size-regular` (1rem), `--font-size-small` (0.875rem)
+  - Mobile sizes automatically adjust via media queries (640px breakpoint)
+- Line heights: `--line-height-heading` (1.2), `--line-height-body` (1.6)
 
 ### Component Organization
 
 ```
 components/
-├── ui/           # shadcn/ui base components (customized)
+├── ui/           # shadcn/ui base components (Button, Dialog, Sheet, Input)
 ├── layout/       # Header, Footer, Navigation
-├── home/         # Homepage-specific components
-├── products/     # Product cards, grids, filters, galleries
-├── cart/         # Cart items, summaries
-└── common/       # Shared components (Button, Modal, Loading)
+├── home/         # Homepage-specific components (Hero, FeaturedProducts, BrandShowcase)
+├── products/     # Product components
+│   ├── ProductCard.tsx        # Magazine-style card with hover effects
+│   ├── ProductGrid.tsx        # Editorial layout with variable heights
+│   ├── ProductFilters.tsx     # Category, brand, price, color, size filters
+│   ├── ProductSorter.tsx      # Dropdown sorter with 6 options
+│   └── index.ts               # Centralized exports
+├── cart/         # Cart and checkout components
+├── search/       # Search components (SearchBar, SearchResults)
+└── test/         # Test components for development
 ```
 
 ### Data Layer
 
-- **Prisma Schema:** Located in `prisma/schema.prisma`
-- **Database Client:** Singleton pattern in `lib/prisma.ts`
-- **State Management:** Zustand stores in `store/` directory (currently minimal)
-- **API Routes:** In `app/api/` following Next.js App Router conventions
+**IMPORTANT:** This project uses **Supabase JS Client directly** (NOT Prisma):
+- **Database:** PostgreSQL hosted on Supabase
+- **Client:** Supabase client in `lib/supabase.ts`
+- **Schema:** Database tables created via SQL scripts in `scripts/` directory
+- **API Routes:** In `app/api/` using Supabase client for all queries
+  - `/api/products` - List products with filters, sorting, pagination
+  - `/api/products/[slug]` - Single product with related products
+  - `/api/brands` - List all brands
+  - `/api/categories` - Categories with hierarchy
+  - `/api/search` - Search products by query
+- **State Management:** Zustand stores in `store/` directory
+  - `store/cartStore.ts` - Shopping cart with localStorage
+  - `store/wishlistStore.ts` - Wishlist with localStorage
+- **Hooks:** Custom hooks in `hooks/` directory
+  - `hooks/useCart.ts` - Cart operations with price formatting
+  - `hooks/useWishlist.ts` - Wishlist operations with sorting
+- **Utilities:** Helper functions in `lib/utils.ts` (includes cn() for Tailwind class merging)
 
 ### Key Data Models
 
@@ -106,6 +149,27 @@ The database follows a standard eCommerce pattern:
 - **Product** → belongs to Brand and Category, has Images and Variants
 - **Order** → belongs to User, has OrderItems and shipping Address
 - **ProductVariant** → handles colors, sizes, SKUs, stock levels
+
+### State Management Architecture
+
+Zustand stores handle client-side state with localStorage persistence:
+
+**Cart Store (`store/cartStore.ts`):**
+- Actions: `addItem`, `removeItem`, `updateQuantity`, `clearCart`, `isInCart`
+- State: `items[]`, `itemCount`, `subtotal`
+- Features: Stock validation, automatic calculations, localStorage persistence
+- Usage: Always use via `hooks/useCart.ts` hook for price formatting and helpers
+
+**Wishlist Store (`store/wishlistStore.ts`):**
+- Actions: `addToWishlist`, `removeFromWishlist`, `toggleWishlist`, `clearWishlist`
+- State: `items[]`, `itemCount`
+- Features: Timestamp tracking, localStorage persistence
+- Usage: Always use via `hooks/useWishlist.ts` hook for sorting/filtering
+
+**Important:** When user authentication is implemented:
+1. Sync localStorage cart/wishlist to database on login
+2. Load user's cart/wishlist from database after auth
+3. Merge local and server state appropriately
 
 ## Critical Implementation Rules
 
@@ -140,7 +204,21 @@ Keep animations **subtle and luxury-appropriate**:
 - NO `any` types
 - Define interfaces for all component props
 - Use Zod for runtime validation
-- Prisma types for database entities
+- Database types inferred from Supabase queries
+
+**Next.js 16 Important Change:**
+- Route params are now async in dynamic routes
+- Always await params: `const params = await props.params`
+- Example:
+  ```typescript
+  export default async function ProductPage(props: {
+    params: Promise<{ slug: string }>
+  }) {
+    const params = await props.params
+    const { slug } = params
+    // ...
+  }
+  ```
 
 ### 5. Naming Conventions
 
@@ -199,46 +277,81 @@ export default function ComponentName({
 
 ## Environment Variables
 
-Required variables in `.env` (see `.env.example`):
+Currently required variables in `.env`:
 
 ```env
-DATABASE_URL              # PostgreSQL connection string
+# Supabase (REQUIRED - Currently Active)
+SUPABASE_URL              # Your Supabase project URL
+SUPABASE_ANON_KEY         # Your Supabase anon/public key
+
+# Future integrations (not yet implemented):
 NEXTAUTH_URL              # App URL (http://localhost:3000 in dev)
 NEXTAUTH_SECRET           # Generate with: openssl rand -base64 32
+GOOGLE_CLIENT_ID          # Google OAuth client ID
+GOOGLE_CLIENT_SECRET      # Google OAuth client secret
 STRIPE_SECRET_KEY         # Stripe secret key (sk_test_...)
 STRIPE_PUBLISHABLE_KEY    # Stripe publishable key (pk_test_...)
 STRIPE_WEBHOOK_SECRET     # Stripe webhook secret (whsec_...)
-CLOUDINARY_CLOUD_NAME     # Cloudinary cloud name
-CLOUDINARY_API_KEY        # Cloudinary API key
-CLOUDINARY_API_SECRET     # Cloudinary API secret
 RESEND_API_KEY            # Resend email API key
 FROM_EMAIL                # Sender email address
 ```
 
 ## Database Workflow
 
-### Making Schema Changes
+### Current Setup (Supabase)
 
-1. Edit `prisma/schema.prisma`
-2. Run `npx prisma migrate dev --name description_of_change`
-3. Prisma Client auto-generates updated types
-4. Use new types in code
+This project uses **Supabase JS Client** for all database operations:
+- Database schema is defined via SQL files in `scripts/` directory
+- No ORM or migration tools (direct SQL)
+- Schema changes require manual SQL updates in Supabase dashboard or via SQL files
 
-### Querying Best Practices
+### Database Scripts
+
+Located in `scripts/` directory:
+
+- **create-tables.sql** - SQL script to create all database tables
+- **create-tables.js** - Node.js script to execute table creation
+- **seed-complete.sql** - Complete seed data (brands, categories, products, images, variants)
+- **seed-data.sql** - Minimal seed data
+- **check-db.js** - Verify database connection and view data summary (run this often!)
+- **test-api.js** - Test all API routes
+- **test-brands.js** - Test brand data and logos
+- **update-brands-with-logos.js** - Update brand logos in database
+
+### Querying with Supabase
 
 ```typescript
+import { supabase } from '@/lib/supabase'
+
 // Always include error handling
 try {
-  const products = await prisma.product.findMany({
-    where: { /* filters */ },
-    include: {
-      brand: true,      // Include related brand
-      images: true,     // Include product images
-      variants: true    // Include size/color variants
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 20,           // Limit results
-  })
+  const { data: products, error } = await supabase
+    .from('Product')
+    .select(`
+      *,
+      brand:Brand!Product_brandId_fkey (
+        id,
+        name,
+        slug
+      ),
+      images:ProductImage (
+        id,
+        url,
+        alt,
+        order
+      ),
+      variants:ProductVariant (
+        id,
+        color,
+        size,
+        stock
+      )
+    `)
+    .eq('inStock', true)
+    .order('createdAt', { ascending: false })
+    .limit(20)
+
+  if (error) throw error
   return products
 } catch (error) {
   console.error('Error fetching products:', error)
@@ -246,31 +359,69 @@ try {
 }
 ```
 
+### Database Seeding
+
+The database is seeded with:
+- **19 luxury brands** with logos (Rolex, Gucci, Prada, Louis Vuitton, Hermès, Chanel, Dior, Balenciaga, Versace, Burberry, Ralph Lauren, Armani, Cartier, Omega, Nike, Adidas, Calvin Klein, Tommy Hilfiger, Hugo Boss)
+- Brand logos stored in `/public/Brands/` directory
+- **7 categories** (Men, Women, Accessories, Watches, Bags, Shoes, Clothing)
+- **28 products** with images and variants
+- All seed data is in SQL format in `scripts/seed-complete.sql`
+
 ## API Route Patterns
 
 All API routes should follow this structure:
 
 ```typescript
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { supabase } from '@/lib/supabase'
 
 export async function GET(request: Request) {
   try {
     // 1. Extract and validate params/query
-    // 2. Authenticate if needed
-    // 3. Perform database query
-    // 4. Return JSON response
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
 
-    return NextResponse.json({ data: results })
+    // 2. Authenticate if needed (for protected routes)
+
+    // 3. Perform database query with Supabase
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+
+    const { data, error, count } = await supabase
+      .from('Product')
+      .select('*', { count: 'exact' })
+      .range(from, to)
+
+    if (error) throw error
+
+    // 4. Return JSON response
+    return NextResponse.json({
+      products: data,
+      total: count,
+      page,
+      limit
+    })
   } catch (error) {
     console.error('Error:', error)
     return NextResponse.json(
-      { error: 'Error message for user' },
+      { error: 'Failed to fetch products' },
       { status: 500 }
     )
   }
 }
 ```
+
+## Important Tailwind CSS 4 Notes
+
+When working with Tailwind v4:
+- **Color classes:** Use color names directly (e.g., `bg-burgundy`, `text-plum`)
+- **CSS variables in Tailwind:** Reference via `var(--variable-name)` in arbitrary values
+- **Custom gradients:** Use `.gradient-primary` class or inline `bg-[var(--gradient-primary)]`
+- **Theme tokens:** Defined in `@theme inline` block in globals.css
+- **No config file:** Don't create `tailwind.config.js` - all configuration is CSS-based
+- **Adding new utilities:** Define them in globals.css after the theme block
 
 ## Common Pitfalls to Avoid
 
@@ -284,13 +435,21 @@ export async function GET(request: Request) {
 8. **DON'T skip server-side validation** - never trust client input
 9. **DON'T hardcode content** - use database and environment variables
 10. **DON'T use `any` types** - TypeScript strict mode is enabled
+11. **DON'T create traditional Tailwind config** - this project uses Tailwind v4 with CSS-only config
 
 ## Reference Documents
 
-The repository includes two critical reference documents in the parent directory:
+**Critical reference documents:**
 
-- **ALINE-MART-PROMPT.md** - Complete project brief with development phases
-- **ALINE-MART-SKILL.md** - Detailed design specifications and requirements
+- **NextPlan.md** - Development plan and progress tracker (IN THIS REPO)
+  - Current phase and overall progress (80% complete as of Phase 5)
+  - Detailed task lists for each development phase
+  - Daily progress log
+  - Completion criteria and next steps
+  - **Always check this first** to understand current project status
+
+- **ALINE-MART-PROMPT.md** - Complete project brief with development phases (parent directory)
+- **ALINE-MART-SKILL.md** - Detailed design specifications and requirements (parent directory)
 
 These documents contain the full design system specifications, brand guidelines, and implementation details. Refer to them for:
 - Complete color palette and usage guidelines
@@ -310,18 +469,6 @@ These documents contain the full design system specifications, brand guidelines,
 - **Validation:** Server-side validation for all inputs using Zod
 - **Security:** Sanitize inputs, parameterized queries, HTTPS only
 
-## Testing Approach
-
-While automated tests may be limited, manual testing checklist includes:
-- User registration and authentication flow
-- Cart operations (add, update quantity, remove)
-- Wishlist functionality
-- Product search and filtering
-- Complete checkout with Stripe test mode
-- Order confirmation emails
-- Mobile responsiveness on iOS/Android
-- Cross-browser compatibility (Chrome, Safari, Firefox)
-
 ## Performance Targets
 
 - Lighthouse score > 90 (all categories)
@@ -333,20 +480,21 @@ While automated tests may be limited, manual testing checklist includes:
 
 ## Key Features
 
-1. **Authentication:** Email/password via NextAuth.js v5
+1. **Authentication:** Google OAuth via NextAuth.js v5 (planned)
 2. **Product Catalog:** Browse by brand, category, with search and filters
-3. **Shopping Cart:** Persistent cart (tied to user account when logged in)
+3. **Shopping Cart:** Persistent cart with localStorage (sync to database when auth is implemented)
 4. **Wishlist:** Save products for later
-5. **Checkout:** Multi-step with Stripe integration
-6. **User Account:** Order history, profile, saved addresses
+5. **Checkout:** Multi-step with Stripe integration (planned)
+6. **User Account:** Order history, profile, saved addresses (planned)
 7. **Responsive Design:** Mobile-first with touch-friendly UI
+8. **Search & Discovery:** Full-text search, brand pages, category pages
 
 ## Brand Requirements
 
-The site features **20+ luxury brands** including:
-Rolex, Adidas, Nike, Zara, Calvin Klein, Gucci, Prada, Louis Vuitton, Hermès, Chanel, Dior, Balenciaga, Versace, Burberry, Ralph Lauren, Tommy Hilfiger, Hugo Boss, Armani, Cartier, Omega
+The site features **19 luxury brands** with logos:
+Rolex, Gucci, Prada, Louis Vuitton, Hermès, Chanel, Dior, Balenciaga, Versace, Burberry, Ralph Lauren, Armani, Cartier, Omega, Nike, Adidas, Calvin Klein, Tommy Hilfiger, Hugo Boss
 
-Products should span multiple categories: Clothing, Shoes, Accessories, Watches, Bags
+Products span multiple categories: Clothing, Shoes, Accessories, Watches, Bags
 
 ## Mobile Considerations
 
@@ -355,6 +503,43 @@ Products should span multiple categories: Clothing, Shoes, Accessories, Watches,
 - Sticky "Add to Cart" button on mobile PDP
 - Full-screen mobile navigation overlay
 - Optimized checkout flow for mobile
+
+## Project Status
+
+**Current Progress: 80% Complete** (as of December 6, 2025 - Phase 5)
+
+### ✅ Completed (Phases 1-5):
+- Next.js 16 project initialized with TypeScript
+- Tailwind CSS v4 configured with custom design system (CSS-only config)
+- Brand colors and typography system implemented
+- Database setup via Supabase (PostgreSQL)
+- Database seeded with 19 brands, 7 categories, 28 products
+- API routes fully functional (products, brands, categories, search)
+- State management with Zustand (cart & wishlist with localStorage)
+- Product components (ProductCard, ProductGrid, ProductFilters, ProductSorter)
+- Homepage with Hero, FeaturedProducts, BrandShowcase
+- Product Listing Page (PLP) with filters and sorting
+- Product Detail Page (PDP) with image gallery, variants, add to cart
+- Shopping Cart Page with cart summary and checkout CTA
+- Search functionality with SearchBar and SearchResults
+- Brand pages with brand-specific product listings
+- Category pages with category-specific product listings
+- Header with navigation and cart/wishlist icons
+- Footer with links and newsletter signup
+- shadcn/ui components installed and customized
+- Test pages for development (`/test-store`, `/test-products`)
+
+### ⏳ In Progress (Phase 6):
+- Authentication with NextAuth.js v5 + Google OAuth
+- User account pages (dashboard, orders, profile, addresses)
+- Syncing localStorage cart/wishlist to database on login
+
+### 🔜 Not Yet Started (Phase 7-9):
+- Stripe payment integration
+- Checkout flow (multi-step with Stripe Elements)
+- Email integration (Resend) for order confirmations
+- Admin dashboard (product management, order management, analytics)
+- Performance optimization and SEO enhancements
 
 ## Final Notes
 
@@ -365,3 +550,8 @@ This is a **luxury eCommerce platform** where every design decision should prior
 4. Editorial style over traditional eCommerce layouts
 
 When in doubt, ask: "Does this feel premium and magazine-like?" The goal is to create an experience that feels like browsing a high-end fashion magazine, not a typical online store.
+
+**Before starting new work:**
+- Always check `NextPlan.md` for current phase and progress
+- Refer to `ALINE-MART-PROMPT.md` and `ALINE-MART-SKILL.md` files in the parent directory for complete specifications
+- Run `node scripts/check-db.js` to verify database connection and data

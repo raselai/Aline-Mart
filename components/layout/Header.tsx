@@ -3,9 +3,21 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Search, Heart, User, ShoppingBag, Menu, MapPin } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, Heart, User, ShoppingBag, Menu, MapPin, LogOut, Package } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import { useCart } from '@/hooks/useCart'
+import { useWishlist } from '@/hooks/useWishlist'
+import { useSession, signIn, signOut } from 'next-auth/react'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const navigation = [
   { name: 'Men', href: '/products?category=men' },
@@ -22,6 +34,14 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+
+  // Get cart and wishlist counts
+  const { itemCount: cartItemCount } = useCart()
+  const { itemCount: wishlistItemCount } = useWishlist()
+
+  // Get session
+  const { data: session, status } = useSession()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +51,15 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Handle search submit
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('') // Clear search after submit
+    }
+  }
 
   return (
     <header
@@ -58,7 +87,7 @@ export default function Header() {
 
             {/* Center: Search Bar (Desktop) */}
             <div className="hidden lg:flex flex-1 max-w-[600px] mx-6">
-              <div className="relative w-full">
+              <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-gray-400" strokeWidth={2} />
                 <input
                   type="text"
@@ -67,7 +96,7 @@ export default function Header() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-4 py-2.5 border border-gray-300 rounded text-[14px] text-charcoal placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 transition-colors"
                 />
-              </div>
+              </form>
             </div>
 
             {/* Right: Utility Icons */}
@@ -87,19 +116,77 @@ export default function Header() {
               >
                 <MapPin className="w-[22px] h-[22px] text-charcoal" strokeWidth={1.5} />
               </button>
-              <Link
-                href="/account"
-                aria-label="Account"
-                className="hidden lg:block hover:opacity-70 transition-opacity duration-200"
-              >
-                <User className="w-[22px] h-[22px] text-charcoal" strokeWidth={1.5} />
-              </Link>
+
+              {/* Desktop: User Account / Sign In */}
+              {status === 'loading' ? (
+                <div className="hidden lg:block w-[22px] h-[22px]" />
+              ) : session ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="Account"
+                      className="hidden lg:flex items-center gap-2 hover:opacity-70 transition-opacity duration-200"
+                    >
+                      {session.user?.image ? (
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
+                          width={28}
+                          height={28}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <User className="w-[22px] h-[22px] text-charcoal" strokeWidth={1.5} />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{session.user?.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {session.user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/account/orders" className="flex items-center cursor-pointer">
+                        <Package className="mr-2 h-4 w-4" />
+                        <span>My Orders</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => signOut()}
+                      className="cursor-pointer text-red-600 focus:text-red-600"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  onClick={() => signIn('google')}
+                  variant="ghost"
+                  size="sm"
+                  className="hidden lg:inline-flex text-xs font-medium px-3 py-1 h-auto"
+                >
+                  Sign In
+                </Button>
+              )}
               <Link
                 href="/wishlist"
                 aria-label="Wishlist"
-                className="hidden sm:block hover:opacity-70 transition-opacity duration-200"
+                className="hidden sm:block hover:opacity-70 transition-opacity duration-200 relative"
               >
                 <Heart className="w-5 h-5 lg:w-[22px] lg:h-[22px] text-charcoal" strokeWidth={1.5} />
+                {wishlistItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-burgundy text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {wishlistItemCount}
+                  </span>
+                )}
               </Link>
               <Link
                 href="/cart"
@@ -107,6 +194,11 @@ export default function Header() {
                 className="hover:opacity-70 transition-opacity duration-200 relative"
               >
                 <ShoppingBag className="w-5 h-5 lg:w-[22px] lg:h-[22px] text-charcoal" strokeWidth={1.5} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-burgundy text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cartItemCount}
+                  </span>
+                )}
               </Link>
 
               {/* Mobile Menu Toggle */}
@@ -163,21 +255,61 @@ export default function Header() {
 
                     {/* Mobile Icons */}
                     <div className="flex flex-col space-y-4 pt-4 border-t border-light-gray">
-                      <Link
-                        href="/account"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
-                      >
-                        <User className="w-5 h-5" />
-                        <span className="font-medium">Account</span>
-                      </Link>
+                      {session ? (
+                        <>
+                          <div className="flex items-center space-x-3 py-2">
+                            {session.user?.image && (
+                              <Image
+                                src={session.user.image}
+                                alt={session.user.name || 'User'}
+                                width={32}
+                                height={32}
+                                className="rounded-full"
+                              />
+                            )}
+                            <div>
+                              <p className="font-medium text-charcoal">{session.user?.name}</p>
+                              <p className="text-xs text-gray-500">{session.user?.email}</p>
+                            </div>
+                          </div>
+                          <Link
+                            href="/account/orders"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
+                          >
+                            <Package className="w-5 h-5" />
+                            <span className="font-medium">My Orders</span>
+                          </Link>
+                          <button
+                            onClick={() => {
+                              signOut()
+                              setIsMobileMenuOpen(false)
+                            }}
+                            className="flex items-center space-x-3 text-red-600 hover:text-red-700 transition-colors py-2"
+                          >
+                            <LogOut className="w-5 h-5" />
+                            <span className="font-medium">Sign Out</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            signIn('google')
+                            setIsMobileMenuOpen(false)
+                          }}
+                          className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
+                        >
+                          <User className="w-5 h-5" />
+                          <span className="font-medium">Sign In with Google</span>
+                        </button>
+                      )}
                       <Link
                         href="/wishlist"
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
                       >
                         <Heart className="w-5 h-5" />
-                        <span className="font-medium">Wishlist</span>
+                        <span className="font-medium">Wishlist ({wishlistItemCount})</span>
                       </Link>
                       <Link
                         href="/cart"
@@ -185,15 +317,8 @@ export default function Header() {
                         className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
                       >
                         <ShoppingBag className="w-5 h-5" />
-                        <span className="font-medium">Cart (0)</span>
+                        <span className="font-medium">Cart ({cartItemCount})</span>
                       </Link>
-                    </div>
-
-                    {/* Mobile CTA */}
-                    <div className="mt-auto pt-6 border-t border-light-gray">
-                      <Button className="w-full gradient-primary text-white hover:opacity-90 transition-opacity">
-                        Sign In
-                      </Button>
                     </div>
                   </div>
                 </SheetContent>

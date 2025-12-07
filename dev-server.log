@@ -1,0 +1,294 @@
+
+> aline-mart@0.1.0 dev
+> next dev
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 16.0.5 (Turbopack)
+   - Local:         http://localhost:3000
+   - Network:       http://192.168.0.241:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1022ms
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/brands'
+}
+ GET /api/brands 500 in 872ms (compile: 788ms, render: 84ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/categories'
+}
+ GET /api/categories 500 in 89ms (compile: 83ms, render: 6ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/products'
+}
+ GET /api/products 500 in 82ms (compile: 77ms, render: 5ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/products'
+}
+ GET /api/products?featured=true&limit=5 500 in 11ms (compile: 7ms, render: 5ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/products/rolex-submariner-date'
+}
+ GET /api/products/rolex-submariner-date 500 in 77ms (compile: 72ms, render: 4ms)
+ GET / 200 in 1513ms (compile: 1364ms, render: 149ms)
+ GET /api/placeholder/400/500 404 in 460ms (compile: 413ms, render: 47ms)
+ GET /test-api 200 in 281ms (compile: 240ms, render: 41ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/brands'
+}
+ GET /api/brands 500 in 89ms (compile: 78ms, render: 11ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/categories'
+}
+ GET /api/categories 500 in 28ms (compile: 22ms, render: 6ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/products'
+}
+ GET /api/products?limit=5 500 in 27ms (compile: 20ms, render: 7ms)
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\@prisma\client\runtime\client.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\node_modules_next_b6a55109._.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require-hook.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\require.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\load-components.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\next-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\lib\trace\tracer.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\dev\next-dev-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\server\base-server.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+E:\Desktop 1\Aline Mart\aline-mart\node_modules\next\dist\trace\trace.js: Invalid source map. Only conformant source maps can be used to find the original code. Cause: Error: sourceMapURL could not be parsed
+ ⨯ Error [PrismaClientConstructorValidationError]: Using engine type "client" requires either "adapter" or "accelerateUrl" to be provided to PrismaClient constructor.
+Read more at https://pris.ly/d/client-constructor
+    at prismaClientSingleton (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:60:12)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:68:43)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at module evaluation (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[root-of-the-server]__7769751e._.js:80:141)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at getOrInstantiateModuleFromParent (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:738:12)
+    at Context.esmImport [as i] (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:228:20)
+    at instantiateModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:715:9)
+    at instantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:743:12)
+    at getOrInstantiateRuntimeModule (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:756:12)
+    at Object.m (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\chunks\[turbopack]_runtime.js:765:18)
+    at Object.<anonymous> (E:\Desktop 1\Aline Mart\aline-mart\.next\dev\server\app\api\brands\route.js:5:3) {
+  page: '/api/products/rolex-submariner-date'
+}
+ GET /api/products/rolex-submariner-date 500 in 24ms (compile: 19ms, render: 5ms)
