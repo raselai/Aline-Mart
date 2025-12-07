@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductDetailClient from './ProductDetailClient'
+import { getApiUrl } from '@/lib/api-url'
 
 interface ProductPageProps {
   params: Promise<{
@@ -10,10 +11,8 @@ interface ProductPageProps {
 
 async function fetchProduct(slug: string) {
   try {
-    // Construct absolute URL for server-side fetching
-    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-    const host = process.env.VERCEL_URL || 'localhost:3000'
-    const apiUrl = `${protocol}://${host}/api/products/${slug}`
+    const apiUrl = getApiUrl(`/api/products/${slug}`)
+    console.log('[fetchProduct] Fetching from:', apiUrl)
 
     const res = await fetch(apiUrl, {
       cache: 'no-store',
@@ -36,10 +35,8 @@ async function fetchProduct(slug: string) {
 
 async function fetchProductWithRelated(slug: string) {
   try {
-    // Construct absolute URL for server-side fetching
-    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-    const host = process.env.VERCEL_URL || 'localhost:3000'
-    const apiUrl = `${protocol}://${host}/api/products/${slug}`
+    const apiUrl = getApiUrl(`/api/products/${slug}`)
+    console.log('[fetchProductWithRelated] Fetching from:', apiUrl)
 
     const res = await fetch(apiUrl, {
       cache: 'no-store',

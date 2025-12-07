@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
 import ProductListingClient from './ProductListingClient'
+import { getApiUrl } from '@/lib/api-url'
 
 export const metadata: Metadata = {
   title: 'Luxury Products | Aline Mart',
@@ -59,9 +60,7 @@ async function fetchProducts(params: {
       if (value) queryParams.append(key, value)
     })
 
-    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-    const host = process.env.VERCEL_URL || 'localhost:3000'
-    const apiUrl = `${protocol}://${host}/api/products?${queryParams.toString()}`
+    const apiUrl = getApiUrl(`/api/products?${queryParams.toString()}`)
 
     const res = await fetch(apiUrl, {
       cache: 'no-store', // Always fetch fresh data
@@ -92,9 +91,7 @@ async function fetchProducts(params: {
 
 async function fetchBrands() {
   try {
-    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-    const host = process.env.VERCEL_URL || 'localhost:3000'
-    const apiUrl = `${protocol}://${host}/api/brands?includeProducts=true`
+    const apiUrl = getApiUrl('/api/brands?includeProducts=true')
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Brands don't change often
@@ -118,9 +115,7 @@ async function fetchBrands() {
 
 async function fetchCategories() {
   try {
-    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
-    const host = process.env.VERCEL_URL || 'localhost:3000'
-    const apiUrl = `${protocol}://${host}/api/categories?includeProducts=true`
+    const apiUrl = getApiUrl('/api/categories?includeProducts=true')
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Categories don't change often
