@@ -9,7 +9,6 @@ interface Category {
   id: string
   name: string
   slug: string
-  description: string | null
   parentId: string | null
 }
 
@@ -48,7 +47,7 @@ interface Product {
 async function getCategoryBySlug(slug: string): Promise<Category | null> {
   const { data, error } = await supabase
     .from('Category')
-    .select('id, name, slug, description, parentId')
+    .select('id, name, slug, parentId')
     .eq('slug', slug)
     .single()
 
@@ -63,7 +62,7 @@ async function getCategoryBySlug(slug: string): Promise<Category | null> {
 async function getSubcategories(categoryId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from('Category')
-    .select('id, name, slug, description, parentId')
+    .select('id, name, slug, parentId')
     .eq('parentId', categoryId)
     .order('name', { ascending: true })
 
@@ -76,6 +75,18 @@ async function getSubcategories(categoryId: string): Promise<Category[]> {
 }
 
 async function getProductsByCategory(categoryId: string): Promise<Product[]> {
+  // Get all subcategories for this category
+  const { data: subcategories } = await supabase
+    .from('Category')
+    .select('id')
+    .eq('parentId', categoryId)
+
+  // Build category IDs array (include current category + all subcategories)
+  const categoryIds = [categoryId]
+  if (subcategories && subcategories.length > 0) {
+    categoryIds.push(...subcategories.map(sub => sub.id))
+  }
+
   const { data, error } = await supabase
     .from('Product')
     .select(`
@@ -104,7 +115,7 @@ async function getProductsByCategory(categoryId: string): Promise<Product[]> {
         order
       )
     `)
-    .eq('categoryId', categoryId)
+    .in('categoryId', categoryIds)
     .eq('inStock', true)
     .order('isNew', { ascending: false })
     .order('createdAt', { ascending: false })
@@ -143,10 +154,10 @@ export async function generateMetadata(
 
   return {
     title: `${category.name} | Luxury Products | Aline Mart`,
-    description: category.description || `Shop luxury ${category.name.toLowerCase()} products`,
+    description: `Shop luxury ${category.name.toLowerCase()} products from the world's most prestigious brands`,
     openGraph: {
       title: `${category.name} | Aline Mart`,
-      description: category.description || `Shop luxury ${category.name.toLowerCase()} products`,
+      description: `Shop luxury ${category.name.toLowerCase()} products from the world's most prestigious brands`,
     },
   }
 }
@@ -188,24 +199,15 @@ export default async function CategoryPage(
       {/* Category Header */}
       <div className="bg-white">
         <div className="container mx-auto px-4 lg:px-12 py-12">
-          <Link
-            href="/products"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-burgundy transition-colors mb-6 group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to all products</span>
-          </Link>
-
-          <div className="max-w-3xl">
-            <h1 className="font-serif text-4xl lg:text-5xl font-bold text-charcoal mb-4">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="font-serif text-4xl lg:text-5xl font-bold text-charcoal mb-6">
               {category.name}
             </h1>
-            {category.description && (
-              <p className="text-lg text-gray-600 leading-relaxed">
-                {category.description}
-              </p>
-            )}
-            <div className="mt-6 flex items-center gap-4 text-sm text-gray-600">
+            <div className="text-lg text-gray-600 leading-relaxed">
+              <p className="mb-1">Explore our curated selection of luxury {category.name.toLowerCase()} products</p>
+              <p>from the world's most prestigious brands.</p>
+            </div>
+            <div className="mt-8 flex items-center justify-center gap-4 text-sm text-gray-600">
               <span>{products.length} {products.length === 1 ? 'product' : 'products'}</span>
             </div>
           </div>

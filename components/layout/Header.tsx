@@ -21,14 +21,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const navigation = [
-  { name: 'Men', href: '/products?category=men' },
-  { name: 'Women', href: '/products?category=women' },
-  { name: 'Kids', href: '/products?category=kids' },
-  { name: 'Homeware', href: '/products?category=homeware' },
-  { name: 'Beauty', href: '/products?category=beauty' },
+  { name: 'Home', href: '/' },
+  { name: 'Men', href: '/categories/men' },
+  { name: 'Women', href: '/categories/women' },
+  { name: 'Kids', href: '/categories/kids' },
+  { name: 'Homeware', href: '/categories/homeware' },
+  { name: 'Beauty', href: '/categories/beauty' },
   { name: 'Brands', href: '/brands' },
-  { name: 'Outlet', href: '/products?filter=outlet' },
-  { name: 'Sports & Fitness', href: '/products?category=sports' },
+  { name: 'Outlet', href: '/categories/outlet' },
+  { name: 'Sports & Fitness', href: '/categories/sports' },
 ]
 
 export default function Header() {

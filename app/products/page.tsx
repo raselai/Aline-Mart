@@ -147,29 +147,17 @@ export default async function ProductsPage(props: ProductsPageProps) {
   ])
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Breadcrumb */}
-      <div className="border-b border-gray-200">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-sm text-secondary">
-            <a href="/" className="hover:text-charcoal transition-colors">
-              Home
-            </a>
-            <span>/</span>
-            <span className="text-charcoal font-medium">Products</span>
-          </nav>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-white pt-24 lg:pt-32">
       {/* Page Header */}
-      <div className="border-b border-gray-200 bg-light-gray">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-charcoal mb-4">
+      <div className="bg-burgundy">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-white mb-6">
             Luxury Collection
           </h1>
-          <p className="text-lg text-secondary max-w-2xl">
-            Discover our curated selection of premium products from the world's most prestigious brands.
-          </p>
+          <div className="text-lg text-white/90">
+            <p>Discover our curated selection of premium products</p>
+            <p>from the world's most prestigious brands.</p>
+          </div>
         </div>
       </div>
 
