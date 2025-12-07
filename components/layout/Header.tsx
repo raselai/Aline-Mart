@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
-import { useSession, signIn, signOut } from 'next-auth/react'
+// Temporarily disabled until authentication is fully configured
+// import { useSession, signIn, signOut } from 'next-auth/react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,8 +41,10 @@ export default function Header() {
   const { itemCount: cartItemCount } = useCart()
   const { itemCount: wishlistItemCount } = useWishlist()
 
-  // Get session
-  const { data: session, status } = useSession()
+  // Get session - temporarily disabled
+  // const { data: session, status } = useSession()
+  const session = null
+  const status = 'unauthenticated'
 
   useEffect(() => {
     const handleScroll = () => {
@@ -158,7 +161,7 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => signOut()}
+                      onClick={() => {/* signOut() - disabled */}}
                       className="cursor-pointer text-red-600 focus:text-red-600"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -168,7 +171,7 @@ export default function Header() {
                 </DropdownMenu>
               ) : (
                 <Button
-                  onClick={() => signIn('google')}
+                  onClick={() => {/* signIn('google') - disabled */}}
                   variant="ghost"
                   size="sm"
                   className="hidden lg:inline-flex text-xs font-medium px-3 py-1 h-auto"
@@ -282,7 +285,7 @@ export default function Header() {
                           </Link>
                           <button
                             onClick={() => {
-                              signOut()
+                              // signOut() - disabled
                               setIsMobileMenuOpen(false)
                             }}
                             className="flex items-center space-x-3 text-red-600 hover:text-red-700 transition-colors py-2"
@@ -294,7 +297,7 @@ export default function Header() {
                       ) : (
                         <button
                           onClick={() => {
-                            signIn('google')
+                            // signIn('google') - disabled
                             setIsMobileMenuOpen(false)
                           }}
                           className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
