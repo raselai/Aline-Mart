@@ -10,7 +10,8 @@ interface ProductPageProps {
 
 async function fetchProduct(slug: string) {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/products/${slug}`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
+    const apiUrl = `${baseUrl}/api/products/${slug}`
 
     const res = await fetch(apiUrl, {
       cache: 'no-store',
@@ -33,7 +34,8 @@ async function fetchProduct(slug: string) {
 
 async function fetchProductWithRelated(slug: string) {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/products/${slug}`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
+    const apiUrl = `${baseUrl}/api/products/${slug}`
 
     const res = await fetch(apiUrl, {
       cache: 'no-store',

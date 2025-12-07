@@ -59,7 +59,8 @@ async function fetchProducts(params: {
       if (value) queryParams.append(key, value)
     })
 
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/products?${queryParams.toString()}`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
+    const apiUrl = `${baseUrl}/api/products?${queryParams.toString()}`
 
     const res = await fetch(apiUrl, {
       cache: 'no-store', // Always fetch fresh data
@@ -90,7 +91,8 @@ async function fetchProducts(params: {
 
 async function fetchBrands() {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/brands?includeProducts=true`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
+    const apiUrl = `${baseUrl}/api/brands?includeProducts=true`
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Brands don't change often
@@ -114,7 +116,8 @@ async function fetchBrands() {
 
 async function fetchCategories() {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/categories?includeProducts=true`
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
+    const apiUrl = `${baseUrl}/api/categories?includeProducts=true`
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Categories don't change often
