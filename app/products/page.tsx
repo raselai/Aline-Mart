@@ -3,6 +3,9 @@ import { Metadata } from 'next'
 import ProductListingClient from './ProductListingClient'
 import { getApiUrl } from '@/lib/api-url'
 
+// Force dynamic rendering for products page
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Luxury Products | Aline Mart',
   description: 'Shop the finest selection of luxury products from world-renowned brands. Discover watches, clothing, accessories, bags, and shoes from Rolex, Gucci, Prada, Louis Vuitton, Hermès, and more.',

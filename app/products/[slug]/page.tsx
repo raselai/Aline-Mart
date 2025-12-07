@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation'
 import ProductDetailClient from './ProductDetailClient'
 import { getApiUrl } from '@/lib/api-url'
 
+// Force dynamic rendering for product pages
+export const dynamic = 'force-dynamic'
+
 interface ProductPageProps {
   params: Promise<{
     slug: string
