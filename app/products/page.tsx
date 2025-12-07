@@ -59,8 +59,9 @@ async function fetchProducts(params: {
       if (value) queryParams.append(key, value)
     })
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
-    const apiUrl = `${baseUrl}/api/products?${queryParams.toString()}`
+    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
+    const host = process.env.VERCEL_URL || 'localhost:3000'
+    const apiUrl = `${protocol}://${host}/api/products?${queryParams.toString()}`
 
     const res = await fetch(apiUrl, {
       cache: 'no-store', // Always fetch fresh data
@@ -91,8 +92,9 @@ async function fetchProducts(params: {
 
 async function fetchBrands() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
-    const apiUrl = `${baseUrl}/api/brands?includeProducts=true`
+    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
+    const host = process.env.VERCEL_URL || 'localhost:3000'
+    const apiUrl = `${protocol}://${host}/api/brands?includeProducts=true`
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Brands don't change often
@@ -116,8 +118,9 @@ async function fetchBrands() {
 
 async function fetchCategories() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window === 'undefined' ? process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000' : '')
-    const apiUrl = `${baseUrl}/api/categories?includeProducts=true`
+    const protocol = process.env.VERCEL_URL ? 'https' : 'http'
+    const host = process.env.VERCEL_URL || 'localhost:3000'
+    const apiUrl = `${protocol}://${host}/api/categories?includeProducts=true`
 
     const res = await fetch(apiUrl, {
       cache: 'force-cache', // Categories don't change often
