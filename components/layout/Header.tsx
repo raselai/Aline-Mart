@@ -45,7 +45,7 @@ export default function Header() {
   // Get session - temporarily disabled
   // const { data: session, status } = useSession()
   const session = null
-  const status = 'unauthenticated'
+  const status = 'unauthenticated' as 'loading' | 'authenticated' | 'unauthenticated'
 
   useEffect(() => {
     const handleScroll = () => {
