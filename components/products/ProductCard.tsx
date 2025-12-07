@@ -53,7 +53,9 @@ export default function ProductCard({
   const inWishlist = isInWishlist(product.id)
 
   // Determine which images to show
-  const primaryImage = product.images[0]?.url || '/placeholder.jpg'
+  // Use a gray SVG placeholder if no image is available
+  const placeholderImage = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="500"%3E%3Crect width="400" height="500" fill="%23f5f5f5"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="20" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E'
+  const primaryImage = product.images[0]?.url || placeholderImage
   const secondaryImage = product.images[1]?.url || primaryImage
 
   // Get default variant (first one with stock, or first one)
