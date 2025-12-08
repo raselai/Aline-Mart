@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import ProductDetailClient from './ProductDetailClient'
-import { getApiUrl } from '@/lib/api-url'
+import { supabase } from '@/lib/supabase'
 
 // Force dynamic rendering for product pages
 export const dynamic = 'force-dynamic'
@@ -14,22 +14,46 @@ interface ProductPageProps {
 
 async function fetchProduct(slug: string) {
   try {
-    const apiUrl = getApiUrl(`/api/products/${slug}`)
-    console.log('[fetchProduct] Fetching from:', apiUrl)
+    const { data: product, error } = await supabase
+      .from('Product')
+      .select(`
+        *,
+        brand:Brand!Product_brandId_fkey (
+          id,
+          name,
+          slug,
+          description
+        ),
+        category:Category!Product_categoryId_fkey (
+          id,
+          name,
+          slug,
+          parentId
+        ),
+        images:ProductImage (
+          id,
+          url,
+          alt,
+          order
+        ),
+        variants:ProductVariant (
+          id,
+          color,
+          size,
+          sku,
+          stock,
+          priceModifier
+        )
+      `)
+      .eq('slug', slug)
+      .single()
 
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      next: { revalidate: 60 },
-    })
-
-    if (!res.ok) {
-      if (res.status === 404) return null
-      throw new Error('Failed to fetch product')
+    if (error || !product) {
+      console.error('Error fetching product:', error)
+      return null
     }
 
-    const response = await res.json()
-    // API returns { success: true, data: { product, relatedProducts } }
-    return response.data?.product || null
+    return product
   } catch (error) {
     console.error('Error fetching product:', error)
     return null
@@ -38,27 +62,87 @@ async function fetchProduct(slug: string) {
 
 async function fetchProductWithRelated(slug: string) {
   try {
-    const apiUrl = getApiUrl(`/api/products/${slug}`)
-    console.log('[fetchProductWithRelated] Fetching from:', apiUrl)
+    // Fetch product with all details
+    const { data: product, error } = await supabase
+      .from('Product')
+      .select(`
+        *,
+        brand:Brand!Product_brandId_fkey (
+          id,
+          name,
+          slug,
+          description
+        ),
+        category:Category!Product_categoryId_fkey (
+          id,
+          name,
+          slug,
+          parentId
+        ),
+        images:ProductImage (
+          id,
+          url,
+          alt,
+          order
+        ),
+        variants:ProductVariant (
+          id,
+          color,
+          size,
+          sku,
+          stock,
+          priceModifier
+        )
+      `)
+      .eq('slug', slug)
+      .single()
 
-    const res = await fetch(apiUrl, {
-      cache: 'no-store',
-      next: { revalidate: 60 },
-    })
-
-    if (!res.ok) {
-      if (res.status === 404) return { product: null, relatedProducts: [] }
-      throw new Error('Failed to fetch product')
+    if (error || !product) {
+      console.error('Error fetching product:', error)
+      return { product: null, relatedProducts: [] }
     }
 
-    const response = await res.json()
-    // API returns { success: true, data: { product, relatedProducts } }
+    // Fetch related products (same brand or category)
+    const { data: relatedProducts } = await supabase
+      .from('Product')
+      .select(`
+        *,
+        brand:Brand!Product_brandId_fkey (
+          id,
+          name,
+          slug
+        ),
+        category:Category!Product_categoryId_fkey (
+          id,
+          name,
+          slug
+        ),
+        images:ProductImage (
+          id,
+          url,
+          alt,
+          order
+        ),
+        variants:ProductVariant (
+          id,
+          color,
+          size,
+          sku,
+          stock
+        )
+      `)
+      .or(`brandId.eq.${product.brandId},categoryId.eq.${product.categoryId}`)
+      .neq('id', product.id)
+      .eq('inStock', true)
+      .order('createdAt', { ascending: false })
+      .limit(6)
+
     return {
-      product: response.data?.product || null,
-      relatedProducts: response.data?.relatedProducts || []
+      product,
+      relatedProducts: relatedProducts || []
     }
   } catch (error) {
-    console.error('Error fetching product:', error)
+    console.error('Error fetching product with related:', error)
     return { product: null, relatedProducts: [] }
   }
 }
