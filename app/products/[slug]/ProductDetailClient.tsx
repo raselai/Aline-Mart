@@ -326,7 +326,7 @@ export default function ProductDetailClient({
             {/* Brand */}
             <Link
               href={`/products?brand=${product.brand.slug}`}
-              className="text-sm text-secondary hover:text-burgundy transition-colors uppercase tracking-wide"
+              className="text-sm text-charcoal hover:text-burgundy transition-colors uppercase tracking-wide font-medium"
             >
               {product.brand.name}
             </Link>
@@ -355,7 +355,7 @@ export default function ProductDetailClient({
 
             {/* Description */}
             {product.description && (
-              <p className="text-secondary leading-relaxed mb-6">
+              <p className="text-charcoal leading-relaxed mb-6">
                 {product.description}
               </p>
             )}
@@ -473,11 +473,14 @@ export default function ProductDetailClient({
                   'px-6 py-6 border-2 transition-colors',
                   isInWishlistState
                     ? 'border-burgundy bg-burgundy text-white'
-                    : 'border-gray-200 hover:border-burgundy'
+                    : 'border-gray-300 hover:border-burgundy hover:bg-light-gray'
                 )}
               >
                 <Heart
-                  className={cn('w-5 h-5', isInWishlistState && 'fill-current')}
+                  className={cn(
+                    'w-5 h-5 text-charcoal',
+                    isInWishlistState && 'fill-current text-white'
+                  )}
                 />
               </Button>
             </div>
@@ -503,7 +506,7 @@ export default function ProductDetailClient({
                   )}
                 </button>
                 {expandedSections.shipping && (
-                  <div className="px-4 pb-4 text-sm text-secondary space-y-2">
+                  <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
                     <p>• Free standard shipping on orders over $100</p>
                     <p>• Express shipping available (2-3 business days)</p>
                     <p>• International shipping available to select countries</p>
@@ -531,7 +534,7 @@ export default function ProductDetailClient({
                   )}
                 </button>
                 {expandedSections.returns && (
-                  <div className="px-4 pb-4 text-sm text-secondary space-y-2">
+                  <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
                     <p>• 30-day return policy for unworn items</p>
                     <p>• Free returns with prepaid shipping label</p>
                     <p>• Exchanges available for different sizes/colors</p>
@@ -559,7 +562,7 @@ export default function ProductDetailClient({
                   )}
                 </button>
                 {expandedSections.details && (
-                  <div className="px-4 pb-4 text-sm text-secondary space-y-2">
+                  <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
                     <p>• SKU: {selectedVariant?.sku || 'N/A'}</p>
                     <p>• Category: {product.category.name}</p>
                     <p>• Brand: {product.brand.name}</p>
@@ -630,7 +633,7 @@ export default function ProductDetailClient({
 
             {/* Product Info */}
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-secondary uppercase tracking-wide truncate">
+              <p className="text-xs text-charcoal uppercase tracking-wide truncate font-medium">
                 {product.brand.name}
               </p>
               <p className="font-semibold text-sm text-charcoal truncate">
@@ -639,7 +642,7 @@ export default function ProductDetailClient({
               <p className="text-sm font-bold text-charcoal">
                 ${displayPrice.toFixed(2)}
                 {hasDiscount && (
-                  <span className="text-xs text-secondary line-through ml-2">
+                  <span className="text-xs text-gray-500 line-through ml-2">
                     ${product.price.toFixed(2)}
                   </span>
                 )}

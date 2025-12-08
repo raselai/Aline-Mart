@@ -232,14 +232,14 @@ export default async function ProductPage(props: ProductPageProps) {
       />
 
       {/* Breadcrumb */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 pt-24 lg:pt-32">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <nav className="flex items-center gap-2 text-sm text-secondary">
-            <a href="/" className="hover:text-charcoal transition-colors">
+          <nav className="flex items-center gap-2 text-sm text-charcoal">
+            <a href="/" className="hover:text-burgundy transition-colors">
               Home
             </a>
             <span>/</span>
-            <a href="/products" className="hover:text-charcoal transition-colors">
+            <a href="/products" className="hover:text-burgundy transition-colors">
               Products
             </a>
             {product.category && (
@@ -247,7 +247,7 @@ export default async function ProductPage(props: ProductPageProps) {
                 <span>/</span>
                 <a
                   href={`/products?category=${product.category.slug}`}
-                  className="hover:text-charcoal transition-colors"
+                  className="hover:text-burgundy transition-colors"
                 >
                   {product.category.name}
                 </a>
