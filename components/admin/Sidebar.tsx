@@ -107,7 +107,7 @@ export default function Sidebar() {
                     }
                   }}
                 >
-                  <Icon className="w-5 h-5" style={{ minWidth: '20px' }} />
+                  <Icon className="w-5 h-5 flex-shrink-0" />
                   {!collapsed && (
                     <span
                       className="ml-3 font-medium"
