@@ -87,9 +87,8 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-all"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-burgundy transition-all"
                 style={{
-                  focusRingColor: '#8e2157',
                   borderColor: '#d1d5db'
                 }}
                 placeholder="admin@alinemart.com"
@@ -111,9 +110,8 @@ export default function AdminLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-all"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-burgundy transition-all"
                 style={{
-                  focusRingColor: '#8e2157',
                   borderColor: '#d1d5db'
                 }}
                 placeholder="Enter your password"
