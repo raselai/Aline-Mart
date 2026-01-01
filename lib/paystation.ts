@@ -11,19 +11,24 @@ export class PayStationClient {
 
   constructor() {
     this.config = {
-      merchantId: process.env.PAYSTATION_MERCHANT_ID!,
-      password: process.env.PAYSTATION_PASSWORD!,
-      apiUrl: process.env.PAYSTATION_API_URL!,
+      merchantId: process.env.PAYSTATION_MERCHANT_ID || '',
+      password: process.env.PAYSTATION_PASSWORD || '',
+      apiUrl: process.env.PAYSTATION_API_URL || '',
       sandboxMode: process.env.PAYSTATION_SANDBOX_MODE === 'true',
-      successUrl: process.env.PAYSTATION_SUCCESS_URL!,
-      failUrl: process.env.PAYSTATION_FAIL_URL!,
-      cancelUrl: process.env.PAYSTATION_CANCEL_URL!,
+      successUrl: process.env.PAYSTATION_SUCCESS_URL || '',
+      failUrl: process.env.PAYSTATION_FAIL_URL || '',
+      cancelUrl: process.env.PAYSTATION_CANCEL_URL || '',
     }
 
     this.validateConfig()
   }
 
   private validateConfig() {
+    // Skip validation during build time
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return
+    }
+
     const required = ['merchantId', 'password', 'apiUrl', 'successUrl']
     const missing = required.filter((key) => !this.config[key as keyof PayStationConfig])
 
