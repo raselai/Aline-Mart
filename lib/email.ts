@@ -4,7 +4,17 @@ import PaymentReceivedEmail from '@/emails/PaymentReceived'
 import OrderShippedEmail from '@/emails/OrderShipped'
 import type { OrderWithDetails } from '@/types/order'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Lazy load Resend client to avoid build-time errors
+let resendClient: Resend | null = null
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    // Use placeholder API key during build, real key at runtime
+    const apiKey = process.env.RESEND_API_KEY || 're_placeholder_key_for_build'
+    resendClient = new Resend(apiKey)
+  }
+  return resendClient
+}
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'orders@yourdomain.com'
 const FROM_NAME = process.env.FROM_NAME || 'Aline Mart'
@@ -17,6 +27,7 @@ export async function sendOrderConfirmationEmail(
   recipientEmail: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const resend = getResendClient()
     const { data, error } = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipientEmail,
@@ -48,6 +59,7 @@ export async function sendPaymentReceivedEmail(
   recipientEmail: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const resend = getResendClient()
     const { data, error } = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipientEmail,
@@ -77,6 +89,7 @@ export async function sendOrderShippedEmail(
   trackingNumber?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const resend = getResendClient()
     const { data, error } = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: recipientEmail,
