@@ -1,0 +1,68 @@
+import { nanoid } from 'nanoid'
+
+/**
+ * Generate a unique order number
+ * Format: AM-{timestamp}-{random}
+ * Example: AM-LQ7X8Y9Z-A1B2C3
+ */
+export function generateOrderNumber(): string {
+  const timestamp = Date.now().toString(36).toUpperCase()
+  const random = nanoid(6).toUpperCase()
+  return `AM-${timestamp}-${random}`
+}
+
+/**
+ * Calculate order total including shipping
+ */
+export function calculateOrderTotal(
+  subtotal: number,
+  paymentMethod: 'PAYSTATION' | 'COD'
+): number {
+  const shippingCost = getShippingCost(paymentMethod)
+  return subtotal + shippingCost
+}
+
+/**
+ * Get shipping cost based on payment method
+ */
+export function getShippingCost(paymentMethod: 'PAYSTATION' | 'COD'): number {
+  if (paymentMethod === 'COD') {
+    return parseFloat(process.env.SHIPPING_COST_COD || '50')
+  }
+  return parseFloat(process.env.SHIPPING_COST_PAYSTATION || '0')
+}
+
+/**
+ * Format price in BDT currency
+ */
+export function formatPrice(amount: number): string {
+  return `৳${amount.toLocaleString('en-BD', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+/**
+ * Parse order status color for UI
+ */
+export function getOrderStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    PENDING: 'bg-yellow-100 text-yellow-800',
+    PROCESSING: 'bg-blue-100 text-blue-800',
+    SHIPPED: 'bg-purple-100 text-purple-800',
+    DELIVERED: 'bg-green-100 text-green-800',
+    CANCELLED: 'bg-red-100 text-red-800',
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+/**
+ * Get payment method display name
+ */
+export function getPaymentMethodName(method: string): string {
+  const names: Record<string, string> = {
+    PAYSTATION: 'PayStation (bKash/Nagad/Cards)',
+    COD: 'Cash on Delivery',
+  }
+  return names[method] || method
+}

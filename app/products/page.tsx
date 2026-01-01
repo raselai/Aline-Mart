@@ -67,7 +67,6 @@ async function fetchProducts(params: {
 
     const res = await fetch(apiUrl, {
       cache: 'no-store', // Always fetch fresh data
-      next: { revalidate: 60 }, // Revalidate every 60 seconds
     })
 
     if (!res.ok) {

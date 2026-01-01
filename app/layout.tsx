@@ -17,6 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: "Aline Mart - Luxury Multi-Brand Marketplace",
   description: "Discover luxury fashion from the world's most prestigious brands. Curated collections for the discerning shopper.",
   keywords: ["luxury fashion", "designer brands", "premium shopping", "high-end clothing"],

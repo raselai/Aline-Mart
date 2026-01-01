@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -117,9 +118,11 @@ export default function CartSummary() {
       </div>
 
       {/* Checkout Button */}
-      <Button className="w-full gradient-primary text-white py-6 text-base font-semibold mb-4">
-        Proceed to Checkout
-      </Button>
+      <Link href="/checkout">
+        <Button className="w-full gradient-primary text-white py-6 text-base font-semibold mb-4">
+          Proceed to Checkout
+        </Button>
+      </Link>
 
       {/* Security Badge */}
       <div className="flex items-center justify-center gap-2 text-sm text-secondary">

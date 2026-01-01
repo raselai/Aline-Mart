@@ -39,13 +39,19 @@ export default function CartItem({ item }: CartItemProps) {
           className="flex-shrink-0"
         >
           <div className="w-24 h-24 sm:w-32 sm:h-32 bg-light-gray rounded-md overflow-hidden">
-            <Image
-              src={item.image}
-              alt={item.name}
-              width={128}
-              height={128}
-              className="w-full h-full object-cover hover:scale-105 transition-transform"
-            />
+            {item.image ? (
+              <Image
+                src={item.image}
+                alt={item.name || 'Product image'}
+                width={128}
+                height={128}
+                className="w-full h-full object-cover hover:scale-105 transition-transform"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                No image
+              </div>
+            )}
           </div>
         </Link>
 
