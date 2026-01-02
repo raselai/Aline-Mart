@@ -117,15 +117,15 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-start gap-3 text-sm text-gray-600">
                 <MapPin className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
-                <span>123 Luxury Avenue, Fashion District, NY 10001</span>
+                <span>Borak Mehnur, 51/B, Kemal Ataturk Avenue, Banani, Dhaka-1213, Bangladesh</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Phone className="w-5 h-5 text-burgundy flex-shrink-0" />
-                <span>+1 (555) 123-4567</span>
+                <span>+880 1345-719410</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Mail className="w-5 h-5 text-burgundy flex-shrink-0" />
-                <span>hello@alinemart.com</span>
+                <span>info@alineglobalbd.com</span>
               </div>
             </div>
           </div>
