@@ -71,6 +71,38 @@ export default function Header() {
         isScrolled ? 'shadow-sm' : ''
       }`}
     >
+      {/* Utility Bar - Top Links */}
+      <div className="w-full bg-gradient-to-r from-burgundy to-plum">
+        <div className="w-full px-4 sm:px-6 lg:px-12">
+          <div className="flex items-center justify-end gap-4 sm:gap-6 lg:gap-8 py-2">
+            <Link
+              href="/about"
+              className="text-white text-xs sm:text-sm font-medium hover:text-white/80 transition-colors duration-200"
+            >
+              About us
+            </Link>
+            <Link
+              href="/account"
+              className="text-white text-xs sm:text-sm font-medium hover:text-white/80 transition-colors duration-200"
+            >
+              My account
+            </Link>
+            <Link
+              href="/wishlist"
+              className="text-white text-xs sm:text-sm font-medium hover:text-white/80 transition-colors duration-200 flex items-center gap-1.5"
+            >
+              <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={1.5} />
+              <span>Wishlist</span>
+              {wishlistItemCount > 0 && (
+                <span className="ml-1 bg-white/20 text-white text-[10px] sm:text-xs font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  {wishlistItemCount}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* Top Tier - Primary Header Bar */}
       <div className="bg-white">
         <div className="w-full px-4 sm:px-6 lg:px-12">

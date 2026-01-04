@@ -213,29 +213,29 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-gray-200 bg-gray-50">
+      {/* Bottom Bar - Premium Section */}
+      <div className="border-t border-burgundy/20 bg-gradient-to-r from-burgundy to-plum">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-12 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
             {/* Copyright */}
-            <p className="text-gray-600">
+            <p className="text-white/90 font-medium">
               © {new Date().getFullYear()} Aline Mart. All rights reserved.
             </p>
 
             {/* Payment Methods */}
             <div className="flex items-center gap-4">
-              <span className="text-gray-600 font-medium">Secure Payment:</span>
+              <span className="text-white/90 font-medium">Secure Payment:</span>
               <div className="flex items-center gap-2">
-                <div className="bg-white border-2 border-gray-300 px-3 py-1.5 text-xs font-bold text-charcoal">
+                <div className="bg-white/95 backdrop-blur-sm border-2 border-white/40 px-3 py-1.5 text-xs font-bold text-charcoal hover:bg-white transition-colors">
                   VISA
                 </div>
-                <div className="bg-white border-2 border-gray-300 px-3 py-1.5 text-xs font-bold text-charcoal">
+                <div className="bg-white/95 backdrop-blur-sm border-2 border-white/40 px-3 py-1.5 text-xs font-bold text-charcoal hover:bg-white transition-colors">
                   MASTERCARD
                 </div>
-                <div className="bg-white border-2 border-gray-300 px-3 py-1.5 text-xs font-bold text-charcoal">
+                <div className="bg-white/95 backdrop-blur-sm border-2 border-white/40 px-3 py-1.5 text-xs font-bold text-charcoal hover:bg-white transition-colors">
                   AMEX
                 </div>
-                <div className="bg-white border-2 border-gray-300 px-3 py-1.5 text-xs font-bold text-charcoal">
+                <div className="bg-white/95 backdrop-blur-sm border-2 border-white/40 px-3 py-1.5 text-xs font-bold text-charcoal hover:bg-white transition-colors">
                   PAYPAL
                 </div>
               </div>
