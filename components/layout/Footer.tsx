@@ -11,7 +11,6 @@ const footerLinks = {
     { name: 'New Arrivals', href: '/products?filter=new' },
     { name: 'Brands', href: '/brands' },
     { name: 'Sale', href: '/products?filter=sale' },
-    { name: 'Gift Cards', href: '/gift-cards' },
   ],
   help: [
     { name: 'FAQ', href: '/faq' },
@@ -117,7 +116,7 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-start gap-3 text-sm text-gray-600">
                 <MapPin className="w-5 h-5 text-burgundy flex-shrink-0 mt-0.5" />
-                <span>Borak Mehnur, 51/B, Kemal Ataturk Avenue, Banani, Dhaka-1213, Bangladesh</span>
+                <span>51/B, Borak Mehnur, Kamal Ataturk Avenue, Banani, Dhaka-12123 Mohakhali.</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Phone className="w-5 h-5 text-burgundy flex-shrink-0" />
@@ -217,10 +216,15 @@ export default function Footer() {
       <div className="border-t border-burgundy/20 bg-gradient-to-r from-burgundy to-plum">
         <div className="max-w-[1600px] mx-auto px-6 lg:px-12 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm">
-            {/* Copyright */}
-            <p className="text-white/90 font-medium">
-              © {new Date().getFullYear()} Aline Mart. All rights reserved.
-            </p>
+            {/* Copyright and Trade License */}
+            <div className="text-center md:text-left">
+              <p className="text-white/90 font-medium">
+                © {new Date().getFullYear()} Aline Mart. All rights reserved.
+              </p>
+              <p className="text-white/75 text-xs mt-1">
+                Trade License No: TRAD/DNCC/048660/2024
+              </p>
+            </div>
 
             {/* Payment Methods */}
             <div className="flex items-center gap-4">

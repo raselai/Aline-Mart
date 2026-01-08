@@ -264,10 +264,10 @@ export default function ContactPage() {
                   overflowWrap: 'normal'
                 }}
               >
-                Borak Mehnur, 51/B<br />
-                Kemal Ataturk Avenue<br />
-                Banani, Dhaka-1213<br />
-                Bangladesh
+                51/B, Borak Mehnur,<br />
+                Kamal Ataturk Avenue,<br />
+                Banani, Dhaka-12123<br />
+                Mohakhali.
               </address>
             </div>
           </div>
