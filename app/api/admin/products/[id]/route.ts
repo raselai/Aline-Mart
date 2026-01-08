@@ -164,6 +164,7 @@ export async function PATCH(
       // Insert new images
       if (images.length > 0) {
         const imageInserts = images.map((img: any, index: number) => ({
+          id: img.id || `img_${id}_${index}_${Date.now()}`, // Generate unique ID if not provided
           productId: id,
           url: img.url,
           alt: img.alt || name,
@@ -196,7 +197,8 @@ export async function PATCH(
 
       // Insert new variants
       if (variants.length > 0) {
-        const variantInserts = variants.map((variant: any) => ({
+        const variantInserts = variants.map((variant: any, index: number) => ({
+          id: variant.id || variant.sku || `var_${id}_${index}_${Date.now()}`, // Use existing ID, SKU, or generate unique ID
           productId: id,
           color: variant.color || null,
           size: variant.size || null,
