@@ -272,6 +272,7 @@ export async function POST(request: Request) {
 
       if (imagesError) {
         console.error('❌ Error adding product images:', imagesError)
+        throw new Error(`Failed to save product images: ${imagesError.message}`)
       } else {
         console.log('✅ Images added successfully')
       }
@@ -297,6 +298,7 @@ export async function POST(request: Request) {
 
       if (variantsError) {
         console.error('❌ Error adding product variants:', variantsError)
+        throw new Error(`Failed to save product variants: ${variantsError.message}`)
       } else {
         console.log('✅ Variants added successfully')
       }

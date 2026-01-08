@@ -151,10 +151,15 @@ export async function PATCH(
     // Update images if provided
     if (images !== undefined) {
       // Delete existing images
-      await supabase
+      const { error: deleteError } = await supabase
         .from('ProductImage')
         .delete()
         .eq('productId', id)
+
+      if (deleteError) {
+        console.error('Error deleting existing images:', deleteError)
+        // Continue anyway - we want to try inserting new images
+      }
 
       // Insert new images
       if (images.length > 0) {
@@ -165,19 +170,29 @@ export async function PATCH(
           order: img.order !== undefined ? img.order : index
         }))
 
-        await supabase
+        const { error: insertError } = await supabase
           .from('ProductImage')
           .insert(imageInserts)
+
+        if (insertError) {
+          console.error('Error inserting images:', insertError)
+          throw new Error(`Failed to save product images: ${insertError.message}`)
+        }
       }
     }
 
     // Update variants if provided
     if (variants !== undefined) {
       // Delete existing variants
-      await supabase
+      const { error: deleteVariantError } = await supabase
         .from('ProductVariant')
         .delete()
         .eq('productId', id)
+
+      if (deleteVariantError) {
+        console.error('Error deleting existing variants:', deleteVariantError)
+        // Continue anyway - we want to try inserting new variants
+      }
 
       // Insert new variants
       if (variants.length > 0) {
@@ -190,9 +205,14 @@ export async function PATCH(
           priceModifier: variant.priceModifier || 0
         }))
 
-        await supabase
+        const { error: insertVariantError } = await supabase
           .from('ProductVariant')
           .insert(variantInserts)
+
+        if (insertVariantError) {
+          console.error('Error inserting variants:', insertVariantError)
+          throw new Error(`Failed to save product variants: ${insertVariantError.message}`)
+        }
       }
     }
 
