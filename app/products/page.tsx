@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { Metadata } from 'next'
 import ProductListingClient from './ProductListingClient'
-import { getApiUrl } from '@/lib/api-url'
+import { supabase } from '@/lib/supabase'
 
 // Force dynamic rendering for products page
 export const dynamic = 'force-dynamic'
@@ -57,28 +57,131 @@ async function fetchProducts(params: {
   search?: string
 }) {
   try {
-    // Build query params
-    const queryParams = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) queryParams.append(key, value)
-    })
+    const page = parseInt(params.page || '1')
+    const limit = parseInt(params.limit || '20')
+    const from = (page - 1) * limit
+    const to = from + limit - 1
 
-    const apiUrl = getApiUrl(`/api/products?${queryParams.toString()}`)
+    // Build query
+    let query = supabase
+      .from('Product')
+      .select(`
+        *,
+        brand:Brand!Product_brandId_fkey (
+          id,
+          name,
+          slug
+        ),
+        category:Category!Product_categoryId_fkey (
+          id,
+          name,
+          slug
+        ),
+        images:ProductImage (
+          id,
+          url,
+          alt,
+          order
+        ),
+        variants:ProductVariant (
+          id,
+          color,
+          size,
+          stock
+        )
+      `, { count: 'exact' })
+      .eq('inStock', true)
 
-    const res = await fetch(apiUrl, {
-      cache: 'no-store', // Always fetch fresh data
-    })
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch products')
+    // Apply search filter
+    if (params.search) {
+      query = query.or(`name.ilike.%${params.search}%,description.ilike.%${params.search}%`)
     }
 
-    const response = await res.json()
+    // Apply brand filter
+    if (params.brand) {
+      const { data: brandData } = await supabase
+        .from('Brand')
+        .select('id')
+        .eq('slug', params.brand)
+        .single()
+
+      if (brandData) {
+        query = query.eq('brandId', brandData.id)
+      }
+    }
+
+    // Apply category filter
+    if (params.category) {
+      const { data: categoryData } = await supabase
+        .from('Category')
+        .select('id')
+        .eq('slug', params.category)
+        .single()
+
+      if (categoryData) {
+        query = query.eq('categoryId', categoryData.id)
+      }
+    }
+
+    // Apply price filters
+    if (params.minPrice) {
+      query = query.gte('price', parseFloat(params.minPrice))
+    }
+    if (params.maxPrice) {
+      query = query.lte('price', parseFloat(params.maxPrice))
+    }
+
+    // Apply sorting
+    if (params.sort) {
+      switch (params.sort) {
+        case 'price-asc':
+          query = query.order('price', { ascending: true })
+          break
+        case 'price-desc':
+          query = query.order('price', { ascending: false })
+          break
+        case 'name-asc':
+          query = query.order('name', { ascending: true })
+          break
+        case 'name-desc':
+          query = query.order('name', { ascending: false })
+          break
+        case 'newest':
+          query = query.order('createdAt', { ascending: false })
+          break
+        default:
+          query = query.order('createdAt', { ascending: false })
+      }
+    } else {
+      query = query.order('createdAt', { ascending: false })
+    }
+
+    // Apply pagination
+    query = query.range(from, to)
+
+    const { data: products, error, count: totalCount } = await query
+
+    if (error) throw error
+
+    // Transform products to match expected format
+    const transformedProducts = (products || []).map((product: any) => ({
+      ...product,
+      brand: Array.isArray(product.brand) ? product.brand[0] : product.brand,
+      category: Array.isArray(product.category) ? product.category[0] : product.category,
+      salePrice: product.salePrice || undefined,
+      images: (product.images || [])
+        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+        .map((img: any) => ({
+          url: img.url,
+          alt: img.alt || undefined
+        }))
+    }))
+
     return {
-      products: response.data || [],
-      total: response.pagination?.totalCount || 0,
-      page: response.pagination?.page || 1,
-      limit: response.pagination?.limit || 20,
+      products: transformedProducts,
+      total: totalCount || 0,
+      page,
+      limit,
     }
   } catch (error) {
     console.error('Error fetching products:', error)
@@ -93,21 +196,34 @@ async function fetchProducts(params: {
 
 async function fetchBrands() {
   try {
-    const apiUrl = getApiUrl('/api/brands?includeProducts=true')
+    // Fetch all brands
+    const { data: brands, error } = await supabase
+      .from('Brand')
+      .select('*')
+      .order('name', { ascending: true })
 
-    const res = await fetch(apiUrl, {
-      cache: 'force-cache', // Brands don't change often
-      next: { revalidate: 3600 }, // Revalidate every hour
-    })
+    if (error) throw error
 
-    if (!res.ok) {
-      throw new Error('Failed to fetch brands')
-    }
+    // Get product counts for each brand
+    const brandsWithCounts = await Promise.all(
+      (brands || []).map(async (brand) => {
+        const { count } = await supabase
+          .from('Product')
+          .select('*', { count: 'exact', head: true })
+          .eq('brandId', brand.id)
 
-    const response = await res.json()
+        return {
+          ...brand,
+          _count: {
+            products: count || 0
+          }
+        }
+      })
+    )
+
     return {
-      brands: response.data || [],
-      count: response.count || 0
+      brands: brandsWithCounts,
+      count: brands?.length || 0
     }
   } catch (error) {
     console.error('Error fetching brands:', error)
@@ -117,21 +233,34 @@ async function fetchBrands() {
 
 async function fetchCategories() {
   try {
-    const apiUrl = getApiUrl('/api/categories?includeProducts=true')
+    // Fetch all categories
+    const { data: categories, error } = await supabase
+      .from('Category')
+      .select('*')
+      .order('name', { ascending: true })
 
-    const res = await fetch(apiUrl, {
-      cache: 'force-cache', // Categories don't change often
-      next: { revalidate: 3600 }, // Revalidate every hour
-    })
+    if (error) throw error
 
-    if (!res.ok) {
-      throw new Error('Failed to fetch categories')
-    }
+    // Get product counts for each category
+    const categoriesWithCounts = await Promise.all(
+      (categories || []).map(async (category) => {
+        const { count } = await supabase
+          .from('Product')
+          .select('*', { count: 'exact', head: true })
+          .eq('categoryId', category.id)
 
-    const response = await res.json()
+        return {
+          ...category,
+          _count: {
+            products: count || 0
+          }
+        }
+      })
+    )
+
     return {
-      categories: response.data?.all || [],
-      count: response.count || 0
+      categories: categoriesWithCounts,
+      count: categories?.length || 0
     }
   } catch (error) {
     console.error('Error fetching categories:', error)
