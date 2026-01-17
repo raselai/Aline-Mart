@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import MetricCard from '@/components/admin/MetricCard'
 import Link from 'next/link'
-import { Package, Tag, Layers, TrendingUp, Plus } from 'lucide-react'
+import { Package, Tag, Layers, TrendingUp, Plus, ShoppingBag, Clock } from 'lucide-react'
 
 async function getDashboardMetrics() {
   try {
@@ -26,12 +26,34 @@ async function getDashboardMetrics() {
       .from('Category')
       .select('*', { count: 'exact', head: true })
 
+    // Get total orders
+    const { count: totalOrders } = await supabase
+      .from('Order')
+      .select('*', { count: 'exact', head: true })
+
+    // Get pending orders
+    const { count: pendingOrders } = await supabase
+      .from('Order')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'PENDING')
+
+    // Get today's orders
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const { count: todaysOrders } = await supabase
+      .from('Order')
+      .select('*', { count: 'exact', head: true })
+      .gte('createdAt', today.toISOString())
+
     return {
       totalProducts: totalProducts || 0,
       inStockProducts: inStockProducts || 0,
       outOfStockProducts: (totalProducts || 0) - (inStockProducts || 0),
       totalBrands: totalBrands || 0,
       totalCategories: totalCategories || 0,
+      totalOrders: totalOrders || 0,
+      pendingOrders: pendingOrders || 0,
+      todaysOrders: todaysOrders || 0,
     }
   } catch (error) {
     console.error('Error fetching dashboard metrics:', error)
@@ -41,6 +63,9 @@ async function getDashboardMetrics() {
       outOfStockProducts: 0,
       totalBrands: 0,
       totalCategories: 0,
+      totalOrders: 0,
+      pendingOrders: 0,
+      todaysOrders: 0,
     }
   }
 }
@@ -74,7 +99,35 @@ export default async function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Metrics Grid */}
+      {/* Order Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <MetricCard
+          title="Total Orders"
+          value={metrics.totalOrders}
+          subtitle={`${metrics.todaysOrders} today`}
+          icon={ShoppingBag}
+          iconColor="#8e2157"
+          iconBgColor="#fdf2f8"
+        />
+        <MetricCard
+          title="Pending Orders"
+          value={metrics.pendingOrders}
+          subtitle="Awaiting processing"
+          icon={Clock}
+          iconColor="#f59e0b"
+          iconBgColor="#fef3c7"
+        />
+        <MetricCard
+          title="Today's Orders"
+          value={metrics.todaysOrders}
+          subtitle="Orders placed today"
+          icon={TrendingUp}
+          iconColor="#16a34a"
+          iconBgColor="#f0fdf4"
+        />
+      </div>
+
+      {/* Product Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <MetricCard
           title="Total Products"
@@ -121,7 +174,27 @@ export default async function AdminDashboardPage() {
         >
           Quick Actions
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link
+            href="/admin/orders"
+            className="flex items-center justify-center px-6 py-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all"
+            style={{
+              borderColor: '#e5e7eb',
+              minHeight: '80px'
+            }}
+          >
+            <ShoppingBag className="w-5 h-5 mr-2" style={{ color: '#8e2157' }} />
+            <span
+              className="font-medium"
+              style={{
+                color: '#2C2C2C',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              View Orders
+            </span>
+          </Link>
+
           <Link
             href="/admin/products/new"
             className="flex items-center justify-center px-6 py-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all"
@@ -130,7 +203,7 @@ export default async function AdminDashboardPage() {
               minHeight: '80px'
             }}
           >
-            <Plus className="w-5 h-5 mr-2" style={{ color: '#8e2157' }} />
+            <Plus className="w-5 h-5 mr-2" style={{ color: '#16a34a' }} />
             <span
               className="font-medium"
               style={{
@@ -170,7 +243,7 @@ export default async function AdminDashboardPage() {
               minHeight: '80px'
             }}
           >
-            <Package className="w-5 h-5 mr-2" style={{ color: '#16a34a' }} />
+            <Package className="w-5 h-5 mr-2" style={{ color: '#ea580c' }} />
             <span
               className="font-medium"
               style={{

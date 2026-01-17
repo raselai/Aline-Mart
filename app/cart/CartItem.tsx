@@ -92,10 +92,10 @@ export default function CartItem({ item }: CartItemProps) {
             {/* Remove Button */}
             <button
               onClick={handleRemove}
-              className="flex-shrink-0 p-2 hover:bg-light-gray rounded-full transition-colors"
+              className="flex-shrink-0 p-2 hover:bg-red-50 rounded-full transition-colors group"
               aria-label="Remove item"
             >
-              <X className="w-4 h-4 text-secondary hover:text-charcoal" />
+              <X className="w-4 h-4 text-burgundy group-hover:text-red-600" />
             </button>
           </div>
 

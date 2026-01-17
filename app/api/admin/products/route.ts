@@ -23,6 +23,7 @@ export async function GET(request: Request) {
     const search = searchParams.get('search') || ''
     const brand = searchParams.get('brand') || ''
     const category = searchParams.get('category') || ''
+    const stock = searchParams.get('stock') || ''
     const sort = searchParams.get('sort') || 'createdAt'
     const order = searchParams.get('order') || 'desc'
     const page = parseInt(searchParams.get('page') || '1')
@@ -67,21 +68,44 @@ export async function GET(request: Request) {
           sku,
           stock
         )
-      `)
+      `, { count: 'exact' })
 
     // Apply search filter
     if (search) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
     }
 
-    // Apply brand filter
-    if (brand) {
-      query = query.eq('brand.slug', brand)
+    // Apply category filter - need to get categoryId first
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from('Category')
+        .select('id')
+        .eq('slug', category)
+        .single()
+
+      if (categoryData) {
+        query = query.eq('categoryId', categoryData.id)
+      }
     }
 
-    // Apply category filter
-    if (category) {
-      query = query.eq('category.slug', category)
+    // Apply brand filter - need to get brandId first
+    if (brand) {
+      const { data: brandData } = await supabase
+        .from('Brand')
+        .select('id')
+        .eq('slug', brand)
+        .single()
+
+      if (brandData) {
+        query = query.eq('brandId', brandData.id)
+      }
+    }
+
+    // Apply stock filter
+    if (stock === 'in-stock') {
+      query = query.eq('inStock', true)
+    } else if (stock === 'out-of-stock') {
+      query = query.eq('inStock', false)
     }
 
     // Apply sorting
@@ -99,47 +123,8 @@ export async function GET(request: Request) {
     const to = from + limit - 1
     query = query.range(from, to)
 
-    // Execute query
-    const { data: products, error, count } = await supabase
-      .from('Product')
-      .select(`
-        id,
-        name,
-        slug,
-        description,
-        price,
-        salePrice,
-        inStock,
-        featured,
-        isNew,
-        createdAt,
-        updatedAt,
-        brand:Brand!Product_brandId_fkey (
-          id,
-          name,
-          slug,
-          logo
-        ),
-        category:Category!Product_categoryId_fkey (
-          id,
-          name,
-          slug
-        ),
-        images:ProductImage (
-          id,
-          url,
-          alt,
-          order
-        ),
-        variants:ProductVariant (
-          id,
-          color,
-          size,
-          sku,
-          stock
-        )
-      `, { count: 'exact' })
-      .order('createdAt', { ascending: false })
+    // Execute the built query with filters
+    const { data: products, error, count } = await query
 
     if (error) {
       console.error('Supabase error:', error)

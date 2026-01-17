@@ -51,3 +51,39 @@ export interface Address {
   createdAt: string
   updatedAt: string
 }
+
+/**
+ * Order item for admin list view (reduced fields for performance)
+ */
+export interface AdminOrderListItem {
+  id: string
+  orderNumber: string
+  total: number
+  status: OrderStatus
+  paymentMethod: PaymentMethod
+  createdAt: string
+  user: {
+    name: string | null
+    email: string
+  }
+  shippingAddress: {
+    city: string
+    fullName: string
+  }
+  itemCount: number
+}
+
+/**
+ * Filters for admin order queries
+ */
+export interface OrderFilters {
+  status?: OrderStatus
+  paymentMethod?: PaymentMethod
+  search?: string
+  dateFrom?: string
+  dateTo?: string
+  sort?: 'createdAt' | 'total' | 'orderNumber'
+  order?: 'asc' | 'desc'
+  page?: number
+  limit?: number
+}

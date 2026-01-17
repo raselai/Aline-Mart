@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS "User" (
   id TEXT PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
-  password TEXT NOT NULL,
+  password TEXT,
+  "isGuest" BOOLEAN NOT NULL DEFAULT false,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -95,12 +96,15 @@ CREATE TABLE IF NOT EXISTS "Order" (
   total DOUBLE PRECISION NOT NULL,
   status TEXT NOT NULL DEFAULT 'PENDING',
   "shippingAddressId" TEXT NOT NULL,
-  "stripePaymentId" TEXT,
+  "paymentMethod" TEXT NOT NULL DEFAULT 'COD',
+  "shippingCost" DOUBLE PRECISION NOT NULL DEFAULT 0,
+  "paystationTransactionId" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "Order_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "Order_shippingAddressId_fkey" FOREIGN KEY ("shippingAddressId") REFERENCES "Address"(id) ON DELETE RESTRICT ON UPDATE CASCADE,
-  CONSTRAINT "Order_status_check" CHECK (status IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'))
+  CONSTRAINT "Order_status_check" CHECK (status IN ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED')),
+  CONSTRAINT "Order_paymentMethod_check" CHECK ("paymentMethod" IN ('PAYSTATION', 'COD'))
 );
 
 -- Create OrderItem table
@@ -111,6 +115,7 @@ CREATE TABLE IF NOT EXISTS "OrderItem" (
   "productName" TEXT NOT NULL,
   "brandName" TEXT NOT NULL,
   "variantId" TEXT,
+  "variantName" TEXT,
   quantity INTEGER NOT NULL,
   price DOUBLE PRECISION NOT NULL,
   total DOUBLE PRECISION NOT NULL,
@@ -136,6 +141,8 @@ CREATE INDEX IF NOT EXISTS "ProductImage_productId_idx" ON "ProductImage"("produ
 CREATE INDEX IF NOT EXISTS "ProductVariant_productId_idx" ON "ProductVariant"("productId");
 CREATE INDEX IF NOT EXISTS "Order_userId_idx" ON "Order"("userId");
 CREATE INDEX IF NOT EXISTS "Order_status_idx" ON "Order"(status);
+CREATE INDEX IF NOT EXISTS "Order_paymentMethod_idx" ON "Order"("paymentMethod");
+CREATE INDEX IF NOT EXISTS "Order_createdAt_idx" ON "Order"("createdAt");
 CREATE INDEX IF NOT EXISTS "OrderItem_orderId_idx" ON "OrderItem"("orderId");
 CREATE INDEX IF NOT EXISTS "WishlistItem_userId_idx" ON "WishlistItem"("userId");
 CREATE INDEX IF NOT EXISTS "WishlistItem_productId_idx" ON "WishlistItem"("productId");

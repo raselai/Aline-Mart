@@ -18,6 +18,7 @@ interface Product {
   category: {
     id: string
     name: string
+    slug: string
   }
   images: {
     url: string
@@ -26,21 +27,49 @@ interface Product {
   inStock: boolean
   featured: boolean
   createdAt: string
+  variants?: {
+    id: string
+    stock: number
+  }[]
+}
+
+interface Category {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function AdminProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterBrand, setFilterBrand] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
+  const [filterStock, setFilterStock] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'createdAt'>('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
   useEffect(() => {
     fetchProducts()
-  }, [searchQuery, filterBrand, filterCategory, sortBy, sortOrder])
+  }, [searchQuery, filterBrand, filterCategory, filterStock, sortBy, sortOrder])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (!response.ok) throw new Error('Failed to fetch categories')
+      const data = await response.json()
+      setCategories(data.data?.all || [])
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
 
   const fetchProducts = async () => {
     setLoading(true)
@@ -49,6 +78,7 @@ export default function AdminProductsPage() {
         search: searchQuery,
         brand: filterBrand,
         category: filterCategory,
+        stock: filterStock,
         sort: sortBy,
         order: sortOrder,
       })
@@ -144,7 +174,7 @@ export default function AdminProductsPage() {
         className="bg-white rounded-lg shadow-sm p-6 mb-6"
         style={{ minWidth: '280px', width: '100%' }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {/* Search */}
           <div>
             <label
@@ -218,6 +248,31 @@ export default function AdminProductsPage() {
             </select>
           </div>
 
+          {/* Category Filter */}
+          <div>
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium mb-2"
+              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+            >
+              Category
+            </label>
+            <select
+              id="category"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+              style={{ borderColor: '#d1d5db' }}
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Stock Filter */}
           <div>
             <label
@@ -229,6 +284,8 @@ export default function AdminProductsPage() {
             </label>
             <select
               id="stock"
+              value={filterStock}
+              onChange={(e) => setFilterStock(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
               style={{ borderColor: '#d1d5db' }}
             >

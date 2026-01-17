@@ -66,3 +66,47 @@ export function getPaymentMethodName(method: string): string {
   }
   return names[method] || method
 }
+
+/**
+ * Valid status transitions map
+ * Key: current status, Value: array of valid next statuses
+ */
+const STATUS_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED', 'CANCELLED'],
+  DELIVERED: [], // Final state
+  CANCELLED: ['PENDING'], // Can reactivate
+}
+
+/**
+ * Check if a status transition is valid
+ */
+export function canTransitionStatus(
+  currentStatus: string,
+  newStatus: string
+): boolean {
+  const validTransitions = STATUS_TRANSITIONS[currentStatus] || []
+  return validTransitions.includes(newStatus)
+}
+
+/**
+ * Get available status transitions for a given status
+ */
+export function getAvailableStatusTransitions(status: string): string[] {
+  return STATUS_TRANSITIONS[status] || []
+}
+
+/**
+ * Get status display name
+ */
+export function getStatusDisplayName(status: string): string {
+  const names: Record<string, string> = {
+    PENDING: 'Pending',
+    PROCESSING: 'Processing',
+    SHIPPED: 'Shipped',
+    DELIVERED: 'Delivered',
+    CANCELLED: 'Cancelled',
+  }
+  return names[status] || status
+}
