@@ -16,6 +16,7 @@ interface Category {
   id: string
   name: string
   slug: string
+  parentId?: string | null
 }
 
 interface ProductImage {
@@ -51,6 +52,30 @@ interface Product {
   variants: ProductVariant[]
 }
 
+const buildCategoryTree = (categories: Category[]) => {
+  const childrenByParent = new Map<string, Category[]>()
+  const roots: Category[] = []
+
+  categories.forEach((category) => {
+    if (category.parentId) {
+      const existing = childrenByParent.get(category.parentId) || []
+      existing.push(category)
+      childrenByParent.set(category.parentId, existing)
+    } else {
+      roots.push(category)
+    }
+  })
+
+  const sortByName = (items: Category[]) =>
+    [...items].sort((a, b) => a.name.localeCompare(b.name))
+
+  return {
+    roots: sortByName(roots),
+    childrenByParent,
+    sortByName,
+  }
+}
+
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -58,15 +83,21 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [productId, setProductId] = useState<string>('')
   const [brands, setBrands] = useState<Brand[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const { roots: rootCategories, childrenByParent, sortByName } = buildCategoryTree(categories)
 
   // Form state
   const [name, setName] = useState('')
   const [slug, setSlug] = useState('')
   const [description, setDescription] = useState('')
   const [price, setPrice] = useState('')
+  const [costPrice, setCostPrice] = useState('')
   const [salePrice, setSalePrice] = useState('')
+  const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent')
+  const [discountValue, setDiscountValue] = useState('')
   const [brandId, setBrandId] = useState('')
   const [categoryId, setCategoryId] = useState('')
+  const [mainCategoryId, setMainCategoryId] = useState('')
+  const [subCategoryId, setSubCategoryId] = useState('')
   const [inStock, setInStock] = useState(true)
   const [featured, setFeatured] = useState(false)
   const [isNew, setIsNew] = useState(false)
@@ -74,6 +105,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({})
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({})
+  const subcategoryOptions = mainCategoryId
+    ? sortByName(childrenByParent.get(mainCategoryId) || [])
+    : []
+  const selectedCategoryId = subCategoryId || mainCategoryId
+
+  useEffect(() => {
+    if (!categoryId || categories.length === 0) return
+    const selected = categories.find((category) => category.id === categoryId)
+    if (selected?.parentId) {
+      setMainCategoryId(selected.parentId)
+      setSubCategoryId(selected.id)
+    } else {
+      setMainCategoryId(categoryId)
+      setSubCategoryId('')
+    }
+  }, [categoryId, categories])
 
   useEffect(() => {
     const initializePage = async () => {
@@ -86,6 +133,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
     initializePage()
   }, [params])
+
+  useEffect(() => {
+    if (!price || !discountValue) return
+    const basePrice = parseFloat(price)
+    const discount = parseFloat(discountValue)
+    if (Number.isNaN(basePrice) || Number.isNaN(discount)) return
+
+    const calculated = discountType === 'percent'
+      ? basePrice - (basePrice * discount) / 100
+      : basePrice - discount
+
+    const safeValue = Math.max(0, calculated)
+    setSalePrice(safeValue.toFixed(2))
+  }, [price, discountType, discountValue])
 
   const fetchProduct = async (id: string) => {
     setFetching(true)
@@ -102,6 +163,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       setDescription(product.description || '')
       setPrice(product.price.toString())
       setSalePrice(product.salePrice?.toString() || '')
+      setCostPrice((product as any).costPrice?.toString() || '')
+      setDiscountType(((product as any).discountType as 'percent' | 'flat') || 'percent')
+      setDiscountValue((product as any).discountValue?.toString() || '')
       setBrandId(product.brandId)
       setCategoryId(product.categoryId)
       setInStock(product.inStock)
@@ -217,6 +281,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setLoading(true)
 
     try {
+      if (mainCategoryId && subcategoryOptions.length > 0 && !subCategoryId) {
+        alert('Please select a subcategory for the chosen main category.')
+        setLoading(false)
+        return
+      }
+
       const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -226,8 +296,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           description,
           price: parseFloat(price),
           salePrice: salePrice ? parseFloat(salePrice) : null,
+          costPrice: costPrice ? parseFloat(costPrice) : null,
+          discountType,
+          discountValue: discountValue ? parseFloat(discountValue) : null,
           brandId,
-          categoryId,
+          categoryId: selectedCategoryId,
           inStock,
           featured,
           isNew,
@@ -404,7 +477,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             Pricing
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label
                 htmlFor="price"
@@ -419,6 +492,27 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 required
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="costPrice"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Cost Price ($)
+              </label>
+              <input
+                type="number"
+                id="costPrice"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
                 min="0"
                 step="0.01"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
@@ -445,6 +539,49 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
                 style={{ borderColor: '#d1d5db' }}
                 placeholder="0.00"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label
+                htmlFor="discountType"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Discount Type
+              </label>
+              <select
+                id="discountType"
+                value={discountType}
+                onChange={(e) => setDiscountType(e.target.value as 'percent' | 'flat')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+              >
+                <option value="percent">Percent (%)</option>
+                <option value="flat">Flat ($)</option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="discountValue"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Discount Value
+              </label>
+              <input
+                type="number"
+                id="discountValue"
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder={discountType === 'percent' ? '0.00' : '0.00'}
               />
             </div>
           </div>
@@ -485,22 +622,52 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             <div>
               <label
-                htmlFor="category"
+                htmlFor="mainCategory"
                 className="block text-sm font-medium mb-2"
                 style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
               >
-                Category *
+                Main Category *
               </label>
               <select
-                id="category"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                id="mainCategory"
+                value={mainCategoryId}
+                onChange={(e) => {
+                  setMainCategoryId(e.target.value)
+                  setSubCategoryId('')
+                }}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
                 style={{ borderColor: '#d1d5db' }}
               >
-                <option value="">Select a category...</option>
-                {categories.map(category => (
+                <option value="">Select a main category...</option>
+                {rootCategories.map((category) => (
+                  <option key={category.id} value={category.id}>{category.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="subcategory"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Subcategory {subcategoryOptions.length > 0 ? '*' : '(optional)'}
+              </label>
+              <select
+                id="subcategory"
+                value={subCategoryId}
+                onChange={(e) => setSubCategoryId(e.target.value)}
+                disabled={!mainCategoryId || subcategoryOptions.length === 0}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+              >
+                <option value="">
+                  {mainCategoryId
+                    ? (subcategoryOptions.length > 0 ? 'Select a subcategory...' : 'No subcategories available')
+                    : 'Select a main category first'}
+                </option>
+                {subcategoryOptions.map((category) => (
                   <option key={category.id} value={category.id}>{category.name}</option>
                 ))}
               </select>

@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Search, Heart, User, ShoppingBag, Menu, MapPin, LogOut, Package } from 'lucide-react'
+import { Search, Heart, User, ShoppingBag, Menu, MapPin, LogOut, Package, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
+import type { Category } from '@/types'
 // Temporarily disabled until authentication is fully configured
 // import { useSession, signIn, signOut } from 'next-auth/react'
 import {
@@ -22,20 +23,22 @@ import {
 
 const navigation = [
   { name: 'Home', href: '/' },
-  { name: 'Men', href: '/categories/men' },
-  { name: 'Women', href: '/categories/women' },
-  { name: 'Kids', href: '/categories/kids' },
-  { name: 'Homeware', href: '/categories/homeware' },
-  { name: 'Beauty', href: '/categories/beauty' },
+  { name: 'Men', href: '/categories/men', categorySlug: 'men' },
+  { name: 'Women', href: '/categories/women', categorySlug: 'women' },
+  { name: 'Kids', href: '/categories/kids', categorySlug: 'kids' },
+  { name: 'Homeware', href: '/categories/homeware', categorySlug: 'homeware' },
+  { name: 'Beauty', href: '/categories/beauty', categorySlug: 'beauty' },
   { name: 'Brands', href: '/brands' },
-  { name: 'Outlet', href: '/categories/outlet' },
-  { name: 'Sports & Fitness', href: '/categories/sports' },
+  { name: 'Outlet', href: '/categories/outlet', categorySlug: 'outlet' },
+  { name: 'Sports & Fitness', href: '/categories/sports', categorySlug: 'sports' },
 ]
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [categories, setCategories] = useState<Category[]>([])
+  const [openMobileMenus, setOpenMobileMenus] = useState<Record<string, boolean>>({})
   const router = useRouter()
 
   // Get cart and wishlist counts
@@ -55,6 +58,70 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    let isActive = true
+
+    const loadCategories = async () => {
+      try {
+        const response = await fetch('/api/categories', { cache: 'no-store' })
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories')
+        }
+        const result = await response.json()
+        if (isActive) {
+          setCategories(result.data?.all || [])
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error)
+      }
+    }
+
+    loadCategories()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isMobileMenuOpen) {
+      setOpenMobileMenus({})
+    }
+  }, [isMobileMenuOpen])
+
+  const categoriesBySlug = new Map(categories.map((category) => [category.slug, category]))
+  const childrenByParentId = new Map<string, Category[]>()
+
+  categories.forEach((category) => {
+    if (!category.parentId) return
+    const existing = childrenByParentId.get(category.parentId) || []
+    existing.push(category)
+    childrenByParentId.set(category.parentId, existing)
+  })
+
+  childrenByParentId.forEach((items, parentId) => {
+    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name))
+    childrenByParentId.set(parentId, sorted)
+  })
+
+  const navItems = navigation.map((item) => {
+    if (!item.categorySlug) {
+      return { ...item, children: [] as Category[] }
+    }
+
+    const category = categoriesBySlug.get(item.categorySlug)
+    const children = category ? childrenByParentId.get(category.id) || [] : []
+
+    return { ...item, children }
+  })
+
+  const toggleMobileMenu = (name: string) => {
+    setOpenMobileMenus((prev) => ({
+      ...prev,
+      [name]: !prev[name],
+    }))
+  }
 
   // Handle search submit
   const handleSearch = (e: React.FormEvent) => {
@@ -277,16 +344,51 @@ export default function Header() {
 
                     {/* Mobile Navigation */}
                     <nav className="flex flex-col mb-8">
-                      {navigation.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="text-lg font-medium text-charcoal hover:text-burgundy transition-colors py-4 px-2 border-b-2 border-gray-200"
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
+                      {navItems.map((item) => {
+                        const hasChildren = item.children.length > 0
+                        const isOpen = Boolean(openMobileMenus[item.name])
+
+                        return (
+                          <div key={item.name} className="border-b-2 border-gray-200">
+                            <div className="flex items-center justify-between py-4 px-2">
+                              <Link
+                                href={item.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="text-lg font-medium text-charcoal hover:text-burgundy transition-colors"
+                              >
+                                {item.name}
+                              </Link>
+                              {hasChildren && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleMobileMenu(item.name)}
+                                  aria-expanded={isOpen}
+                                  aria-label={`${item.name} sub menu`}
+                                  className="p-1 text-charcoal hover:text-burgundy transition-colors"
+                                >
+                                  <ChevronDown
+                                    className={`w-5 h-5 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                  />
+                                </button>
+                              )}
+                            </div>
+                            {hasChildren && isOpen && (
+                              <div className="pb-4 pl-4">
+                                {item.children.map((child) => (
+                                  <Link
+                                    key={child.id}
+                                    href={`/categories/${child.slug}`}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className="block py-2 text-sm text-charcoal/80 hover:text-burgundy transition-colors"
+                                  >
+                                    {child.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </nav>
 
                     {/* Mobile Icons */}
@@ -368,16 +470,48 @@ export default function Header() {
       <div className="hidden lg:block bg-burgundy">
         <div className="w-full">
           <nav className="flex items-center justify-center">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="relative px-4 py-3 text-white text-[11.5px] uppercase tracking-[0.08em] font-semibold hover:text-white/80 transition-colors duration-300 group whitespace-nowrap"
-              >
-                {item.name}
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const hasChildren = item.children.length > 0
+
+              if (!hasChildren) {
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="relative px-4 py-3 text-white text-[11.5px] uppercase tracking-[0.08em] font-semibold hover:text-white/80 transition-colors duration-300 group whitespace-nowrap"
+                  >
+                    {item.name}
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
+                  </Link>
+                )
+              }
+
+              return (
+                <div key={item.name} className="relative group">
+                  <Link
+                    href={item.href}
+                    className="relative flex items-center gap-1 px-4 py-3 text-white text-[11.5px] uppercase tracking-[0.08em] font-semibold hover:text-white/80 transition-colors duration-300 whitespace-nowrap"
+                  >
+                    {item.name}
+                    <ChevronDown className="w-3.5 h-3.5" />
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
+                  </Link>
+                  <div className="absolute left-0 top-full pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+                    <div className="bg-white border border-gray-200 shadow-xl min-w-[220px] py-3">
+                      {item.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={`/categories/${child.slug}`}
+                          className="block px-4 py-2 text-sm text-charcoal hover:text-burgundy hover:bg-gray-50 transition-colors"
+                        >
+                          {child.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </nav>
         </div>
       </div>

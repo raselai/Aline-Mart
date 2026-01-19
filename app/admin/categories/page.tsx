@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react'
 import { Plus, Search, Edit, Trash2, X, Check, AlertCircle, ChevronRight, ChevronDown } from 'lucide-react'
 
 interface Category {
-  id: number
+  id: string
   name: string
   slug: string
   description: string | null
-  parentId: number | null
+  parentId: string | null
   featured: boolean
   displayOrder: number
   productCount?: number
@@ -22,7 +22,7 @@ interface CategoryFormData {
   name: string
   slug: string
   description: string
-  parentId: number | null
+  parentId: string | null
   featured: boolean
   displayOrder: number
 }
@@ -35,7 +35,7 @@ export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('name-asc')
   const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree')
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -117,7 +117,7 @@ export default function CategoriesPage() {
   }
 
   // Toggle category expansion in tree view
-  const toggleExpand = (categoryId: number) => {
+  const toggleExpand = (categoryId: string) => {
     const newExpanded = new Set(expandedCategories)
     if (newExpanded.has(categoryId)) {
       newExpanded.delete(categoryId)
@@ -1129,7 +1129,7 @@ export default function CategoriesPage() {
                   <select
                     id="parentId"
                     value={formData.parentId || ''}
-                    onChange={(e) => setFormData({ ...formData, parentId: e.target.value ? parseInt(e.target.value) : null })}
+                    onChange={(e) => setFormData({ ...formData, parentId: e.target.value || null })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     style={{
                       fontSize: '14px',

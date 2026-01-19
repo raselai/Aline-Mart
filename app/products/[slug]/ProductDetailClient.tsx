@@ -29,6 +29,9 @@ interface Product {
   description: string | null
   price: number
   salePrice?: number
+  costPrice?: number | null
+  discountType?: 'percent' | 'flat' | null
+  discountValue?: number | null
   inStock: boolean
   featured: boolean
   isNew: boolean
@@ -127,6 +130,11 @@ export default function ProductDetailClient({
   const discountPercentage = hasDiscount
     ? Math.round(((product.price - displayPrice) / product.price) * 100)
     : 0
+  const discountLabel = product.discountValue
+    ? product.discountType === 'flat'
+      ? `$${product.discountValue.toFixed(2)} off`
+      : `${product.discountValue}% off`
+    : null
 
   // Handlers
   const handleAddToCart = () => {
@@ -352,6 +360,17 @@ export default function ProductDetailClient({
                 </>
               )}
             </div>
+
+            {(product.costPrice || discountLabel) && (
+              <div className="mb-6 text-sm text-charcoal/70 space-y-1">
+                {product.costPrice && (
+                  <p>Cost Price: ${product.costPrice.toFixed(2)}</p>
+                )}
+                {discountLabel && (
+                  <p>Discount: {discountLabel}</p>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             {product.description && (

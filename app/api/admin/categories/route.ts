@@ -163,19 +163,41 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create category
-    const { data: newCategory, error: createError } = await supabase
+    const baseCategory = {
+      id: `cat_${slug}`,
+      name,
+      slug,
+      parentId: parentId || null,
+    }
+
+    const extendedCategory = {
+      ...baseCategory,
+      description: description || null,
+      featured: Boolean(featured),
+      displayOrder: displayOrder || 0,
+    }
+
+    // Create category (retry without optional columns if schema doesn't include them)
+    let newCategory = null
+    let createError = null
+
+    ;({ data: newCategory, error: createError } = await supabase
       .from('Category')
-      .insert({
-        name,
-        slug,
-        description: description || null,
-        parentId: parentId || null,
-        featured: featured || false,
-        displayOrder: displayOrder || 0
-      })
+      .insert(extendedCategory)
       .select()
-      .single()
+      .single())
+
+    if (
+      createError &&
+      (createError.code === 'PGRST204' ||
+        (createError.message?.includes('column') && createError.message?.includes('does not exist')))
+    ) {
+      ;({ data: newCategory, error: createError } = await supabase
+        .from('Category')
+        .insert(baseCategory)
+        .select()
+        .single())
+    }
 
     if (createError) {
       console.error('Error creating category:', createError)

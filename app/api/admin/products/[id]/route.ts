@@ -114,6 +114,9 @@ export async function PATCH(
       description,
       price,
       salePrice,
+      costPrice,
+      discountType,
+      discountValue,
       brandId,
       categoryId,
       inStock,
@@ -130,6 +133,9 @@ export async function PATCH(
     if (description !== undefined) updateData.description = description
     if (price !== undefined) updateData.price = parseFloat(price)
     if (salePrice !== undefined) updateData.salePrice = salePrice ? parseFloat(salePrice) : null
+    if (costPrice !== undefined) updateData.costPrice = costPrice ? parseFloat(costPrice) : null
+    if (discountType !== undefined) updateData.discountType = discountType || null
+    if (discountValue !== undefined) updateData.discountValue = discountValue ? parseFloat(discountValue) : null
     if (brandId !== undefined) updateData.brandId = brandId
     if (categoryId !== undefined) updateData.categoryId = categoryId
     if (inStock !== undefined) updateData.inStock = inStock

@@ -19,7 +19,7 @@ export async function GET(
     const { data: category, error } = await supabase
       .from('Category')
       .select('*')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -113,7 +113,7 @@ export async function PATCH(
     const { data: existingCategory, error: checkError } = await supabase
       .from('Category')
       .select('id')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (checkError || !existingCategory) {
@@ -128,7 +128,7 @@ export async function PATCH(
       .from('Category')
       .select('id')
       .eq('slug', slug)
-      .neq('id', parseInt(id))
+      .neq('id', id)
       .single()
 
     if (slugError && slugError.code !== 'PGRST116') {
@@ -146,7 +146,7 @@ export async function PATCH(
     // If parentId is provided, verify parent exists and prevent circular reference
     if (parentId) {
       // Can't be its own parent
-      if (parseInt(parentId) === parseInt(id)) {
+      if (parentId === id) {
         return NextResponse.json(
           { error: 'A category cannot be its own parent' },
           { status: 400 }
@@ -168,7 +168,7 @@ export async function PATCH(
       }
 
       // Prevent circular reference (parent can't be a child of this category)
-      const checkCircular = async (checkId: number, originalId: number): Promise<boolean> => {
+      const checkCircular = async (checkId: string, originalId: string): Promise<boolean> => {
         const { data: cat } = await supabase
           .from('Category')
           .select('parentId')
@@ -180,7 +180,7 @@ export async function PATCH(
         return await checkCircular(cat.parentId, originalId)
       }
 
-      const isCircular = await checkCircular(parseInt(parentId), parseInt(id))
+      const isCircular = await checkCircular(parentId, id)
       if (isCircular) {
         return NextResponse.json(
           { error: 'Cannot create circular category hierarchy' },
@@ -189,20 +189,42 @@ export async function PATCH(
       }
     }
 
-    // Update category
-    const { data: updatedCategory, error: updateError } = await supabase
+    const baseUpdate = {
+      name,
+      slug,
+      parentId: parentId || null,
+    }
+
+    const extendedUpdate = {
+      ...baseUpdate,
+      description: description || null,
+      featured: Boolean(featured),
+      displayOrder: displayOrder || 0,
+    }
+
+    // Update category (retry without optional columns if schema doesn't include them)
+    let updatedCategory = null
+    let updateError = null
+
+    ;({ data: updatedCategory, error: updateError } = await supabase
       .from('Category')
-      .update({
-        name,
-        slug,
-        description: description || null,
-        parentId: parentId || null,
-        featured: featured || false,
-        displayOrder: displayOrder || 0
-      })
-      .eq('id', parseInt(id))
+      .update(extendedUpdate)
+      .eq('id', id)
       .select()
-      .single()
+      .single())
+
+    if (
+      updateError &&
+      (updateError.code === 'PGRST204' ||
+        (updateError.message?.includes('column') && updateError.message?.includes('does not exist')))
+    ) {
+      ;({ data: updatedCategory, error: updateError } = await supabase
+        .from('Category')
+        .update(baseUpdate)
+        .eq('id', id)
+        .select()
+        .single())
+    }
 
     if (updateError) {
       console.error('Error updating category:', updateError)
@@ -239,7 +261,7 @@ export async function DELETE(
     const { data: existingCategory, error: checkError } = await supabase
       .from('Category')
       .select('id, name')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (checkError || !existingCategory) {
@@ -253,7 +275,7 @@ export async function DELETE(
     const { count: productCount, error: countError } = await supabase
       .from('Product')
       .select('id', { count: 'exact', head: true })
-      .eq('categoryId', parseInt(id))
+      .eq('categoryId', id)
 
     if (countError) {
       console.error('Error counting products:', countError)
@@ -273,7 +295,7 @@ export async function DELETE(
     const { count: childrenCount, error: childrenError } = await supabase
       .from('Category')
       .select('id', { count: 'exact', head: true })
-      .eq('parentId', parseInt(id))
+      .eq('parentId', id)
 
     if (childrenError) {
       console.error('Error counting children:', childrenError)
@@ -293,7 +315,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('Category')
       .delete()
-      .eq('id', parseInt(id))
+      .eq('id', id)
 
     if (deleteError) {
       console.error('Error deleting category:', deleteError)
