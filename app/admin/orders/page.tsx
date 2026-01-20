@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock } from 'lucide-react'
+import Image from 'next/image'
+import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock, ImageOff } from 'lucide-react'
 import { getOrderStatusColor, getPaymentMethodName, getStatusDisplayName, getAvailableStatusTransitions, formatPrice } from '@/lib/order-utils'
 import type { AdminOrderListItem, OrderWithDetails, OrderStatus, PaymentMethod } from '@/types/order'
 
@@ -148,15 +149,39 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate }: OrderDeta
                   {order.items.map((item) => (
                     <tr key={item.id} className="border-t" style={{ borderColor: '#e5e7eb' }}>
                       <td className="px-4 py-3">
-                        <p className="font-medium" style={{ color: '#2C2C2C' }}>{item.productName}</p>
-                        <p className="text-sm" style={{ color: '#6B7280' }}>{item.brandName}</p>
-                        {item.variantName && (
-                          <p className="text-sm" style={{ color: '#6B7280' }}>{item.variantName}</p>
-                        )}
+                        <div className="flex items-start gap-3">
+                          {/* Product Image */}
+                          <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden bg-gray-100">
+                            {item.image ? (
+                              <Image
+                                src={item.image}
+                                alt={item.productName}
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <ImageOff className="w-6 h-6" style={{ color: '#9CA3AF' }} />
+                              </div>
+                            )}
+                          </div>
+                          {/* Product Details */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium" style={{ color: '#2C2C2C' }}>{item.productName}</p>
+                            <p className="text-sm" style={{ color: '#8e2157' }}>{item.brandName}</p>
+                            {item.vendor && (
+                              <p className="text-xs" style={{ color: '#6B7280' }}>Vendor: {item.vendor}</p>
+                            )}
+                            {item.variantName && (
+                              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{item.variantName}</p>
+                            )}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-center" style={{ color: '#2C2C2C' }}>{item.quantity}</td>
-                      <td className="px-4 py-3 text-right" style={{ color: '#2C2C2C' }}>{formatPrice(item.price)}</td>
-                      <td className="px-4 py-3 text-right font-medium" style={{ color: '#2C2C2C' }}>{formatPrice(item.total)}</td>
+                      <td className="px-4 py-3 text-center align-middle" style={{ color: '#2C2C2C' }}>{item.quantity}</td>
+                      <td className="px-4 py-3 text-right align-middle" style={{ color: '#2C2C2C' }}>{formatPrice(item.price)}</td>
+                      <td className="px-4 py-3 text-right align-middle font-medium" style={{ color: '#2C2C2C' }}>{formatPrice(item.total)}</td>
                     </tr>
                   ))}
                 </tbody>

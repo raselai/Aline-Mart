@@ -26,6 +26,8 @@ export interface OrderItem {
   quantity: number
   price: number
   total: number
+  image?: string | null
+  vendor?: string | null
 }
 
 export interface OrderWithDetails extends Order {

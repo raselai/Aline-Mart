@@ -86,6 +86,38 @@ export async function GET(request: Request, props: RouteParams) {
       throw error
     }
 
+    // Fetch product details (image and vendor) for each order item
+    const productIds = (order.OrderItem || []).map((item: any) => item.productId).filter(Boolean)
+    let productDetailsMap: Record<string, { image: string | null; vendor: string | null }> = {}
+
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from('Product')
+        .select(`
+          id,
+          vendor,
+          ProductImage (
+            url,
+            order
+          )
+        `)
+        .in('id', productIds)
+
+      if (products) {
+        products.forEach((product: any) => {
+          // Get the first image (sorted by order)
+          const images = product.ProductImage || []
+          const sortedImages = images.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+          const firstImage = sortedImages[0]?.url || null
+
+          productDetailsMap[product.id] = {
+            image: firstImage,
+            vendor: product.vendor || null
+          }
+        })
+      }
+    }
+
     // Transform to match OrderWithDetails interface
     const transformedOrder: OrderWithDetails = {
       id: order.id,
@@ -119,7 +151,9 @@ export async function GET(request: Request, props: RouteParams) {
       },
       items: (order.OrderItem || []).map((item: any) => ({
         ...item,
-        orderId: order.id
+        orderId: order.id,
+        image: productDetailsMap[item.productId]?.image || null,
+        vendor: productDetailsMap[item.productId]?.vendor || null
       }))
     }
 

@@ -11,7 +11,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  Store
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -25,6 +26,7 @@ const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { name: 'Products', href: '/admin/products', icon: Package },
+  { name: 'Vendors', href: '/admin/vendors', icon: Store },
   { name: 'Brands', href: '/admin/brands', icon: Tag },
   { name: 'Categories', href: '/admin/categories', icon: Layers },
   { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3 },
