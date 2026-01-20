@@ -123,11 +123,11 @@ export default function Header() {
 
   const navItems = navigation.map((item) => {
     if (!item.categorySlug) {
-      return { ...item, children: [] as Category[] }
+      return { ...item, children: [] as CategoryNode[] }
     }
 
     const category = categoriesBySlug.get(item.categorySlug)
-    const children = category ? category.children : []
+    const children = category ? category.children : ([] as CategoryNode[])
 
     return { ...item, children }
   })
@@ -139,23 +139,23 @@ export default function Header() {
     }))
   }
 
-  const renderDesktopSubmenu = (items: CategoryNode[]) => {
+  const renderDesktopSubmenu = (items: CategoryNode[], isNested = false) => {
     return (
-      <div className="bg-white border border-gray-200 shadow-xl min-w-[220px] py-3">
+      <div className={`bg-gradient-to-r from-burgundy to-plum shadow-xl ${isNested ? 'min-w-[180px] py-2' : 'flex items-center gap-1 px-4 py-3'}`}>
         {items.map((child) => {
           const hasChildren = child.children.length > 0
           return (
             <div key={child.id} className="relative group/sub">
               <Link
                 href={`/categories/${child.slug}`}
-                className="flex items-center justify-between gap-2 px-4 py-2 text-sm text-charcoal hover:text-burgundy hover:bg-gray-50 transition-colors"
+                className={`flex items-center gap-1.5 text-white/90 hover:text-white transition-colors ${isNested ? 'px-4 py-2 text-sm' : 'px-3 py-1.5 text-[12px] uppercase tracking-wide font-medium whitespace-nowrap'}`}
               >
                 <span>{child.name}</span>
-                {hasChildren && <ChevronRight className="w-4 h-4 text-charcoal/60" />}
+                {hasChildren && <ChevronDown className="w-3.5 h-3.5 text-white/70" />}
               </Link>
               {hasChildren && (
-                <div className="absolute left-full top-0 ml-2 opacity-0 pointer-events-none group-hover/sub:opacity-100 group-hover/sub:pointer-events-auto transition-opacity duration-200">
-                  {renderDesktopSubmenu(child.children)}
+                <div className={`absolute ${isNested ? 'left-full top-0 ml-1' : 'left-0 top-full mt-1'} opacity-0 pointer-events-none group-hover/sub:opacity-100 group-hover/sub:pointer-events-auto transition-opacity duration-200`}>
+                  {renderDesktopSubmenu(child.children, true)}
                 </div>
               )}
             </div>
@@ -569,7 +569,7 @@ export default function Header() {
                     <ChevronDown className="w-3.5 h-3.5" />
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
                   </Link>
-                  <div className="absolute left-0 top-full pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
                     {renderDesktopSubmenu(item.children)}
                   </div>
                 </div>

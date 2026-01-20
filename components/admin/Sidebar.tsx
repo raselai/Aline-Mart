@@ -10,7 +10,8 @@ import {
   Layers,
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -26,6 +27,7 @@ const navItems: NavItem[] = [
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Brands', href: '/admin/brands', icon: Tag },
   { name: 'Categories', href: '/admin/categories', icon: Layers },
+  { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3 },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
@@ -87,7 +89,9 @@ export default function Sidebar() {
         <ul className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = pathname === item.href
+            const isActive = item.href === '/admin'
+              ? pathname === '/admin'
+              : pathname.startsWith(item.href)
 
             return (
               <li key={item.href}>
