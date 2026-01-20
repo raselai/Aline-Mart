@@ -29,6 +29,12 @@ interface Product {
   description: string | null
   price: number
   salePrice?: number
+  weight?: string | null
+  dimensions?: string | null
+  shippingFee?: string | null
+  warranty?: string | null
+  vendor?: string | null
+  status?: 'DRAFT' | 'ACTIVE' | null
   costPrice?: number | null
   discountType?: 'percent' | 'flat' | null
   discountValue?: number | null
@@ -585,6 +591,11 @@ export default function ProductDetailClient({
                     <p>• SKU: {selectedVariant?.sku || 'N/A'}</p>
                     <p>• Category: {product.category.name}</p>
                     <p>• Brand: {product.brand.name}</p>
+                    <p>• Weight: {product.weight || 'N/A'}</p>
+                    <p>• Dimensions: {product.dimensions || 'N/A'}</p>
+                    <p>• Shipping Fee: {product.shippingFee || 'N/A'}</p>
+                    <p>• Warranty: {product.warranty || 'N/A'}</p>
+                    <p>• Vendor: {product.vendor || 'N/A'}</p>
                     <p>• Authentic luxury product with certificate</p>
                     <p>• Premium quality materials and craftsmanship</p>
                   </div>

@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
             .from('Product')
             .select('*', { count: 'exact', head: true })
             .eq('brandId', brand.id)
+            .or('status.is.null,status.eq.ACTIVE')
 
           return {
             ...brand,

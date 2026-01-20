@@ -30,6 +30,8 @@ interface ProductVariant {
   size: string
   sku: string
   stock: number
+  priceModifier: number
+  status: 'in' | 'out'
 }
 
 const buildCategoryTree = (categories: Category[]) => {
@@ -79,6 +81,12 @@ export default function NewProductPage() {
   const [inStock, setInStock] = useState(true)
   const [featured, setFeatured] = useState(false)
   const [isNew, setIsNew] = useState(false)
+  const [weight, setWeight] = useState('')
+  const [dimensions, setDimensions] = useState('')
+  const [shippingFee, setShippingFee] = useState('')
+  const [warranty, setWarranty] = useState('')
+  const [vendor, setVendor] = useState('')
+  const [productStatus, setProductStatus] = useState<'DRAFT' | 'ACTIVE'>('ACTIVE')
   const [images, setImages] = useState<ProductImage[]>([])
   const [variants, setVariants] = useState<ProductVariant[]>([])
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({})
@@ -204,7 +212,10 @@ export default function NewProductPage() {
   }
 
   const addVariant = () => {
-    setVariants([...variants, { color: '', size: '', sku: '', stock: 0 }])
+    setVariants([
+      ...variants,
+      { color: '', size: '', sku: '', stock: 0, priceModifier: 0, status: 'in' }
+    ])
   }
 
   const removeVariant = (index: number) => {
@@ -257,8 +268,22 @@ export default function NewProductPage() {
         inStock,
         featured,
         isNew,
+        weight: weight.trim() || null,
+        dimensions: dimensions.trim() || null,
+        shippingFee: shippingFee.trim() || null,
+        warranty: warranty.trim() || null,
+        vendor: vendor.trim() || null,
+        status: productStatus,
         images: images.filter(img => img.url), // Only include images with URLs
-        variants: variants.filter(v => v.sku) // Only include variants with SKUs
+        variants: variants
+          .filter(v => v.sku)
+          .map(v => ({
+            color: v.color || null,
+            size: v.size || null,
+            sku: v.sku,
+            stock: v.status === 'out' ? 0 : v.stock,
+            priceModifier: Number.isFinite(v.priceModifier) ? v.priceModifier : 0,
+          }))
       }
 
       console.log('Submitting product data:', productData)
@@ -556,6 +581,133 @@ export default function NewProductPage() {
           </div>
         </div>
 
+        {/* Additional Details */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6" style={{ minWidth: '280px' }}>
+          <h2
+            className="text-xl font-serif font-bold mb-4"
+            style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+          >
+            Additional Details
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="weight"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Weight (kg)
+              </label>
+              <input
+                type="text"
+                id="weight"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="e.g., 1.25"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="dimensions"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Dimensions (LxWxH)
+              </label>
+              <input
+                type="text"
+                id="dimensions"
+                value={dimensions}
+                onChange={(e) => setDimensions(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="e.g., 30 x 20 x 10 cm"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="shippingFee"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Shipping Fee
+              </label>
+              <input
+                type="text"
+                id="shippingFee"
+                value={shippingFee}
+                onChange={(e) => setShippingFee(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="Free / Regular / Bulk / Weight-based / $10"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="warranty"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Warranty
+              </label>
+              <input
+                type="text"
+                id="warranty"
+                value={warranty}
+                onChange={(e) => setWarranty(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="e.g., 1 year manufacturer warranty"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="vendor"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Vendor / Supplier
+              </label>
+              <input
+                type="text"
+                id="vendor"
+                value={vendor}
+                onChange={(e) => setVendor(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="Vendor name"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="productStatus"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Product Status
+              </label>
+              <select
+                id="productStatus"
+                value={productStatus}
+                onChange={(e) => setProductStatus(e.target.value as 'DRAFT' | 'ACTIVE')}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="DRAFT">Draft</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Organization */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6" style={{ minWidth: '280px' }}>
           <h2
@@ -810,7 +962,25 @@ export default function NewProductPage() {
             <div className="space-y-4">
               {variants.map((variant, index) => (
                 <div key={index} className="p-4 border rounded-md" style={{ borderColor: '#E5E7EB' }}>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-3">
+                    <select
+                      value={variant.status}
+                      onChange={(e) => {
+                        const nextStatus = e.target.value as 'in' | 'out'
+                        const updated = [...variants]
+                        updated[index] = {
+                          ...updated[index],
+                          status: nextStatus,
+                          stock: nextStatus === 'out' ? 0 : updated[index].stock
+                        }
+                        setVariants(updated)
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-md"
+                      style={{ borderColor: '#d1d5db' }}
+                    >
+                      <option value="in">In Stock</option>
+                      <option value="out">Out of Stock</option>
+                    </select>
                     <input
                       type="text"
                       value={variant.color}
@@ -827,24 +997,58 @@ export default function NewProductPage() {
                       className="px-3 py-2 border border-gray-300 rounded-md"
                       style={{ borderColor: '#d1d5db' }}
                     />
-                    <input
-                      type="text"
-                      value={variant.sku}
-                      onChange={(e) => updateVariant(index, 'sku', e.target.value)}
-                      placeholder="SKU *"
-                      required
-                      className="px-3 py-2 border border-gray-300 rounded-md"
-                      style={{ borderColor: '#d1d5db' }}
-                    />
-                    <input
-                      type="number"
-                      value={variant.stock}
-                      onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
-                      placeholder="Stock"
-                      min="0"
-                      className="px-3 py-2 border border-gray-300 rounded-md"
-                      style={{ borderColor: '#d1d5db' }}
-                    />
+                    <div>
+                      <label
+                        className="block text-xs font-medium mb-1"
+                        style={{ color: '#6B7280', whiteSpace: 'nowrap' }}
+                      >
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        value={variant.sku}
+                        onChange={(e) => updateVariant(index, 'sku', e.target.value)}
+                        placeholder="SKU *"
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        style={{ borderColor: '#d1d5db' }}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="block text-xs font-medium mb-1"
+                        style={{ color: '#6B7280', whiteSpace: 'nowrap' }}
+                      >
+                        Variant Price
+                      </label>
+                      <input
+                        type="number"
+                        value={variant.priceModifier}
+                        onChange={(e) => updateVariant(index, 'priceModifier', parseFloat(e.target.value) || 0)}
+                        placeholder="0.00"
+                        step="0.01"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        style={{ borderColor: '#d1d5db' }}
+                      />
+                    </div>
+                    <div>
+                      <label
+                        className="block text-xs font-medium mb-1"
+                        style={{ color: '#6B7280', whiteSpace: 'nowrap' }}
+                      >
+                        Variant Stock
+                      </label>
+                      <input
+                        type="number"
+                        value={variant.stock}
+                        onChange={(e) => updateVariant(index, 'stock', parseInt(e.target.value) || 0)}
+                        placeholder="0"
+                        min="0"
+                        disabled={variant.status === 'out'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        style={{ borderColor: '#d1d5db' }}
+                      />
+                    </div>
                   </div>
                   <button
                     type="button"

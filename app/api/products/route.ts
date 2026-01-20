@@ -51,6 +51,7 @@ export async function GET(request: NextRequest) {
         )
       `, { count: 'exact' })
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
 
     // Apply filters
     if (search) {

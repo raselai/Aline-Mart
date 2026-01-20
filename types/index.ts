@@ -25,6 +25,12 @@ export interface Product {
   description: string
   price: number
   salePrice?: number
+  weight?: string | null
+  dimensions?: string | null
+  shippingFee?: string | null
+  warranty?: string | null
+  vendor?: string | null
+  status?: 'DRAFT' | 'ACTIVE' | null
   brandId: string
   brand: Brand
   categoryId: string

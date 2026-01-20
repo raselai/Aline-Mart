@@ -41,6 +41,7 @@ export async function GET(
         )
       `)
       .eq('slug', slug)
+      .or('status.is.null,status.eq.ACTIVE')
       .single()
 
     if (error || !product) {
@@ -72,6 +73,7 @@ export async function GET(
       .or(`brandId.eq.${product.brandId},categoryId.eq.${product.categoryId}`)
       .neq('id', product.id)
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
       .order('createdAt', { ascending: false })
       .limit(6)
 

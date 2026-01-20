@@ -117,6 +117,7 @@ async function getProductsByCategory(categoryId: string): Promise<Product[]> {
     `)
     .in('categoryId', categoryIds)
     .eq('inStock', true)
+    .or('status.is.null,status.eq.ACTIVE')
     .order('isNew', { ascending: false })
     .order('createdAt', { ascending: false })
 

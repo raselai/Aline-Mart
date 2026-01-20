@@ -48,6 +48,7 @@ async function getBrands(): Promise<Brand[]> {
           .select('*', { count: 'exact', head: true })
           .eq('brandId', brand.id)
           .eq('inStock', true)
+          .or('status.is.null,status.eq.ACTIVE')
 
         return {
           ...brand,

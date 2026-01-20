@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Search, Heart, User, ShoppingBag, Menu, MapPin, LogOut, Package, ChevronDown } from 'lucide-react'
+import { Search, Heart, User, ShoppingBag, Menu, MapPin, LogOut, Package, ChevronDown, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { useCart } from '@/hooks/useCart'
@@ -32,6 +32,8 @@ const navigation = [
   { name: 'Outlet', href: '/categories/outlet', categorySlug: 'outlet' },
   { name: 'Sports & Fitness', href: '/categories/sports', categorySlug: 'sports' },
 ]
+
+type CategoryNode = Category & { children: CategoryNode[] }
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -90,20 +92,34 @@ export default function Header() {
     }
   }, [isMobileMenuOpen])
 
-  const categoriesBySlug = new Map(categories.map((category) => [category.slug, category]))
-  const childrenByParentId = new Map<string, Category[]>()
+  const categoryNodesById = new Map<string, CategoryNode>()
+  const categoriesBySlug = new Map<string, CategoryNode>()
 
   categories.forEach((category) => {
-    if (!category.parentId) return
-    const existing = childrenByParentId.get(category.parentId) || []
-    existing.push(category)
-    childrenByParentId.set(category.parentId, existing)
+    const node: CategoryNode = { ...category, children: [] }
+    categoryNodesById.set(category.id, node)
+    categoriesBySlug.set(category.slug, node)
   })
 
-  childrenByParentId.forEach((items, parentId) => {
-    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name))
-    childrenByParentId.set(parentId, sorted)
+  categoryNodesById.forEach((node) => {
+    if (!node.parentId) return
+    const parent = categoryNodesById.get(node.parentId)
+    if (parent) {
+      parent.children.push(node)
+    }
   })
+
+  const sortTree = (nodes: CategoryNode[]) => {
+    nodes.sort((a, b) => a.name.localeCompare(b.name))
+    nodes.forEach((node) => {
+      if (node.children.length > 0) {
+        sortTree(node.children)
+      }
+    })
+  }
+
+  const rootNodes = [...categoryNodesById.values()].filter((node) => !node.parentId)
+  sortTree(rootNodes)
 
   const navItems = navigation.map((item) => {
     if (!item.categorySlug) {
@@ -111,7 +127,7 @@ export default function Header() {
     }
 
     const category = categoriesBySlug.get(item.categorySlug)
-    const children = category ? childrenByParentId.get(category.id) || [] : []
+    const children = category ? category.children : []
 
     return { ...item, children }
   })
@@ -121,6 +137,72 @@ export default function Header() {
       ...prev,
       [name]: !prev[name],
     }))
+  }
+
+  const renderDesktopSubmenu = (items: CategoryNode[]) => {
+    return (
+      <div className="bg-white border border-gray-200 shadow-xl min-w-[220px] py-3">
+        {items.map((child) => {
+          const hasChildren = child.children.length > 0
+          return (
+            <div key={child.id} className="relative group/sub">
+              <Link
+                href={`/categories/${child.slug}`}
+                className="flex items-center justify-between gap-2 px-4 py-2 text-sm text-charcoal hover:text-burgundy hover:bg-gray-50 transition-colors"
+              >
+                <span>{child.name}</span>
+                {hasChildren && <ChevronRight className="w-4 h-4 text-charcoal/60" />}
+              </Link>
+              {hasChildren && (
+                <div className="absolute left-full top-0 ml-2 opacity-0 pointer-events-none group-hover/sub:opacity-100 group-hover/sub:pointer-events-auto transition-opacity duration-200">
+                  {renderDesktopSubmenu(child.children)}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  const renderMobileChildren = (items: CategoryNode[], parentKey: string, level: number) => {
+    return (
+      <div style={{ paddingLeft: level * 12 }}>
+        {items.map((child) => {
+          const hasChildren = child.children.length > 0
+          const childKey = `${parentKey}:${child.id}`
+          const isOpen = Boolean(openMobileMenus[childKey])
+
+          return (
+            <div key={child.id}>
+              <div className="flex items-center justify-between py-2">
+                <Link
+                  href={`/categories/${child.slug}`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block text-sm text-charcoal/80 hover:text-burgundy transition-colors"
+                >
+                  {child.name}
+                </Link>
+                {hasChildren && (
+                  <button
+                    type="button"
+                    onClick={() => toggleMobileMenu(childKey)}
+                    aria-expanded={isOpen}
+                    aria-label={`${child.name} sub menu`}
+                    className="p-1 text-charcoal hover:text-burgundy transition-colors"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                )}
+              </div>
+              {hasChildren && isOpen && renderMobileChildren(child.children, childKey, level + 1)}
+            </div>
+          )
+        })}
+      </div>
+    )
   }
 
   // Handle search submit
@@ -374,16 +456,7 @@ export default function Header() {
                             </div>
                             {hasChildren && isOpen && (
                               <div className="pb-4 pl-4">
-                                {item.children.map((child) => (
-                                  <Link
-                                    key={child.id}
-                                    href={`/categories/${child.slug}`}
-                                    onClick={() => setIsMobileMenuOpen(false)}
-                                    className="block py-2 text-sm text-charcoal/80 hover:text-burgundy transition-colors"
-                                  >
-                                    {child.name}
-                                  </Link>
-                                ))}
+                                {renderMobileChildren(item.children, item.name, 1)}
                               </div>
                             )}
                           </div>
@@ -497,17 +570,7 @@ export default function Header() {
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white group-hover:w-full transition-all duration-300" />
                   </Link>
                   <div className="absolute left-0 top-full pt-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200">
-                    <div className="bg-white border border-gray-200 shadow-xl min-w-[220px] py-3">
-                      {item.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          href={`/categories/${child.slug}`}
-                          className="block px-4 py-2 text-sm text-charcoal hover:text-burgundy hover:bg-gray-50 transition-colors"
-                        >
-                          {child.name}
-                        </Link>
-                      ))}
-                    </div>
+                    {renderDesktopSubmenu(item.children)}
                   </div>
                 </div>
               )

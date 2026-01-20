@@ -91,6 +91,7 @@ async function fetchProducts(params: {
         )
       `, { count: 'exact' })
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
 
     // Apply search filter
     if (params.search) {

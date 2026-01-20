@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
             .from('Product')
             .select('*', { count: 'exact', head: true })
             .eq('categoryId', category.id)
+            .or('status.is.null,status.eq.ACTIVE')
 
           return {
             ...category,

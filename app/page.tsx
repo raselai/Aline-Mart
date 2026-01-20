@@ -62,6 +62,7 @@ async function getHotDeals(): Promise<Product[]> {
       `)
       .not('salePrice', 'is', null)
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
       .order('salePrice', { ascending: true })
       .limit(8)
 
@@ -104,6 +105,7 @@ async function getNewArrivals(): Promise<Product[]> {
       `)
       .eq('isNew', true)
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
       .order('createdAt', { ascending: false })
       .limit(8)
 

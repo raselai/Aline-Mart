@@ -91,6 +91,7 @@ async function getProductsByBrand(brandId: string): Promise<Product[]> {
     `)
     .eq('brandId', brandId)
     .eq('inStock', true)
+    .or('status.is.null,status.eq.ACTIVE')
     .order('isNew', { ascending: false })
     .order('createdAt', { ascending: false })
 

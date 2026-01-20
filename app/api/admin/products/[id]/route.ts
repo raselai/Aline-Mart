@@ -122,6 +122,12 @@ export async function PATCH(
       inStock,
       featured,
       isNew,
+      weight,
+      dimensions,
+      shippingFee,
+      warranty,
+      vendor,
+      status,
       images,
       variants
     } = body
@@ -141,6 +147,12 @@ export async function PATCH(
     if (inStock !== undefined) updateData.inStock = inStock
     if (featured !== undefined) updateData.featured = featured
     if (isNew !== undefined) updateData.isNew = isNew
+    if (weight !== undefined) updateData.weight = weight ? String(weight) : null
+    if (dimensions !== undefined) updateData.dimensions = dimensions ? String(dimensions) : null
+    if (shippingFee !== undefined) updateData.shippingFee = shippingFee ? String(shippingFee) : null
+    if (warranty !== undefined) updateData.warranty = warranty ? String(warranty) : null
+    if (vendor !== undefined) updateData.vendor = vendor ? String(vendor) : null
+    if (status !== undefined) updateData.status = status === 'DRAFT' ? 'DRAFT' : 'ACTIVE'
 
     const { data: product, error: productError } = await supabase
       .from('Product')

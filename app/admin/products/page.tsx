@@ -39,35 +39,49 @@ interface Category {
   slug: string
 }
 
+interface Brand {
+  id: string
+  name: string
+  slug: string
+}
+
 export default function AdminProductsPage() {
   const router = useRouter()
   const [products, setProducts] = useState<Product[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterBrand, setFilterBrand] = useState('')
   const [filterCategory, setFilterCategory] = useState('')
   const [filterStock, setFilterStock] = useState('')
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'createdAt'>('createdAt')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [filterVendor, setFilterVendor] = useState('')
 
-  // Fetch categories on mount
+  // Fetch filters on mount
   useEffect(() => {
-    fetchCategories()
+    fetchFilters()
   }, [])
 
   useEffect(() => {
     fetchProducts()
-  }, [searchQuery, filterBrand, filterCategory, filterStock, sortBy, sortOrder])
+  }, [searchQuery, filterBrand, filterCategory, filterStock, filterVendor])
 
-  const fetchCategories = async () => {
+  const fetchFilters = async () => {
     try {
-      const response = await fetch('/api/categories')
-      if (!response.ok) throw new Error('Failed to fetch categories')
-      const data = await response.json()
-      setCategories(data.data?.all || [])
+      const [categoriesRes, brandsRes] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/brands')
+      ])
+
+      if (!categoriesRes.ok) throw new Error('Failed to fetch categories')
+      if (!brandsRes.ok) throw new Error('Failed to fetch brands')
+
+      const categoriesData = await categoriesRes.json()
+      const brandsData = await brandsRes.json()
+      setCategories(categoriesData.data?.all || [])
+      setBrands(brandsData.data || [])
     } catch (error) {
-      console.error('Error fetching categories:', error)
+      console.error('Error fetching filters:', error)
     }
   }
 
@@ -79,8 +93,7 @@ export default function AdminProductsPage() {
         brand: filterBrand,
         category: filterCategory,
         stock: filterStock,
-        sort: sortBy,
-        order: sortOrder,
+        vendor: filterVendor,
       })
 
       const response = await fetch(`/api/admin/products?${params}`)
@@ -205,49 +218,6 @@ export default function AdminProductsPage() {
             </div>
           </div>
 
-          {/* Sort By */}
-          <div>
-            <label
-              htmlFor="sortBy"
-              className="block text-sm font-medium mb-2"
-              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
-            >
-              Sort By
-            </label>
-            <select
-              id="sortBy"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-              style={{ borderColor: '#d1d5db' }}
-            >
-              <option value="createdAt">Newest First</option>
-              <option value="name">Name (A-Z)</option>
-              <option value="price">Price</option>
-            </select>
-          </div>
-
-          {/* Sort Order */}
-          <div>
-            <label
-              htmlFor="sortOrder"
-              className="block text-sm font-medium mb-2"
-              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
-            >
-              Order
-            </label>
-            <select
-              id="sortOrder"
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as any)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-              style={{ borderColor: '#d1d5db' }}
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-
           {/* Category Filter */}
           <div>
             <label
@@ -273,6 +243,31 @@ export default function AdminProductsPage() {
             </select>
           </div>
 
+          {/* Brand Filter */}
+          <div>
+            <label
+              htmlFor="brand"
+              className="block text-sm font-medium mb-2"
+              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+            >
+              Brand
+            </label>
+            <select
+              id="brand"
+              value={filterBrand}
+              onChange={(e) => setFilterBrand(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+              style={{ borderColor: '#d1d5db' }}
+            >
+              <option value="">All Brands</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.slug}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Stock Filter */}
           <div>
             <label
@@ -293,6 +288,26 @@ export default function AdminProductsPage() {
               <option value="in-stock">In Stock</option>
               <option value="out-of-stock">Out of Stock</option>
             </select>
+          </div>
+
+          {/* Vendor Filter */}
+          <div>
+            <label
+              htmlFor="vendor"
+              className="block text-sm font-medium mb-2"
+              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+            >
+              Vendor / Supplier
+            </label>
+            <input
+              type="text"
+              id="vendor"
+              value={filterVendor}
+              onChange={(e) => setFilterVendor(e.target.value)}
+              placeholder="Search vendor..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+              style={{ borderColor: '#d1d5db' }}
+            />
           </div>
         </div>
       </div>

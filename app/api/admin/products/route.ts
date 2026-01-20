@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     const brand = searchParams.get('brand') || ''
     const category = searchParams.get('category') || ''
     const stock = searchParams.get('stock') || ''
+    const vendor = searchParams.get('vendor') || ''
     const sort = searchParams.get('sort') || 'createdAt'
     const order = searchParams.get('order') || 'desc'
     const page = parseInt(searchParams.get('page') || '1')
@@ -108,6 +109,11 @@ export async function GET(request: Request) {
       query = query.eq('inStock', false)
     }
 
+    // Apply vendor filter
+    if (vendor) {
+      query = query.ilike('vendor', `%${vendor}%`)
+    }
+
     // Apply sorting
     const ascending = order === 'asc'
     if (sort === 'name') {
@@ -185,6 +191,12 @@ export async function POST(request: Request) {
       inStock,
       featured,
       isNew,
+      weight,
+      dimensions,
+      shippingFee,
+      warranty,
+      vendor,
+      status,
       images,
       variants
     } = body
@@ -227,6 +239,12 @@ export async function POST(request: Request) {
       inStock: inStock !== false,
       featured: featured === true,
       isNew: isNew === true,
+      weight: weight ? String(weight) : null,
+      dimensions: dimensions ? String(dimensions) : null,
+      shippingFee: shippingFee ? String(shippingFee) : null,
+      warranty: warranty ? String(warranty) : null,
+      vendor: vendor ? String(vendor) : null,
+      status: status === 'DRAFT' ? 'DRAFT' : 'ACTIVE',
     }
 
     console.log('💾 Inserting product:', productData)

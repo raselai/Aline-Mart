@@ -74,6 +74,7 @@ export async function GET(request: Request) {
 
     // Only show in-stock products
     queryBuilder = queryBuilder.eq('inStock', true)
+    queryBuilder = queryBuilder.or('status.is.null,status.eq.ACTIVE')
 
     // Order by relevance (products with query in name first, then by newest)
     queryBuilder = queryBuilder.order('createdAt', { ascending: false })

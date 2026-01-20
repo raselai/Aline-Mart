@@ -46,6 +46,7 @@ async function fetchProduct(slug: string) {
         )
       `)
       .eq('slug', slug)
+      .or('status.is.null,status.eq.ACTIVE')
       .single()
 
     if (error || !product) {
@@ -95,6 +96,7 @@ async function fetchProductWithRelated(slug: string) {
         )
       `)
       .eq('slug', slug)
+      .or('status.is.null,status.eq.ACTIVE')
       .single()
 
     if (error || !product) {
@@ -134,6 +136,7 @@ async function fetchProductWithRelated(slug: string) {
       .or(`brandId.eq.${product.brandId},categoryId.eq.${product.categoryId}`)
       .neq('id', product.id)
       .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
       .order('createdAt', { ascending: false })
       .limit(6)
 
