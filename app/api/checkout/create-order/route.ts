@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { generateOrderNumber, calculateOrderTotal } from '@/lib/order-utils'
-import { validateStock } from '@/lib/inventory'
+import { validateStock, decrementStockWithLog } from '@/lib/inventory'
 import { checkoutSchema } from '@/types/checkout'
 import type { CartItem } from '@/types/checkout'
 
@@ -144,6 +144,24 @@ export async function POST(request: NextRequest) {
       // Rollback: Delete order if items fail
       await supabase.from('Order').delete().eq('id', order.id)
       throw new Error('Failed to create order items')
+    }
+
+    // Decrement stock for COD orders immediately
+    // PayStation orders decrement stock in the callback after payment confirmation
+    if (data.paymentMethod === 'COD') {
+      try {
+        await decrementStockWithLog(
+          (cartItems as CartItem[]).map(item => ({
+            variantId: item.variantId,
+            quantity: item.quantity
+          })),
+          'SALE',
+          order.id
+        )
+      } catch (stockError) {
+        console.error('Failed to decrement stock for COD order:', stockError)
+        // Don't fail the order - log for manual review
+      }
     }
 
     return NextResponse.json({

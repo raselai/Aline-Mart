@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { paystationClient } from '@/lib/paystation'
-import { decrementStock } from '@/lib/inventory'
+import { decrementStockWithLog } from '@/lib/inventory'
 import { sendPaymentReceivedEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
@@ -119,13 +119,15 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to update order')
     }
 
-    // STEP 6: Decrement stock (CRITICAL - atomic operation)
+    // STEP 6: Decrement stock (CRITICAL - atomic operation with audit log)
     try {
-      await decrementStock(
+      await decrementStockWithLog(
         order.OrderItem.map((item: any) => ({
           variantId: item.variantId,
           quantity: item.quantity,
-        }))
+        })),
+        'SALE',
+        order.id
       )
     } catch (stockError) {
       console.error('Stock decrement failed:', stockError)

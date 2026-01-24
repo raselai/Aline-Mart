@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
 import { canTransitionStatus } from '@/lib/order-utils'
-import { restoreStock } from '@/lib/inventory'
+import { restoreStockWithLog } from '@/lib/inventory'
 import { sendOrderShippedEmail } from '@/lib/email'
 import type { OrderWithDetails } from '@/types/order'
 
@@ -256,7 +256,7 @@ export async function PATCH(request: Request, props: RouteParams) {
 
     // Handle side effects based on new status
     if (newStatus === 'CANCELLED' && currentOrder.status !== 'CANCELLED') {
-      // Restore stock for cancelled orders
+      // Restore stock for cancelled orders with audit log
       try {
         const orderItems = currentOrder.OrderItem?.map((item: any) => ({
           variantId: item.variantId,
@@ -264,7 +264,7 @@ export async function PATCH(request: Request, props: RouteParams) {
         })).filter((item: any) => item.variantId) || []
 
         if (orderItems.length > 0) {
-          await restoreStock(orderItems)
+          await restoreStockWithLog(orderItems, 'CANCELLED_ORDER', id)
           message += '. Stock has been restored.'
         }
       } catch (stockError) {
