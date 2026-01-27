@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
       .select(`
         *,
         User(name, email),
-        Address(phone, street, city, state, postalCode),
-        OrderItem(*, Product(name))
+        Address(phone, addressLine1, city, state, zipCode),
+        OrderItem(*)
       `)
       .eq('id', orderId)
       .single()
@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
 
     // Build checkout_items from order items
     const checkoutItems: CheckoutItem[] = (order.OrderItem || []).map(
-      (item: { Product: { name: string }; quantity: number; price: number }) => ({
-        name: item.Product?.name || 'Product',
+      (item: { productName: string; quantity: number; price: number }) => ({
+        name: item.productName || 'Product',
         quantity: item.quantity,
         price: item.price,
       })
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Build customer address string
     const addr = order.Address
     const customerAddress = addr
-      ? [addr.street, addr.city, addr.state, addr.postalCode].filter(Boolean).join(', ')
+      ? [addr.addressLine1, addr.city, addr.state, addr.zipCode].filter(Boolean).join(', ')
       : undefined
 
     // Production mode: Use real PayStation API

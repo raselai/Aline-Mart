@@ -30,7 +30,8 @@ export class PayStationClient {
     const missing = required.filter((key) => !this.config[key as keyof PayStationConfig])
 
     if (missing.length > 0) {
-      throw new Error(`Missing PayStation config: ${missing.join(', ')}`)
+      // Log warning instead of throwing to avoid breaking route module loading
+      console.warn(`[PayStation] Missing config: ${missing.join(', ')}. Payment initiation will fail.`)
     }
   }
 
@@ -39,6 +40,14 @@ export class PayStationClient {
    * Returns a redirect URL where the customer should be sent
    */
   async initiatePayment(params: InitiatePaymentParams): Promise<PayStationInitiateResponse> {
+    if (!this.config.merchantId || !this.config.password || !this.config.apiUrl || !this.config.callbackUrl) {
+      return {
+        status_code: 500,
+        status: 'error',
+        message: 'PayStation is not configured. Check environment variables.',
+      }
+    }
+
     try {
       const payload: Record<string, unknown> = {
         merchantId: this.config.merchantId,
