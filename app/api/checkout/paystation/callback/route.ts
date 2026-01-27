@@ -95,18 +95,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Decrement stock (CRITICAL - atomic operation with audit log)
-    try {
-      await decrementStockWithLog(
-        order.OrderItem.map((item: { variantId: string; quantity: number }) => ({
-          variantId: item.variantId,
-          quantity: item.quantity,
-        })),
-        'SALE',
-        order.id
-      )
-    } catch (stockError) {
-      console.error('Stock decrement failed:', stockError)
-      // Don't fail the entire flow - log for manual review
+    // Skip products without real variants (variantId ending in '-default')
+    const itemsWithVariants = order.OrderItem
+      .filter((item: { variantId: string }) => item.variantId && !item.variantId.endsWith('-default'))
+      .map((item: { variantId: string; quantity: number }) => ({
+        variantId: item.variantId,
+        quantity: item.quantity,
+      }))
+
+    if (itemsWithVariants.length > 0) {
+      try {
+        await decrementStockWithLog(itemsWithVariants, 'SALE', order.id)
+      } catch (stockError) {
+        console.error('Stock decrement failed:', stockError)
+        // Don't fail the entire flow - log for manual review
+      }
     }
 
     // Send payment confirmation email

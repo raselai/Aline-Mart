@@ -23,40 +23,73 @@ export async function validateStock(items: CartItem[]): Promise<StockValidationR
   const supabase = await createServerClient()
   const errors: StockError[] = []
 
-  // Get current stock levels
-  const variantIds = items.map((item) => item.variantId)
-  const { data: variants, error } = await supabase
-    .from('ProductVariant')
-    .select('id, stock, Product(name)')
-    .in('id', variantIds)
+  // Separate items with real variants from products without variants
+  // Products without variants use "{productId}-default" as variantId
+  const variantItems = items.filter((item) => !item.variantId.endsWith('-default'))
+  const defaultItems = items.filter((item) => item.variantId.endsWith('-default'))
 
-  if (error || !variants) {
-    throw new Error('Failed to validate stock')
-  }
+  // Validate items with real variants
+  if (variantItems.length > 0) {
+    const variantIds = variantItems.map((item) => item.variantId)
+    const { data: variants, error } = await supabase
+      .from('ProductVariant')
+      .select('id, stock, Product(name)')
+      .in('id', variantIds)
 
-  // Check each item
-  for (const item of items) {
-    const variant = variants.find((v) => v.id === item.variantId)
-
-    if (!variant) {
-      errors.push({
-        variantId: item.variantId,
-        productName: item.productName,
-        variantName: item.variantName,
-        requestedQuantity: item.quantity,
-        availableStock: 0,
-      })
-      continue
+    if (error || !variants) {
+      throw new Error('Failed to validate stock')
     }
 
-    if (variant.stock < item.quantity) {
-      errors.push({
-        variantId: item.variantId,
-        productName: item.productName,
-        variantName: item.variantName,
-        requestedQuantity: item.quantity,
-        availableStock: variant.stock,
-      })
+    for (const item of variantItems) {
+      const variant = variants.find((v) => v.id === item.variantId)
+
+      if (!variant) {
+        errors.push({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantName: item.variantName,
+          requestedQuantity: item.quantity,
+          availableStock: 0,
+        })
+        continue
+      }
+
+      if (variant.stock < item.quantity) {
+        errors.push({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantName: item.variantName,
+          requestedQuantity: item.quantity,
+          availableStock: variant.stock,
+        })
+      }
+    }
+  }
+
+  // Validate products without variants by checking Product.inStock flag
+  if (defaultItems.length > 0) {
+    const productIds = defaultItems.map((item) => item.productId)
+    const { data: products, error } = await supabase
+      .from('Product')
+      .select('id, name, inStock')
+      .in('id', productIds)
+
+    if (error || !products) {
+      throw new Error('Failed to validate stock')
+    }
+
+    for (const item of defaultItems) {
+      const product = products.find((p) => p.id === item.productId)
+
+      if (!product || !product.inStock) {
+        errors.push({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantName: item.variantName,
+          requestedQuantity: item.quantity,
+          availableStock: 0,
+        })
+      }
     }
   }
 

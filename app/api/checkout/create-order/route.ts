@@ -153,16 +153,23 @@ export async function POST(request: NextRequest) {
 
     // Decrement stock for COD orders immediately
     // PayStation orders decrement stock in the callback after payment confirmation
+    // Skip products without real variants (variantId ending in '-default')
     if (data.paymentMethod === 'COD') {
+      const itemsWithVariants = (cartItems as CartItem[])
+        .filter(item => !item.variantId.endsWith('-default'))
+        .map(item => ({
+          variantId: item.variantId,
+          quantity: item.quantity
+        }))
+
       try {
-        await decrementStockWithLog(
-          (cartItems as CartItem[]).map(item => ({
-            variantId: item.variantId,
-            quantity: item.quantity
-          })),
-          'SALE',
-          order.id
-        )
+        if (itemsWithVariants.length > 0) {
+          await decrementStockWithLog(
+            itemsWithVariants,
+            'SALE',
+            order.id
+          )
+        }
       } catch (stockError) {
         console.error('Failed to decrement stock for COD order:', stockError)
         // Don't fail the order - log for manual review
