@@ -27,7 +27,7 @@ export async function validateStock(items: CartItem[]): Promise<StockValidationR
   const variantIds = items.map((item) => item.variantId)
   const { data: variants, error } = await supabase
     .from('ProductVariant')
-    .select('id, stock, Product(name), name')
+    .select('id, stock, Product(name)')
     .in('id', variantIds)
 
   if (error || !variants) {
