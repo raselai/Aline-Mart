@@ -67,7 +67,8 @@ export class PayStationClient {
       }
 
       if (params.checkoutItems && params.checkoutItems.length > 0) {
-        payload.checkout_items = params.checkoutItems
+        // PayStation expects checkout_items as a JSON string, not a nested array
+        payload.checkout_items = JSON.stringify(params.checkoutItems)
       }
 
       const response = await fetch(`${this.config.apiUrl}/initiate-payment`, {
