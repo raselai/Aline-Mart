@@ -19,6 +19,12 @@ interface Category {
   parentId?: string | null
 }
 
+interface Vendor {
+  id: string
+  shopName: string
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
 interface ProductImage {
   id?: string
   url: string
@@ -98,6 +104,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [productId, setProductId] = useState<string>('')
   const [brands, setBrands] = useState<Brand[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [vendors, setVendors] = useState<Vendor[]>([])
   const { roots: rootCategories, childrenByParent, sortByName } = buildCategoryTree(categories)
 
   // Form state
@@ -220,17 +227,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const fetchBrandsAndCategories = async () => {
     try {
-      const [brandsRes, categoriesRes] = await Promise.all([
+      const [brandsRes, categoriesRes, vendorsRes] = await Promise.all([
         fetch('/api/brands'),
-        fetch('/api/categories')
+        fetch('/api/categories'),
+        fetch('/api/admin/vendors?status=ACTIVE&limit=100')
       ])
 
       const brandsData = await brandsRes.json()
       const categoriesData = await categoriesRes.json()
+      const vendorsData = await vendorsRes.json()
 
       // Fix: API returns data in 'data' property, not 'brands'/'categories'
       setBrands(brandsData.data || [])
       setCategories(categoriesData.data?.all || [])
+      setVendors(vendorsData.vendors || [])
     } catch (error) {
       console.error('Error fetching data:', error)
     }
@@ -730,15 +740,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               >
                 Vendor / Supplier
               </label>
-              <input
-                type="text"
+              <select
                 id="vendor"
                 value={vendor}
                 onChange={(e) => setVendor(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
                 style={{ borderColor: '#d1d5db' }}
-                placeholder="Vendor name"
-              />
+              >
+                <option value="">Select a vendor...</option>
+                {vendors.map(v => (
+                  <option key={v.id} value={v.shopName}>{v.shopName}</option>
+                ))}
+              </select>
             </div>
 
             <div>

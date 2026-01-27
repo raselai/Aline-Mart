@@ -10,12 +10,9 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const invoiceNumber = searchParams.get('invoice_number')
     const trxId = searchParams.get('trx_id') || searchParams.get('transaction_id')
-    const amount = searchParams.get('amount')
-    const token = searchParams.get('token')
-    const paymentMethod = searchParams.get('payment_method')
 
-    // Validate required parameters
-    if (!status || !invoiceNumber || !amount || !token) {
+    // Validate required parameters (real API sends status, invoice_number, trx_id)
+    if (!status || !invoiceNumber) {
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/checkout?payment=error`
       )
@@ -23,29 +20,7 @@ export async function GET(request: NextRequest) {
 
     const isSandbox = process.env.PAYSTATION_SANDBOX_MODE === 'true'
 
-    // STEP 1: Verify callback signature (prevent URL tampering)
-    if (isSandbox && token === 'mock_signature_for_dev') {
-      // In sandbox mode with our mock signature, skip signature verification
-      console.log('[DEV MODE] Accepting mock payment callback')
-    } else {
-      // Production mode: verify real signature
-      const params = {
-        status,
-        invoice_number: invoiceNumber,
-        trx_id: trxId || '',
-        amount,
-      }
-
-      const isValidSignature = paystationClient.verifyCallbackSignature(params, token)
-      if (!isValidSignature) {
-        console.error('Invalid PayStation callback signature')
-        return NextResponse.redirect(
-          `${process.env.NEXT_PUBLIC_APP_URL}/checkout?payment=error`
-        )
-      }
-    }
-
-    // STEP 2: Server-side verification
+    // Server-side verification: the ONLY secure way to confirm payment
     let verifiedStatus = status
     let verifiedTrxId = trxId || `MOCK-${Date.now()}`
 
@@ -64,12 +39,12 @@ export async function GET(request: NextRequest) {
         )
       }
 
-      verifiedStatus = verification.data.status
+      verifiedStatus = verification.data.trx_status
       verifiedTrxId = verification.data.trx_id
     }
 
     // Check if payment was actually successful
-    if (verifiedStatus !== 'Successful') {
+    if (verifiedStatus !== 'Success') {
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/checkout?payment=failed`
       )
@@ -77,7 +52,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    // STEP 3: Get order by order number
+    // Get order by order number
     const { data: order, error: orderError } = await supabase
       .from('Order')
       .select(`
@@ -96,7 +71,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // STEP 4: Check if already processed (idempotency)
+    // Check if already processed (idempotency)
     if (order.status === 'PROCESSING' || order.status === 'SHIPPED' || order.status === 'DELIVERED') {
       // Already processed, redirect to confirmation
       return NextResponse.redirect(
@@ -104,7 +79,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // STEP 5: Update order status to PROCESSING
+    // Update order status to PROCESSING
     const { error: updateError } = await supabase
       .from('Order')
       .update({
@@ -119,10 +94,10 @@ export async function GET(request: NextRequest) {
       throw new Error('Failed to update order')
     }
 
-    // STEP 6: Decrement stock (CRITICAL - atomic operation with audit log)
+    // Decrement stock (CRITICAL - atomic operation with audit log)
     try {
       await decrementStockWithLog(
-        order.OrderItem.map((item: any) => ({
+        order.OrderItem.map((item: { variantId: string; quantity: number }) => ({
           variantId: item.variantId,
           quantity: item.quantity,
         })),
@@ -132,10 +107,9 @@ export async function GET(request: NextRequest) {
     } catch (stockError) {
       console.error('Stock decrement failed:', stockError)
       // Don't fail the entire flow - log for manual review
-      // In production, you might want to trigger an alert here
     }
 
-    // STEP 7: Send payment confirmation email
+    // Send payment confirmation email
     try {
       await sendPaymentReceivedEmail(
         {
@@ -150,7 +124,7 @@ export async function GET(request: NextRequest) {
       // Don't fail the flow - email is not critical
     }
 
-    // STEP 8: Redirect to confirmation page with clearCart flag
+    // Redirect to confirmation page with clearCart flag
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.orderNumber}/confirmation?clearCart=true`
     )

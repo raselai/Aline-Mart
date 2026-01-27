@@ -119,15 +119,20 @@ export default function ProductDetailClient({
     new Set(product.variants.map((v) => v.size).filter(Boolean))
   ) as string[]
 
-  // Get selected variant or first available variant
-  const selectedVariant = product.variants.find(
-    (v) =>
-      (selectedColor ? v.color === selectedColor : true) &&
-      (selectedSize ? v.size === selectedSize : true)
-  ) || product.variants[0]
+  // Check if product has variants
+  const hasVariants = product.variants && product.variants.length > 0
 
-  // Calculate stock - if no variant is selected, use the total stock of first variant
-  const maxStock = selectedVariant?.stock || 0
+  // Get selected variant or first available variant
+  const selectedVariant = hasVariants
+    ? product.variants.find(
+        (v) =>
+          (selectedColor ? v.color === selectedColor : true) &&
+          (selectedSize ? v.size === selectedSize : true)
+      ) || product.variants[0]
+    : null
+
+  // Calculate stock - products without variants are treated as having 1 stock if inStock is true
+  const maxStock = hasVariants ? (selectedVariant?.stock || 0) : (product.inStock ? 1 : 0)
   const isProductInStock = product.inStock && maxStock > 0
 
   // Calculate price
@@ -149,17 +154,20 @@ export default function ProductDetailClient({
       return
     }
 
+    // For products without variants, use product.id as the variant identifier
+    const cartItemId = selectedVariant?.id || `${product.id}-default`
+
     console.log('Adding to cart:', {
       productId: product.id,
-      variantId: selectedVariant?.id,
+      variantId: cartItemId,
       quantity,
       maxStock,
     })
 
     addItem({
-      id: selectedVariant?.id || product.variants[0]?.id,
+      id: cartItemId,
       productId: product.id,
-      variantId: selectedVariant?.id || product.variants[0]?.id,
+      variantId: cartItemId,
       slug: product.slug,
       name: product.name,
       brand: product.brand.name,
@@ -167,7 +175,7 @@ export default function ProductDetailClient({
       image: product.images[0]?.url || '',
       color: selectedColor || undefined,
       size: selectedSize || undefined,
-      sku: selectedVariant?.sku || product.variants[0]?.sku || '',
+      sku: selectedVariant?.sku || `${product.slug}-default`,
       stock: maxStock,
     })
 
@@ -243,7 +251,8 @@ export default function ProductDetailClient({
   }
 
   const isInWishlistState = isInWishlist(product.id)
-  const isInCartState = isInCart(selectedVariant?.id || product.variants[0]?.id || '')
+  const cartItemId = selectedVariant?.id || `${product.id}-default`
+  const isInCartState = isInCart(cartItemId)
 
   return (
     <div className="min-h-screen bg-white">

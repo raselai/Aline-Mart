@@ -3,9 +3,13 @@ export interface PayStationConfig {
   password: string
   apiUrl: string
   sandboxMode: boolean
-  successUrl: string
-  failUrl: string
-  cancelUrl: string
+  callbackUrl: string
+}
+
+export interface CheckoutItem {
+  name: string
+  quantity: number
+  price: number
 }
 
 export interface InitiatePaymentParams {
@@ -14,43 +18,37 @@ export interface InitiatePaymentParams {
   customerName: string
   customerEmail: string
   customerPhone: string
-  description?: string
+  customerAddress?: string
+  reference?: string
+  checkoutItems?: CheckoutItem[]
 }
 
 export interface PayStationInitiateResponse {
-  success: boolean
-  message?: string
-  data?: {
-    payment_url: string
-    invoice_number: string
-    session_key?: string
-  }
-  error?: string
+  status_code: number
+  status: string
+  message: string
+  payment_url?: string
+  invoice_number?: string
 }
 
 export interface PayStationCallbackParams {
-  status: string // 'Successful' | 'Failed' | 'Cancelled'
+  status: string // 'Success' | 'Failed' | 'Cancelled'
   invoice_number: string
-  trx_id: string
-  amount: string
-  token: string // HMAC signature
+  trx_id?: string
 }
 
 export interface PayStationTransactionStatus {
   success: boolean
   data?: {
-    status: 'Successful' | 'Failed' | 'Pending' | 'Cancelled'
+    trx_status: 'Success' | 'Failed' | 'Pending' | 'Cancelled'
     trx_id: string
     invoice_number: string
-    amount: number
-    currency: string
-    payment_time: string
+    payment_amount: number
+    order_date_time: string
+    payer_mobile_no?: string
+    payment_method?: string
+    reference?: string
+    checkout_items?: CheckoutItem[]
   }
   error?: string
-}
-
-export interface PayStationError {
-  code: string
-  message: string
-  details?: any
 }

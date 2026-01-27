@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { paystationClient } from '@/lib/paystation'
+import type { CheckoutItem } from '@/types/paystation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,13 +16,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    // Get order details
+    // Get order details with items for checkout_items
     const { data: order, error: orderError } = await supabase
       .from('Order')
       .select(`
         *,
         User(name, email),
-        Address(phone)
+        Address(phone, street, city, state, postalCode),
+        OrderItem(*, Product(name))
       `)
       .eq('id', orderId)
       .single()
@@ -68,6 +70,21 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Build checkout_items from order items
+    const checkoutItems: CheckoutItem[] = (order.OrderItem || []).map(
+      (item: { Product: { name: string }; quantity: number; price: number }) => ({
+        name: item.Product?.name || 'Product',
+        quantity: item.quantity,
+        price: item.price,
+      })
+    )
+
+    // Build customer address string
+    const addr = order.Address
+    const customerAddress = addr
+      ? [addr.street, addr.city, addr.state, addr.postalCode].filter(Boolean).join(', ')
+      : undefined
+
     // Production mode: Use real PayStation API
     const paymentResult = await paystationClient.initiatePayment({
       orderNumber: order.orderNumber,
@@ -75,19 +92,21 @@ export async function POST(request: NextRequest) {
       customerName: order.User.name,
       customerEmail: order.User.email,
       customerPhone: order.Address.phone,
-      description: `Order ${order.orderNumber} - Aline Mart`,
+      customerAddress,
+      reference: order.orderNumber,
+      checkoutItems,
     })
 
-    if (!paymentResult.success || !paymentResult.data) {
+    if (paymentResult.status !== 'success' || !paymentResult.payment_url) {
       return NextResponse.json(
-        { error: paymentResult.error || 'Payment initiation failed' },
+        { error: paymentResult.message || 'Payment initiation failed' },
         { status: 500 }
       )
     }
 
     return NextResponse.json({
       success: true,
-      paymentUrl: paymentResult.data.payment_url,
+      paymentUrl: paymentResult.payment_url,
     })
   } catch (error) {
     console.error('PayStation initiate error:', error)

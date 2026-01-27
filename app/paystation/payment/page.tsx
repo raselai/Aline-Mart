@@ -38,12 +38,8 @@ function PayStationPaymentContent() {
       // Simulate successful payment callback
       const params = new URLSearchParams({
         invoice_number: invoiceNumber || '',
-        amount: amount || '',
-        status: 'Successful',
-        transaction_id: `TXN${Date.now()}`,
-        payment_method: selectedMethod || 'bkash',
-        // In production, PayStation would add an HMAC token here
-        token: 'mock_signature_for_dev',
+        status: 'Success',
+        trx_id: `TXN${Date.now()}`,
       })
       callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
     } else if (action === 'fail') {

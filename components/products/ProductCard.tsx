@@ -61,6 +61,9 @@ export default function ProductCard({
   // Get default variant (first one with stock, or first one)
   const defaultVariant = product.variants?.find(v => v.stock > 0) || product.variants?.[0]
 
+  // Check if product has variants
+  const hasVariants = product.variants && product.variants.length > 0
+
   // Determine price to display
   const displayPrice = product.isOnSale && product.salePrice
     ? product.salePrice
@@ -73,21 +76,23 @@ export default function ProductCard({
     e.preventDefault()
     e.stopPropagation()
 
-    if (!defaultVariant) return
+    // For products without variants, use product.id as the variant identifier
+    const cartItemId = defaultVariant?.id || `${product.id}-default`
+    const itemStock = hasVariants ? (defaultVariant?.stock || 0) : 1 // Treat no-variant products as having 1 stock
 
     addItem({
-      id: defaultVariant.id,
+      id: cartItemId,
       productId: product.id,
       slug: product.slug,
       name: product.name,
       brand: product.brand.name,
       price: displayPrice,
       image: primaryImage,
-      variantId: defaultVariant.id,
-      color: defaultVariant.color,
-      size: defaultVariant.size,
-      sku: defaultVariant.sku,
-      stock: defaultVariant.stock
+      variantId: cartItemId,
+      color: defaultVariant?.color,
+      size: defaultVariant?.size,
+      sku: defaultVariant?.sku || `${product.slug}-default`,
+      stock: itemStock
     })
   }
 
@@ -96,6 +101,9 @@ export default function ProductCard({
     e.preventDefault()
     e.stopPropagation()
 
+    // Products without variants are considered in stock if they have no variant requirement
+    const isInStock = hasVariants ? (defaultVariant?.stock || 0) > 0 : true
+
     toggleWishlist({
       id: product.id,
       slug: product.slug,
@@ -103,7 +111,7 @@ export default function ProductCard({
       brand: product.brand.name,
       price: displayPrice,
       image: primaryImage,
-      inStock: (defaultVariant?.stock || 0) > 0
+      inStock: isInStock
     })
   }
 
@@ -205,10 +213,10 @@ export default function ProductCard({
             <Button
               onClick={handleAddToCart}
               className="w-full gradient-primary hover:gradient-hover text-white font-semibold shadow-lg"
-              disabled={!defaultVariant || defaultVariant.stock === 0}
+              disabled={hasVariants && (!defaultVariant || defaultVariant.stock === 0)}
             >
               <ShoppingCart className="w-4 h-4" />
-              {defaultVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+              {hasVariants && defaultVariant?.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
             </Button>
           </div>
         </div>

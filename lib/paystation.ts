@@ -1,4 +1,3 @@
-import crypto from 'crypto'
 import type {
   PayStationConfig,
   InitiatePaymentParams,
@@ -15,9 +14,7 @@ export class PayStationClient {
       password: process.env.PAYSTATION_PASSWORD || '',
       apiUrl: process.env.PAYSTATION_API_URL || '',
       sandboxMode: process.env.PAYSTATION_SANDBOX_MODE === 'true',
-      successUrl: process.env.PAYSTATION_SUCCESS_URL || '',
-      failUrl: process.env.PAYSTATION_FAIL_URL || '',
-      cancelUrl: process.env.PAYSTATION_CANCEL_URL || '',
+      callbackUrl: process.env.PAYSTATION_CALLBACK_URL || '',
     }
 
     this.validateConfig()
@@ -29,7 +26,7 @@ export class PayStationClient {
       return
     }
 
-    const required = ['merchantId', 'password', 'apiUrl', 'successUrl']
+    const required = ['merchantId', 'password', 'apiUrl', 'callbackUrl']
     const missing = required.filter((key) => !this.config[key as keyof PayStationConfig])
 
     if (missing.length > 0) {
@@ -43,20 +40,25 @@ export class PayStationClient {
    */
   async initiatePayment(params: InitiatePaymentParams): Promise<PayStationInitiateResponse> {
     try {
-      const payload = {
-        merchant_id: this.config.merchantId,
+      const payload: Record<string, unknown> = {
+        merchantId: this.config.merchantId,
         password: this.config.password,
         invoice_number: params.orderNumber,
-        amount: params.amount.toFixed(2),
         currency: 'BDT',
-        customer_name: params.customerName,
-        customer_email: params.customerEmail,
-        customer_phone: params.customerPhone,
-        description: params.description || `Order ${params.orderNumber}`,
-        success_url: this.config.successUrl,
-        fail_url: this.config.failUrl,
-        cancel_url: this.config.cancelUrl,
-        mode: this.config.sandboxMode ? 'sandbox' : 'live',
+        payment_amount: params.amount,
+        reference: params.reference || params.orderNumber,
+        cust_name: params.customerName,
+        cust_phone: params.customerPhone,
+        cust_email: params.customerEmail,
+        callback_url: this.config.callbackUrl,
+      }
+
+      if (params.customerAddress) {
+        payload.cust_address = params.customerAddress
+      }
+
+      if (params.checkoutItems && params.checkoutItems.length > 0) {
+        payload.checkout_items = params.checkoutItems
       }
 
       const response = await fetch(`${this.config.apiUrl}/initiate-payment`, {
@@ -67,26 +69,20 @@ export class PayStationClient {
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'PayStation API error')
+      const data: PayStationInitiateResponse = await response.json()
+
+      if (data.status !== 'success' || !data.payment_url) {
+        console.error('PayStation initiate payment failed:', data.message)
+        return data
       }
 
-      const data = await response.json()
-
-      return {
-        success: true,
-        data: {
-          payment_url: data.payment_url,
-          invoice_number: data.invoice_number,
-          session_key: data.session_key,
-        },
-      }
+      return data
     } catch (error) {
       console.error('PayStation initiate payment error:', error)
       return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        status_code: 500,
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -97,18 +93,15 @@ export class PayStationClient {
    */
   async verifyTransaction(invoiceNumber: string): Promise<PayStationTransactionStatus> {
     try {
-      const payload = {
-        merchant_id: this.config.merchantId,
-        password: this.config.password,
-        invoice_number: invoiceNumber,
-      }
-
-      const response = await fetch(`${this.config.apiUrl}/v2/transaction-status`, {
+      const response = await fetch(`${this.config.apiUrl}/transaction-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'merchantId': this.config.merchantId,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          invoice_number: invoiceNumber,
+        }),
       })
 
       if (!response.ok) {
@@ -117,15 +110,25 @@ export class PayStationClient {
 
       const data = await response.json()
 
+      if (!data.data) {
+        return {
+          success: false,
+          error: data.message || 'No transaction data returned',
+        }
+      }
+
       return {
         success: true,
         data: {
-          status: data.status,
-          trx_id: data.trx_id,
-          invoice_number: data.invoice_number,
-          amount: parseFloat(data.amount),
-          currency: data.currency,
-          payment_time: data.payment_time,
+          trx_status: data.data.trx_status,
+          trx_id: data.data.trx_id,
+          invoice_number: data.data.invoice_number,
+          payment_amount: parseFloat(data.data.payment_amount),
+          order_date_time: data.data.order_date_time,
+          payer_mobile_no: data.data.payer_mobile_no,
+          payment_method: data.data.payment_method,
+          reference: data.data.reference,
+          checkout_items: data.data.checkout_items,
         },
       }
     } catch (error) {
@@ -134,35 +137,6 @@ export class PayStationClient {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       }
-    }
-  }
-
-  /**
-   * Verify HMAC signature from callback URL
-   * This prevents URL parameter tampering
-   */
-  verifyCallbackSignature(params: Record<string, string>, signature: string): boolean {
-    try {
-      // Create sorted query string (excluding signature)
-      const { token, ...restParams } = params
-      const sortedParams = Object.keys(restParams)
-        .sort()
-        .map((key) => `${key}=${restParams[key]}`)
-        .join('&')
-
-      // Generate HMAC signature
-      const expectedSignature = crypto
-        .createHmac('sha256', this.config.password)
-        .update(sortedParams)
-        .digest('hex')
-
-      return crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expectedSignature)
-      )
-    } catch (error) {
-      console.error('Signature verification error:', error)
-      return false
     }
   }
 }
