@@ -1,3 +1,4 @@
+import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { generateOrderNumber, calculateOrderTotal } from '@/lib/order-utils'
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
       const { data: newUser, error: userError } = await supabase
         .from('User')
         .insert({
+          id: crypto.randomUUID(),
           email: data.email,
           name: data.fullName,
           isGuest: true,
@@ -85,6 +87,7 @@ export async function POST(request: NextRequest) {
     const { data: address, error: addressError } = await supabase
       .from('Address')
       .insert({
+        id: crypto.randomUUID(),
         userId,
         fullName: data.fullName,
         phone: data.phone,
@@ -108,6 +111,7 @@ export async function POST(request: NextRequest) {
     const { data: order, error: orderError } = await supabase
       .from('Order')
       .insert({
+        id: crypto.randomUUID(),
         orderNumber,
         userId,
         total,
@@ -125,6 +129,7 @@ export async function POST(request: NextRequest) {
 
     // Create order items
     const orderItems = (cartItems as CartItem[]).map((item) => ({
+      id: crypto.randomUUID(),
       orderId: order.id,
       productId: item.productId,
       productName: item.productName,
