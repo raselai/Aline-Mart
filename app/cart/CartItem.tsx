@@ -3,15 +3,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
-import { Button } from '@/components/ui/button'
 import { Minus, Plus, X } from 'lucide-react'
 import { CartItem as CartItemType } from '@/store/cartStore'
 
 interface CartItemProps {
   item: CartItemType
+  isLast?: boolean
 }
 
-export default function CartItem({ item }: CartItemProps) {
+export default function CartItem({ item, isLast }: CartItemProps) {
   const { increaseQuantity, decreaseQuantity, removeItem, formatPrice } = useCart()
 
   const handleIncrease = () => {
@@ -31,115 +31,451 @@ export default function CartItem({ item }: CartItemProps) {
   const itemTotal = item.price * item.quantity
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-shadow">
-      <div className="flex gap-4">
-        {/* Product Image */}
-        <Link
-          href={`/products/${item.slug}`}
-          className="flex-shrink-0"
-        >
-          <div className="w-24 h-24 sm:w-32 sm:h-32 bg-light-gray rounded-md overflow-hidden">
+    <div
+      style={{
+        borderBottom: isLast ? 'none' : '1px solid #E8E6E3',
+        padding: '24px 0',
+        transition: 'background-color 200ms',
+      }}
+    >
+      {/* Desktop layout */}
+      <div
+        className="hidden lg:grid"
+        style={{
+          gridTemplateColumns: '1fr 140px 140px 100px',
+          gap: '16px',
+          alignItems: 'center',
+        }}
+      >
+        {/* Product info */}
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
+          {/* Image */}
+          <Link
+            href={`/products/${item.slug}`}
+            style={{
+              flexShrink: 0,
+              display: 'block',
+              width: '100px',
+              height: '120px',
+              overflow: 'hidden',
+              backgroundColor: '#F5F5F5',
+            }}
+          >
             {item.image ? (
               <Image
                 src={item.image}
                 alt={item.name || 'Product image'}
-                width={128}
-                height={128}
-                className="w-full h-full object-cover hover:scale-105 transition-transform"
+                width={100}
+                height={120}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transition: 'transform 400ms ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#D1D5DB',
+                  fontSize: '12px',
+                }}
+              >
                 No image
               </div>
             )}
-          </div>
-        </Link>
+          </Link>
 
-        {/* Product Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              {/* Brand */}
-              <p className="text-xs text-secondary uppercase tracking-wide mb-1">
-                {item.brand}
-              </p>
-
-              {/* Product Name */}
-              <Link href={`/products/${item.slug}`}>
-                <h3 className="font-semibold text-charcoal hover:text-burgundy transition-colors line-clamp-2">
-                  {item.name}
-                </h3>
-              </Link>
-
-              {/* Variant Info */}
-              {(item.color || item.size) && (
-                <div className="mt-2 flex flex-wrap gap-2 text-sm text-secondary">
-                  {item.color && (
-                    <span>Color: {item.color}</span>
-                  )}
-                  {item.size && (
-                    <span>Size: {item.size}</span>
-                  )}
-                </div>
-              )}
-
-              {/* Price (Mobile) */}
-              <p className="mt-2 sm:hidden font-semibold text-charcoal">
-                {formatPrice(item.price)}
-              </p>
-            </div>
-
-            {/* Remove Button */}
-            <button
-              onClick={handleRemove}
-              className="flex-shrink-0 p-2 hover:bg-red-50 rounded-full transition-colors group"
-              aria-label="Remove item"
+          {/* Details */}
+          <div style={{ minWidth: 0 }}>
+            <p
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                color: '#8e2157',
+                marginBottom: '4px',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+              }}
             >
-              <X className="w-4 h-4 text-burgundy group-hover:text-red-600" />
+              {item.brand}
+            </p>
+            <Link
+              href={`/products/${item.slug}`}
+              style={{ textDecoration: 'none' }}
+            >
+              <h3
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  lineHeight: 1.4,
+                  transition: 'color 200ms',
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'normal',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  margin: 0,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#8e2157')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#2C2C2C')}
+              >
+                {item.name}
+              </h3>
+            </Link>
+            {(item.color || item.size) && (
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#6B7280',
+                  marginTop: '6px',
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                }}
+              >
+                {[item.color, item.size].filter(Boolean).join(' / ')}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Quantity controls */}
+        <div>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              border: '1px solid #E8E6E3',
+            }}
+          >
+            <button
+              onClick={handleDecrease}
+              disabled={item.quantity <= 1}
+              style={{
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                opacity: item.quantity <= 1 ? 0.3 : 1,
+                transition: 'background-color 200ms',
+                color: '#2C2C2C',
+              }}
+              onMouseEnter={(e) => {
+                if (item.quantity > 1) e.currentTarget.style.backgroundColor = '#F5F5F5'
+              }}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              aria-label="Decrease quantity"
+            >
+              <Minus style={{ width: '14px', height: '14px' }} />
+            </button>
+            <span
+              style={{
+                width: '44px',
+                textAlign: 'center',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#2C2C2C',
+                borderLeft: '1px solid #E8E6E3',
+                borderRight: '1px solid #E8E6E3',
+                lineHeight: '40px',
+              }}
+            >
+              {item.quantity}
+            </span>
+            <button
+              onClick={handleIncrease}
+              style={{
+                width: '40px',
+                height: '40px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 200ms',
+                color: '#2C2C2C',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F5F5F5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              aria-label="Increase quantity"
+            >
+              <Plus style={{ width: '14px', height: '14px' }} />
             </button>
           </div>
+        </div>
 
-          {/* Quantity and Price Row (Desktop) */}
-          <div className="mt-4 flex items-center justify-between">
-            {/* Quantity Selector */}
-            <div className="flex items-center border border-gray-200 rounded-md">
-              <button
-                onClick={handleDecrease}
-                disabled={item.quantity <= 1}
-                className="p-2 hover:bg-light-gray disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                aria-label="Decrease quantity"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="px-4 py-2 font-semibold text-charcoal min-w-[50px] text-center">
-                {item.quantity}
-              </span>
-              <button
-                onClick={handleIncrease}
-                className="p-2 hover:bg-light-gray transition-colors"
-                aria-label="Increase quantity"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Price (Desktop) */}
-            <div className="hidden sm:block text-right">
-              <p className="text-sm text-secondary">
-                {formatPrice(item.price)} each
-              </p>
-              <p className="font-bold text-lg text-charcoal">
-                {formatPrice(itemTotal)}
-              </p>
-            </div>
-          </div>
-
-          {/* Total (Mobile) */}
-          <div className="mt-3 sm:hidden text-right">
-            <p className="text-sm text-secondary">Subtotal</p>
-            <p className="font-bold text-lg text-charcoal">
-              {formatPrice(itemTotal)}
+        {/* Price */}
+        <div style={{ textAlign: 'right' }}>
+          <p
+            style={{
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#2C2C2C',
+              margin: 0,
+            }}
+          >
+            {formatPrice(itemTotal)}
+          </p>
+          {item.quantity > 1 && (
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#9CA3AF',
+                marginTop: '4px',
+              }}
+            >
+              {formatPrice(item.price)} each
             </p>
+          )}
+        </div>
+
+        {/* Remove */}
+        <div style={{ textAlign: 'right' }}>
+          <button
+            onClick={handleRemove}
+            style={{
+              width: '44px',
+              height: '44px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#9CA3AF',
+              transition: 'all 200ms',
+              borderRadius: '50%',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#DC2626'
+              e.currentTarget.style.backgroundColor = '#FEF2F2'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#9CA3AF'
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            aria-label="Remove item"
+          >
+            <X style={{ width: '18px', height: '18px' }} />
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile layout */}
+      <div className="lg:hidden">
+        <div style={{ display: 'flex', gap: '16px' }}>
+          {/* Image */}
+          <Link
+            href={`/products/${item.slug}`}
+            style={{
+              flexShrink: 0,
+              display: 'block',
+              width: '90px',
+              height: '110px',
+              overflow: 'hidden',
+              backgroundColor: '#F5F5F5',
+            }}
+          >
+            {item.image ? (
+              <Image
+                src={item.image}
+                alt={item.name || 'Product image'}
+                width={90}
+                height={110}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#D1D5DB',
+                  fontSize: '11px',
+                }}
+              >
+                No image
+              </div>
+            )}
+          </Link>
+
+          {/* Details */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+              <div style={{ minWidth: 0 }}>
+                <p
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    letterSpacing: '1.5px',
+                    textTransform: 'uppercase',
+                    color: '#8e2157',
+                    marginBottom: '2px',
+                  }}
+                >
+                  {item.brand}
+                </p>
+                <Link href={`/products/${item.slug}`} style={{ textDecoration: 'none' }}>
+                  <h3
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: '#2C2C2C',
+                      lineHeight: 1.3,
+                      margin: 0,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {item.name}
+                  </h3>
+                </Link>
+              </div>
+              <button
+                onClick={handleRemove}
+                style={{
+                  flexShrink: 0,
+                  width: '44px',
+                  height: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#9CA3AF',
+                  marginTop: '-8px',
+                  marginRight: '-8px',
+                }}
+                aria-label="Remove item"
+              >
+                <X style={{ width: '16px', height: '16px' }} />
+              </button>
+            </div>
+
+            {(item.color || item.size) && (
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  marginTop: '4px',
+                }}
+              >
+                {[item.color, item.size].filter(Boolean).join(' / ')}
+              </p>
+            )}
+
+            {/* Quantity + Price row */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginTop: '12px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  border: '1px solid #E8E6E3',
+                }}
+              >
+                <button
+                  onClick={handleDecrease}
+                  disabled={item.quantity <= 1}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: item.quantity <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: item.quantity <= 1 ? 0.3 : 1,
+                    color: '#2C2C2C',
+                  }}
+                  aria-label="Decrease quantity"
+                >
+                  <Minus style={{ width: '14px', height: '14px' }} />
+                </button>
+                <span
+                  style={{
+                    width: '36px',
+                    textAlign: 'center',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: '#2C2C2C',
+                    borderLeft: '1px solid #E8E6E3',
+                    borderRight: '1px solid #E8E6E3',
+                    lineHeight: '36px',
+                  }}
+                >
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={handleIncrease}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#2C2C2C',
+                  }}
+                  aria-label="Increase quantity"
+                >
+                  <Plus style={{ width: '14px', height: '14px' }} />
+                </button>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <p
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    color: '#2C2C2C',
+                    margin: 0,
+                  }}
+                >
+                  {formatPrice(itemTotal)}
+                </p>
+                {item.quantity > 1 && (
+                  <p style={{ fontSize: '11px', color: '#9CA3AF', marginTop: '2px' }}>
+                    {formatPrice(item.price)} each
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

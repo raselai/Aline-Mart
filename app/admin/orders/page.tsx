@@ -25,6 +25,7 @@ function OrderStatusBadge({ status }: { status: string }) {
 function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate }: OrderDetailsModalProps) {
   const [updating, setUpdating] = useState(false)
   const [trackingNumber, setTrackingNumber] = useState('')
+  const [trackingFocused, setTrackingFocused] = useState(false)
 
   if (!isOpen || !order) return null
 
@@ -40,170 +41,620 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate }: OrderDeta
   }
 
   const getStatusIcon = (status: string) => {
+    const iconStyle = { width: '18px', height: '18px' }
     switch (status) {
-      case 'PENDING': return <Clock className="w-5 h-5" />
-      case 'PROCESSING': return <Package className="w-5 h-5" />
-      case 'SHIPPED': return <Truck className="w-5 h-5" />
-      case 'DELIVERED': return <CheckCircle className="w-5 h-5" />
-      case 'CANCELLED': return <XCircle className="w-5 h-5" />
-      default: return <Clock className="w-5 h-5" />
+      case 'PENDING': return <Clock style={iconStyle} />
+      case 'PROCESSING': return <Package style={iconStyle} />
+      case 'SHIPPED': return <Truck style={iconStyle} />
+      case 'DELIVERED': return <CheckCircle style={iconStyle} />
+      case 'CANCELLED': return <XCircle style={iconStyle} />
+      default: return <Clock style={iconStyle} />
     }
   }
 
+  const sectionHeadingStyle: React.CSSProperties = {
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '1.5px',
+    textTransform: 'uppercase',
+    color: '#9CA3AF',
+    marginBottom: '14px',
+    whiteSpace: 'normal',
+    wordBreak: 'normal',
+    display: 'block',
+    minWidth: '100%',
+  }
+
+  const textStyle: React.CSSProperties = {
+    whiteSpace: 'normal',
+    wordBreak: 'normal',
+    overflowWrap: 'normal',
+    display: 'block',
+    minWidth: '100%',
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
         onClick={onClose}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.45)',
+          backdropFilter: 'blur(2px)',
+        }}
       />
 
       {/* Modal */}
       <div
-        className="relative bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto m-4"
         onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'relative',
+          backgroundColor: '#FFFFFF',
+          width: '100%',
+          maxWidth: '780px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          margin: '16px',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          border: '1px solid #E8E6E3',
+          minWidth: '320px',
+        }}
       >
+        {/* Top accent line */}
+        <div
+          style={{
+            height: '3px',
+            background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+          }}
+        />
+
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: '#e5e7eb' }}>
-          <div>
-            <h2 className="text-xl font-serif font-bold" style={{ color: '#2C2C2C' }}>
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            backgroundColor: '#FFFFFF',
+            borderBottom: '1px solid #E8E6E3',
+            padding: '24px 28px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '16px',
+            zIndex: 10,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <h2
+              className="font-serif"
+              style={{
+                fontSize: '22px',
+                fontWeight: 400,
+                color: '#2C2C2C',
+                letterSpacing: '-0.3px',
+                margin: 0,
+                ...textStyle,
+              }}
+            >
               Order {order.orderNumber}
             </h2>
-            <p className="text-sm" style={{ color: '#6B7280' }}>
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#6B7280',
+                marginTop: '6px',
+                ...textStyle,
+              }}
+            >
               {new Date(order.createdAt).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
               })}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            style={{
+              flexShrink: 0,
+              width: '44px',
+              height: '44px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'none',
+              border: '1px solid #E8E6E3',
+              cursor: 'pointer',
+              transition: 'all 200ms',
+              color: '#6B7280',
+              marginTop: '-4px',
+              marginRight: '-4px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F5F5F5'
+              e.currentTarget.style.borderColor = '#D1D5DB'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent'
+              e.currentTarget.style.borderColor = '#E8E6E3'
+            }}
+            aria-label="Close modal"
           >
-            <X className="w-5 h-5" style={{ color: '#6B7280' }} />
+            <X style={{ width: '18px', height: '18px' }} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div style={{ padding: '28px' }}>
           {/* Status & Payment Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm font-medium mb-2" style={{ color: '#6B7280' }}>Order Status</p>
-              <div className="flex items-center gap-2">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '16px',
+              marginBottom: '28px',
+            }}
+          >
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              <p style={sectionHeadingStyle}>Order Status</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {getStatusIcon(order.status)}
                 <OrderStatusBadge status={order.status} />
               </div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-sm font-medium mb-2" style={{ color: '#6B7280' }}>Payment Method</p>
-              <p className="font-medium" style={{ color: '#2C2C2C' }}>
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              <p style={sectionHeadingStyle}>Payment Method</p>
+              <p
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  margin: 0,
+                  ...textStyle,
+                }}
+              >
                 {getPaymentMethodName(order.paymentMethod)}
               </p>
             </div>
           </div>
 
           {/* Customer Info */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: '#2C2C2C' }}>Customer</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="font-medium" style={{ color: '#2C2C2C' }}>{order.user.name}</p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>{order.user.email}</p>
+          <div style={{ marginBottom: '28px' }}>
+            <p style={sectionHeadingStyle}>Customer</p>
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  margin: 0,
+                  ...textStyle,
+                }}
+              >
+                {order.user.name}
+              </p>
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#6B7280',
+                  marginTop: '4px',
+                  ...textStyle,
+                  overflowWrap: 'anywhere',
+                }}
+              >
+                {order.user.email}
+              </p>
             </div>
           </div>
 
           {/* Shipping Address */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: '#2C2C2C' }}>Shipping Address</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="font-medium" style={{ color: '#2C2C2C' }}>{order.shippingAddress.fullName}</p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>{order.shippingAddress.phone}</p>
-              <p className="text-sm mt-2" style={{ color: '#6B7280' }}>
-                {order.shippingAddress.addressLine1}
-                {order.shippingAddress.addressLine2 && <><br />{order.shippingAddress.addressLine2}</>}
+          <div style={{ marginBottom: '28px' }}>
+            <p style={sectionHeadingStyle}>Shipping Address</p>
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  color: '#2C2C2C',
+                  margin: 0,
+                  ...textStyle,
+                }}
+              >
+                {order.shippingAddress.fullName}
               </p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>
-                {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+              <p
+                style={{
+                  fontSize: '13px',
+                  color: '#6B7280',
+                  marginTop: '4px',
+                  ...textStyle,
+                }}
+              >
+                {order.shippingAddress.phone}
               </p>
-              <p className="text-sm" style={{ color: '#6B7280' }}>{order.shippingAddress.country}</p>
+              <div
+                style={{
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid #E8E6E3',
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#6B7280',
+                    margin: 0,
+                    lineHeight: 1.6,
+                    ...textStyle,
+                  }}
+                >
+                  {order.shippingAddress.addressLine1}
+                  {order.shippingAddress.addressLine2 && (
+                    <><br />{order.shippingAddress.addressLine2}</>
+                  )}
+                </p>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#6B7280',
+                    margin: 0,
+                    marginTop: '2px',
+                    ...textStyle,
+                  }}
+                >
+                  {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+                </p>
+                <p
+                  style={{
+                    fontSize: '14px',
+                    color: '#6B7280',
+                    margin: 0,
+                    marginTop: '2px',
+                    ...textStyle,
+                  }}
+                >
+                  {order.shippingAddress.country}
+                </p>
+              </div>
             </div>
           </div>
 
           {/* Order Items */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: '#2C2C2C' }}>Order Items</h3>
-            <div className="border rounded-lg overflow-hidden" style={{ borderColor: '#e5e7eb' }}>
-              <table className="w-full">
-                <thead style={{ backgroundColor: '#F5F5F5' }}>
-                  <tr>
-                    <th className="text-left px-4 py-3 text-sm font-medium" style={{ color: '#2C2C2C' }}>Product</th>
-                    <th className="text-center px-4 py-3 text-sm font-medium" style={{ color: '#2C2C2C' }}>Qty</th>
-                    <th className="text-right px-4 py-3 text-sm font-medium" style={{ color: '#2C2C2C' }}>Price</th>
-                    <th className="text-right px-4 py-3 text-sm font-medium" style={{ color: '#2C2C2C' }}>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {order.items.map((item) => (
-                    <tr key={item.id} className="border-t" style={{ borderColor: '#e5e7eb' }}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-start gap-3">
-                          {/* Product Image */}
-                          <div className="flex-shrink-0 w-16 h-16 rounded-md overflow-hidden bg-gray-100">
-                            {item.image ? (
-                              <Image
-                                src={item.image}
-                                alt={item.productName}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ImageOff className="w-6 h-6" style={{ color: '#9CA3AF' }} />
-                              </div>
-                            )}
+          <div style={{ marginBottom: '28px' }}>
+            <p style={sectionHeadingStyle}>
+              Order Items ({order.items.length})
+            </p>
+            <div
+              style={{
+                border: '1px solid #E8E6E3',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Table header */}
+              <div
+                className="hidden md:grid"
+                style={{
+                  gridTemplateColumns: '1fr 70px 100px 100px',
+                  gap: '12px',
+                  padding: '12px 20px',
+                  backgroundColor: '#FAFAF8',
+                  borderBottom: '1px solid #E8E6E3',
+                }}
+              >
+                {[
+                  { label: 'Product', align: 'left' as const },
+                  { label: 'Qty', align: 'center' as const },
+                  { label: 'Price', align: 'right' as const },
+                  { label: 'Total', align: 'right' as const },
+                ].map(({ label, align }) => (
+                  <span
+                    key={label}
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      letterSpacing: '1.5px',
+                      textTransform: 'uppercase',
+                      color: '#9CA3AF',
+                      textAlign: align,
+                    }}
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+
+              {/* Items */}
+              {order.items.map((item, index) => (
+                <div
+                  key={item.id}
+                  style={{
+                    borderTop: index === 0 ? 'none' : '1px solid #E8E6E3',
+                    padding: '16px 20px',
+                  }}
+                >
+                  {/* Desktop row */}
+                  <div
+                    className="hidden md:grid"
+                    style={{
+                      gridTemplateColumns: '1fr 70px 100px 100px',
+                      gap: '12px',
+                      alignItems: 'center',
+                    }}
+                  >
+                    {/* Product info */}
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center', minWidth: 0 }}>
+                      <div
+                        style={{
+                          flexShrink: 0,
+                          width: '56px',
+                          height: '56px',
+                          overflow: 'hidden',
+                          backgroundColor: '#F5F5F5',
+                          border: '1px solid #E8E6E3',
+                        }}
+                      >
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.productName}
+                            width={56}
+                            height={56}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <ImageOff style={{ width: '20px', height: '20px', color: '#D1D5DB' }} />
                           </div>
-                          {/* Product Details */}
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium" style={{ color: '#2C2C2C' }}>{item.productName}</p>
-                            <p className="text-sm" style={{ color: '#8e2157' }}>{item.brandName}</p>
-                            {item.vendor && (
-                              <p className="text-xs" style={{ color: '#6B7280' }}>Vendor: {item.vendor}</p>
-                            )}
-                            {item.variantName && (
-                              <p className="text-xs mt-1" style={{ color: '#6B7280' }}>{item.variantName}</p>
-                            )}
-                          </div>
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p
+                          style={{
+                            fontSize: '14px',
+                            fontWeight: 500,
+                            color: '#2C2C2C',
+                            margin: 0,
+                            whiteSpace: 'normal',
+                            wordBreak: 'normal',
+                            overflowWrap: 'normal',
+                          }}
+                        >
+                          {item.productName}
+                        </p>
+                        <p
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            letterSpacing: '0.5px',
+                            color: '#8e2157',
+                            margin: 0,
+                            marginTop: '2px',
+                          }}
+                        >
+                          {item.brandName}
+                        </p>
+                        {item.vendor && (
+                          <p style={{ fontSize: '12px', color: '#9CA3AF', margin: 0, marginTop: '2px' }}>
+                            Vendor: {item.vendor}
+                          </p>
+                        )}
+                        {item.variantName && (
+                          <p style={{ fontSize: '12px', color: '#6B7280', margin: 0, marginTop: '2px' }}>
+                            {item.variantName}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '14px', color: '#2C2C2C', textAlign: 'center', margin: 0 }}>
+                      {item.quantity}
+                    </p>
+                    <p style={{ fontSize: '14px', color: '#6B7280', textAlign: 'right', margin: 0 }}>
+                      {formatPrice(item.price)}
+                    </p>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#2C2C2C', textAlign: 'right', margin: 0 }}>
+                      {formatPrice(item.total)}
+                    </p>
+                  </div>
+
+                  {/* Mobile row */}
+                  <div className="md:hidden" style={{ display: 'flex', gap: '12px' }}>
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: '56px',
+                        height: '56px',
+                        overflow: 'hidden',
+                        backgroundColor: '#F5F5F5',
+                        border: '1px solid #E8E6E3',
+                      }}
+                    >
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.productName}
+                          width={56}
+                          height={56}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <ImageOff style={{ width: '20px', height: '20px', color: '#D1D5DB' }} />
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-center align-middle" style={{ color: '#2C2C2C' }}>{item.quantity}</td>
-                      <td className="px-4 py-3 text-right align-middle" style={{ color: '#2C2C2C' }}>{formatPrice(item.price)}</td>
-                      <td className="px-4 py-3 text-right align-middle font-medium" style={{ color: '#2C2C2C' }}>{formatPrice(item.total)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      )}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontSize: '14px',
+                          fontWeight: 500,
+                          color: '#2C2C2C',
+                          margin: 0,
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal',
+                        }}
+                      >
+                        {item.productName}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#8e2157', margin: 0, marginTop: '2px' }}>
+                        {item.brandName}
+                      </p>
+                      {item.variantName && (
+                        <p style={{ fontSize: '12px', color: '#6B7280', margin: 0, marginTop: '2px' }}>
+                          {item.variantName}
+                        </p>
+                      )}
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'baseline',
+                          marginTop: '8px',
+                        }}
+                      >
+                        <span style={{ fontSize: '13px', color: '#6B7280' }}>
+                          Qty: {item.quantity} x {formatPrice(item.price)}
+                        </span>
+                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#2C2C2C' }}>
+                          {formatPrice(item.total)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Order Summary */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3" style={{ color: '#2C2C2C' }}>Summary</h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              <div className="flex justify-between">
-                <span style={{ color: '#6B7280' }}>Subtotal</span>
-                <span style={{ color: '#2C2C2C' }}>{formatPrice(order.total - (order.shippingCost || 0))}</span>
+          <div style={{ marginBottom: '28px' }}>
+            <p style={sectionHeadingStyle}>Summary</p>
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  padding: '8px 0',
+                }}
+              >
+                <span style={{ fontSize: '14px', color: '#6B7280', whiteSpace: 'normal', wordBreak: 'normal' }}>
+                  Subtotal
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#2C2C2C' }}>
+                  {formatPrice(order.total - (order.shippingCost || 0))}
+                </span>
               </div>
-              <div className="flex justify-between">
-                <span style={{ color: '#6B7280' }}>Shipping</span>
-                <span style={{ color: '#2C2C2C' }}>{formatPrice(order.shippingCost || 0)}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  padding: '8px 0',
+                }}
+              >
+                <span style={{ fontSize: '14px', color: '#6B7280', whiteSpace: 'normal', wordBreak: 'normal' }}>
+                  Shipping
+                </span>
+                <span style={{ fontSize: '14px', fontWeight: 500, color: '#2C2C2C' }}>
+                  {formatPrice(order.shippingCost || 0)}
+                </span>
               </div>
-              <div className="flex justify-between pt-2 border-t" style={{ borderColor: '#e5e7eb' }}>
-                <span className="font-semibold" style={{ color: '#2C2C2C' }}>Total</span>
-                <span className="font-semibold" style={{ color: '#8e2157' }}>{formatPrice(order.total)}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  paddingTop: '12px',
+                  marginTop: '8px',
+                  borderTop: '1px solid #E8E6E3',
+                }}
+              >
+                <span
+                  className="font-serif"
+                  style={{
+                    fontSize: '16px',
+                    fontWeight: 400,
+                    color: '#2C2C2C',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Total
+                </span>
+                <span
+                  className="font-serif"
+                  style={{
+                    fontSize: '22px',
+                    fontWeight: 400,
+                    color: '#8e2157',
+                    letterSpacing: '-0.3px',
+                  }}
+                >
+                  {formatPrice(order.total)}
+                </span>
               </div>
             </div>
           </div>
@@ -211,12 +662,23 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate }: OrderDeta
           {/* Status Actions */}
           {availableTransitions.length > 0 && (
             <div>
-              <h3 className="text-lg font-semibold mb-3" style={{ color: '#2C2C2C' }}>Update Status</h3>
+              <p style={sectionHeadingStyle}>Update Status</p>
 
               {/* Tracking number input for shipping */}
               {availableTransitions.includes('SHIPPED') && (
-                <div className="mb-4">
-                  <label htmlFor="tracking" className="block text-sm font-medium mb-2" style={{ color: '#6B7280' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <label
+                    htmlFor="tracking"
+                    style={{
+                      display: 'block',
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      color: '#6B7280',
+                      marginBottom: '8px',
+                      whiteSpace: 'normal',
+                      wordBreak: 'normal',
+                    }}
+                  >
                     Tracking Number (optional)
                   </label>
                   <input
@@ -224,28 +686,60 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate }: OrderDeta
                     id="tracking"
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
+                    onFocus={() => setTrackingFocused(true)}
+                    onBlur={() => setTrackingFocused(false)}
                     placeholder="Enter tracking number..."
-                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
-                    style={{ borderColor: '#d1d5db' }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 14px',
+                      fontSize: '14px',
+                      color: '#2C2C2C',
+                      backgroundColor: '#FAFAF8',
+                      border: trackingFocused ? '1px solid #8e2157' : '1px solid #E8E6E3',
+                      outline: 'none',
+                      transition: 'border-color 200ms',
+                      boxSizing: 'border-box',
+                    }}
                   />
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-3">
-                {availableTransitions.map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(status as OrderStatus)}
-                    disabled={updating}
-                    className="px-4 py-2 rounded-md font-medium transition-all disabled:opacity-50"
-                    style={{
-                      backgroundColor: status === 'CANCELLED' ? '#FEE2E2' : '#fdf2f8',
-                      color: status === 'CANCELLED' ? '#991B1B' : '#8e2157'
-                    }}
-                  >
-                    {updating ? 'Updating...' : `Mark as ${getStatusDisplayName(status)}`}
-                  </button>
-                ))}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                {availableTransitions.map((status) => {
+                  const isCancelled = status === 'CANCELLED'
+                  return (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status as OrderStatus)}
+                      disabled={updating}
+                      style={{
+                        padding: '12px 20px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        letterSpacing: '0.5px',
+                        border: isCancelled ? '1px solid #FECACA' : '1px solid #E8E6E3',
+                        backgroundColor: isCancelled ? '#FEF2F2' : '#FAFAF8',
+                        color: isCancelled ? '#991B1B' : '#8e2157',
+                        cursor: updating ? 'not-allowed' : 'pointer',
+                        opacity: updating ? 0.5 : 1,
+                        transition: 'all 200ms',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!updating) {
+                          e.currentTarget.style.backgroundColor = isCancelled ? '#FEE2E2' : '#fdf2f8'
+                          e.currentTarget.style.borderColor = isCancelled ? '#FCA5A5' : '#8e2157'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = isCancelled ? '#FEF2F2' : '#FAFAF8'
+                        e.currentTarget.style.borderColor = isCancelled ? '#FECACA' : '#E8E6E3'
+                      }}
+                    >
+                      {updating ? 'Updating...' : `Mark as ${getStatusDisplayName(status)}`}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
