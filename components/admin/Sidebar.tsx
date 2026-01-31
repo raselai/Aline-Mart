@@ -11,9 +11,11 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   BarChart3,
   Store,
-  Warehouse
+  Warehouse,
+  DollarSign,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -21,6 +23,7 @@ interface NavItem {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
+  children?: { name: string; href: string }[]
 }
 
 const navItems: NavItem[] = [
@@ -28,6 +31,20 @@ const navItems: NavItem[] = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Inventory', href: '/admin/inventory', icon: Warehouse },
+  {
+    name: 'Accounts',
+    href: '/admin/accounts',
+    icon: DollarSign,
+    children: [
+      { name: 'Dashboard', href: '/admin/accounts' },
+      { name: 'Transactions', href: '/admin/accounts/transactions' },
+      { name: 'COD Collections', href: '/admin/accounts/cod-collections' },
+      { name: 'Refunds', href: '/admin/accounts/refunds' },
+      { name: 'Vendor Payouts', href: '/admin/accounts/vendor-payouts' },
+      { name: 'Reports', href: '/admin/accounts/reports' },
+      { name: 'Settings', href: '/admin/accounts/settings' },
+    ],
+  },
   { name: 'Vendors', href: '/admin/vendors', icon: Store },
   { name: 'Brands', href: '/admin/brands', icon: Tag },
   { name: 'Categories', href: '/admin/categories', icon: Layers },
@@ -38,6 +55,28 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
+    // Auto-expand if current path matches
+    const initial: Record<string, boolean> = {}
+    for (const item of navItems) {
+      if (item.children && typeof window !== 'undefined') {
+        // Will be set in effect
+      }
+    }
+    return initial
+  })
+
+  // Auto-expand parent menu if child is active
+  const isChildActive = (item: NavItem) =>
+    item.children?.some((child) =>
+      child.href === '/admin/accounts'
+        ? pathname === '/admin/accounts'
+        : pathname.startsWith(child.href)
+    )
+
+  const toggleMenu = (href: string) => {
+    setExpandedMenus((prev) => ({ ...prev, [href]: !prev[href] }))
+  }
 
   return (
     <aside
@@ -93,44 +132,108 @@ export default function Sidebar() {
         <ul className="space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive = item.href === '/admin'
-              ? pathname === '/admin'
-              : pathname.startsWith(item.href)
+            const hasChildren = !!item.children
+            const childActive = hasChildren && isChildActive(item)
+            const isActive = hasChildren
+              ? childActive
+              : item.href === '/admin'
+                ? pathname === '/admin'
+                : pathname.startsWith(item.href)
+            const isExpanded = expandedMenus[item.href] || childActive
 
             return (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="flex items-center px-4 py-3 rounded-md transition-all"
-                  style={{
-                    backgroundColor: isActive ? '#fdf2f8' : 'transparent',
-                    color: isActive ? '#8e2157' : '#6B7280',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = '#f9fafb'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.backgroundColor = 'transparent'
-                    }
-                  }}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <span
-                      className="ml-3 font-medium"
+                {hasChildren ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (collapsed) return
+                        toggleMenu(item.href)
+                      }}
+                      className="w-full flex items-center px-4 py-3 rounded-md transition-all"
                       style={{
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis'
+                        backgroundColor: isActive ? '#fdf2f8' : 'transparent',
+                        color: isActive ? '#8e2157' : '#6B7280',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) e.currentTarget.style.backgroundColor = '#f9fafb'
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'
                       }}
                     >
-                      {item.name}
-                    </span>
-                  )}
-                </Link>
+                      <Icon className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && (
+                        <>
+                          <span
+                            className="ml-3 font-medium flex-1 text-left"
+                            style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                          >
+                            {item.name}
+                          </span>
+                          <ChevronDown
+                            className="w-4 h-4 transition-transform"
+                            style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          />
+                        </>
+                      )}
+                    </button>
+                    {!collapsed && isExpanded && item.children && (
+                      <ul className="ml-8 mt-1 space-y-1">
+                        {item.children.map((child) => {
+                          const isSubActive = child.href === '/admin/accounts'
+                            ? pathname === '/admin/accounts'
+                            : pathname.startsWith(child.href)
+                          return (
+                            <li key={child.href}>
+                              <Link
+                                href={child.href}
+                                className="block px-4 py-2 rounded-md text-sm transition-all"
+                                style={{
+                                  backgroundColor: isSubActive ? '#fdf2f8' : 'transparent',
+                                  color: isSubActive ? '#8e2157' : '#6B7280',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSubActive) e.currentTarget.style.backgroundColor = '#f9fafb'
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSubActive) e.currentTarget.style.backgroundColor = 'transparent'
+                                }}
+                              >
+                                {child.name}
+                              </Link>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="flex items-center px-4 py-3 rounded-md transition-all"
+                    style={{
+                      backgroundColor: isActive ? '#fdf2f8' : 'transparent',
+                      color: isActive ? '#8e2157' : '#6B7280',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.backgroundColor = '#f9fafb'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    {!collapsed && (
+                      <span
+                        className="ml-3 font-medium"
+                        style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      >
+                        {item.name}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </li>
             )
           })}

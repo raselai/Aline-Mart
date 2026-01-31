@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { generateOrderNumber, calculateOrderTotal } from '@/lib/order-utils'
 import { validateStock, decrementStockWithLog } from '@/lib/inventory'
+import { createTransaction } from '@/lib/accounts'
 import { checkoutSchema } from '@/types/checkout'
 import type { CartItem } from '@/types/checkout'
 
@@ -174,6 +175,31 @@ export async function POST(request: NextRequest) {
         console.error('Failed to decrement stock for COD order:', stockError)
         // Don't fail the order - log for manual review
       }
+
+      // Create COD collection record
+      try {
+        await supabase.from('CODCollection').insert({
+          id: crypto.randomUUID(),
+          orderId: order.id,
+          expectedAmount: total,
+          status: 'PENDING',
+        })
+        await supabase.from('Order').update({ codCollectionStatus: 'PENDING' }).eq('id', order.id)
+      } catch (codError) {
+        console.error('Failed to create COD collection record:', codError)
+      }
+    }
+
+    // Create SALE transaction for the order
+    try {
+      await createTransaction({
+        type: 'SALE',
+        amount: total,
+        orderId: order.id,
+        description: `Order ${orderNumber} - ${data.paymentMethod}`,
+      })
+    } catch (txError) {
+      console.error('Failed to create sale transaction:', txError)
     }
 
     return NextResponse.json({

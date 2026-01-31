@@ -39,6 +39,9 @@ export interface Vendor {
   // Payment Information - Mobile Banking
   mobileBanking?: MobileBanking | null
 
+  // Commission
+  commissionRate?: number | null
+
   // Notes
   notes?: string | null
 
