@@ -11,13 +11,18 @@ export interface Order {
   paymentMethod: PaymentMethod
   shippingCost: number
   paystationTransactionId?: string | null
+  cancellationReason?: string | null
   createdAt: string
   updatedAt: string
 }
 
+export type OrderItemStatus = 'ACTIVE' | 'CANCELLED' | 'RETURNED' | 'REFUNDED'
+
 export interface OrderItem {
   id: string
   orderId: string
+  subOrderNumber?: string | null
+  status: OrderItemStatus
   productId: string
   productName: string
   brandName: string
@@ -26,8 +31,10 @@ export interface OrderItem {
   quantity: number
   price: number
   total: number
-  image?: string | null
+  costPrice?: number | null
   vendor?: string | null
+  itemCancellationReason?: string | null
+  image?: string | null
 }
 
 export interface OrderWithDetails extends Order {

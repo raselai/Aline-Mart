@@ -40,6 +40,7 @@ export async function GET(request: Request, props: RouteParams) {
         paymentMethod,
         shippingCost,
         paystationTransactionId,
+        cancellationReason,
         createdAt,
         updatedAt,
         userId,
@@ -62,6 +63,8 @@ export async function GET(request: Request, props: RouteParams) {
         ),
         OrderItem (
           id,
+          subOrderNumber,
+          status,
           productId,
           productName,
           brandName,
@@ -69,7 +72,10 @@ export async function GET(request: Request, props: RouteParams) {
           variantName,
           quantity,
           price,
-          total
+          total,
+          costPrice,
+          vendor,
+          itemCancellationReason
         )
       `)
       .eq('id', id)
@@ -86,16 +92,15 @@ export async function GET(request: Request, props: RouteParams) {
       throw error
     }
 
-    // Fetch product details (image and vendor) for each order item
+    // Fetch product images for each order item
     const productIds = (order.OrderItem || []).map((item: any) => item.productId).filter(Boolean)
-    let productDetailsMap: Record<string, { image: string | null; vendor: string | null }> = {}
+    let productImageMap: Record<string, string | null> = {}
 
     if (productIds.length > 0) {
       const { data: products } = await supabase
         .from('Product')
         .select(`
           id,
-          vendor,
           ProductImage (
             url,
             order
@@ -105,15 +110,9 @@ export async function GET(request: Request, props: RouteParams) {
 
       if (products) {
         products.forEach((product: any) => {
-          // Get the first image (sorted by order)
           const images = product.ProductImage || []
           const sortedImages = images.sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-          const firstImage = sortedImages[0]?.url || null
-
-          productDetailsMap[product.id] = {
-            image: firstImage,
-            vendor: product.vendor || null
-          }
+          productImageMap[product.id] = sortedImages[0]?.url || null
         })
       }
     }
@@ -127,6 +126,7 @@ export async function GET(request: Request, props: RouteParams) {
       paymentMethod: order.paymentMethod || 'COD',
       shippingCost: order.shippingCost || 0,
       paystationTransactionId: order.paystationTransactionId,
+      cancellationReason: order.cancellationReason || null,
       createdAt: order.createdAt,
       updatedAt: order.updatedAt,
       userId: order.userId,
@@ -152,8 +152,8 @@ export async function GET(request: Request, props: RouteParams) {
       items: (order.OrderItem || []).map((item: any) => ({
         ...item,
         orderId: order.id,
-        image: productDetailsMap[item.productId]?.image || null,
-        vendor: productDetailsMap[item.productId]?.vendor || null
+        status: item.status || 'ACTIVE',
+        image: productImageMap[item.productId] || null,
       }))
     }
 
@@ -186,7 +186,7 @@ export async function PATCH(request: Request, props: RouteParams) {
     const params = await props.params
     const { id } = params
     const body = await request.json()
-    const { status: newStatus, trackingNumber } = body
+    const { status: newStatus, trackingNumber, cancellationReason } = body
 
     if (!newStatus) {
       return NextResponse.json(
@@ -238,12 +238,18 @@ export async function PATCH(request: Request, props: RouteParams) {
     }
 
     // Update order status
+    const updateData: Record<string, string> = {
+      status: newStatus,
+      updatedAt: new Date().toISOString(),
+    }
+
+    if (newStatus === 'CANCELLED' && cancellationReason) {
+      updateData.cancellationReason = cancellationReason
+    }
+
     const { data: updatedOrder, error: updateError } = await supabase
       .from('Order')
-      .update({
-        status: newStatus,
-        updatedAt: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single()

@@ -16,9 +16,15 @@ export default async function AdminLayout({
   // ⚠️ CRITICAL: Skip auth check for login page to prevent redirect loop
   // DO NOT REMOVE THIS CHECK - it prevents infinite 307 redirects
   const isLoginPage = pathname === '/admin/login' || pathname.startsWith('/admin/(auth)')
+  const isInvoicePage = pathname.includes('/invoice')
 
   if (isLoginPage) {
     // Just render children without sidebar/header for login page
+    return <>{children}</>
+  }
+
+  // Render invoice pages without sidebar/header for clean printing
+  if (isInvoicePage) {
     return <>{children}</>
   }
 

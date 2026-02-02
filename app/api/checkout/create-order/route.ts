@@ -128,10 +128,32 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create order')
     }
 
-    // Create order items
-    const orderItems = (cartItems as CartItem[]).map((item) => ({
+    // Fetch cost prices and vendor from Product table to capture at order time
+    const productIds = (cartItems as CartItem[]).map((item) => item.productId)
+    const productDataMap: Record<string, { costPrice: number | null; vendor: string | null }> = {}
+
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from('Product')
+        .select('id, costPrice, vendor')
+        .in('id', productIds)
+
+      if (products) {
+        for (const product of products) {
+          productDataMap[product.id] = {
+            costPrice: product.costPrice ?? null,
+            vendor: product.vendor ?? null,
+          }
+        }
+      }
+    }
+
+    // Create order items with sub-order numbers
+    const orderItems = (cartItems as CartItem[]).map((item, index) => ({
       id: crypto.randomUUID(),
       orderId: order.id,
+      subOrderNumber: `${orderNumber}-${index + 1}`,
+      status: 'ACTIVE',
       productId: item.productId,
       productName: item.productName,
       brandName: item.brandName,
@@ -140,6 +162,8 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       price: item.price,
       total: item.price * item.quantity,
+      costPrice: productDataMap[item.productId]?.costPrice ?? null,
+      vendor: productDataMap[item.productId]?.vendor ?? null,
     }))
 
     const { error: itemsError } = await supabase
