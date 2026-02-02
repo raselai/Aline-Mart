@@ -302,55 +302,88 @@ export default function RefundsPage() {
 
       {/* Order Search Modal (for new refund) */}
       {showOrderSearch && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-serif font-bold" style={{ color: '#2C2C2C' }}>Select Order</h2>
-              <button onClick={() => setShowOrderSearch(false)} className="p-1 hover:bg-gray-100 rounded">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div
+            className="w-full bg-white rounded-lg shadow-xl p-8"
+            style={{ maxWidth: '600px', minWidth: '320px' }}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2
+                className="text-xl font-serif font-bold"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Select Order
+              </h2>
+              <button onClick={() => setShowOrderSearch(false)} className="p-2 hover:bg-gray-100 rounded">
                 <XCircle size={20} style={{ color: '#6B7280' }} />
               </button>
             </div>
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-6">
               <input
                 type="text"
                 value={orderSearch}
                 onChange={(e) => setOrderSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchOrders()}
                 placeholder="Search by order number..."
-                className="flex-1 px-4 py-2 border rounded-md"
-                style={{ borderColor: '#d1d5db' }}
+                className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+                style={{
+                  borderColor: '#d1d5db',
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'normal',
+                }}
               />
               <button
                 onClick={searchOrders}
                 disabled={searchingOrders}
-                className="px-4 py-2 rounded-md text-white"
-                style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+                className="px-4 py-2 rounded-md text-white transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                  cursor: searchingOrders ? 'not-allowed' : 'pointer',
+                  opacity: searchingOrders ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {searchingOrders ? '...' : 'Search'}
               </button>
             </div>
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="space-y-2" style={{ maxHeight: '320px', overflowY: 'auto', width: '100%' }}>
               {orderResults.map((order) => (
                 <button
                   key={order.id}
                   onClick={() => selectOrderForRefund(order.id)}
-                  className="w-full text-left p-3 rounded-md border hover:bg-gray-50 transition-colors"
-                  style={{ borderColor: '#e5e7eb' }}
+                  className="w-full text-left p-3 rounded-md border transition-colors"
+                  style={{ borderColor: '#e5e7eb', backgroundColor: '#ffffff', width: '100%', minWidth: '280px' }}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-mono text-sm" style={{ color: '#8e2157' }}>{order.orderNumber}</span>
-                    <span className="font-medium" style={{ color: '#2C2C2C' }}>
+                    <span className="text-sm" style={{
+                      color: '#8e2157',
+                      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {order.orderNumber}
+                    </span>
+                    <span className="font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>
                       ৳{Number(order.total).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between mt-1">
-                    <span className="text-xs" style={{ color: '#6B7280' }}>{order.status}</span>
-                    <span className="text-xs" style={{ color: '#6B7280' }}>{order.paymentMethod}</span>
+                    <span className="text-xs" style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>{order.status}</span>
+                    <span className="text-xs" style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>{order.paymentMethod}</span>
                   </div>
                 </button>
               ))}
               {orderResults.length === 0 && orderSearch && !searchingOrders && (
-                <p className="text-center py-4 text-sm" style={{ color: '#6B7280' }}>No orders found</p>
+                <p className="text-center py-4 text-sm" style={{
+                  color: '#6B7280',
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'normal',
+                  display: 'block',
+                  minWidth: '100%',
+                }}>
+                  No orders found
+                </p>
               )}
             </div>
           </div>

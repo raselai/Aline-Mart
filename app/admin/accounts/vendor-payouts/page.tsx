@@ -218,65 +218,108 @@ export default function VendorPayoutsPage() {
       </div>
 
       {/* Payouts Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div
+        className="bg-white rounded-lg shadow-sm"
+        style={{ width: '100%', minWidth: '320px', overflow: 'hidden' }}
+      >
         {loading ? (
           <div className="p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#8e2157' }} />
-            <p className="mt-4" style={{ color: '#6B7280' }}>Loading payouts...</p>
+            <p
+              className="mt-4"
+              style={{
+                color: '#6B7280',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              Loading payouts...
+            </p>
           </div>
         ) : payouts.length === 0 ? (
           <div className="p-12 text-center">
             <DollarSign className="w-16 h-16 mx-auto mb-4" style={{ color: '#9CA3AF' }} />
-            <p className="text-lg mb-2" style={{ color: '#6B7280' }}>No payouts found</p>
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>Use "Calculate Payouts" to create vendor payouts</p>
+            <p
+              className="text-lg mb-2"
+              style={{
+                color: '#6B7280',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              No payouts found
+            </p>
+            <p
+              className="text-sm"
+              style={{
+                color: '#9CA3AF',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              Use &quot;Calculate Payouts&quot; to create vendor payouts
+            </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: '900px' }}>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: '900px', borderCollapse: 'collapse' }}>
               <thead style={{ backgroundColor: '#F5F5F5' }}>
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Vendor</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Period</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Sales</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Commission</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Payout</th>
-                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Status</th>
-                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Action</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Vendor</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Period</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Sales</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Commission</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Payout</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Status</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {payouts.map((payout) => (
-                  <tr key={payout.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: '#E5E7EB' }}>
-                    <td className="px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>
+                  <tr key={payout.id} className="hover:bg-gray-50 transition-colors" style={{ borderTop: '1px solid #E5E7EB' }}>
+                    <td className="px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'normal', wordBreak: 'normal', overflowWrap: 'normal' }}>
                       {payout.vendor?.shopName || '—'}
                     </td>
-                    <td className="px-6 py-4 text-sm" style={{ color: '#6B7280' }}>
+                    <td className="px-6 py-4 text-sm" style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>
                       {formatDate(payout.periodStart)} - {formatDate(payout.periodEnd)}
                     </td>
-                    <td className="px-6 py-4 text-right text-sm" style={{ color: '#2C2C2C' }}>
+                    <td className="px-6 py-4 text-right text-sm" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>
                       ৳{Number(payout.totalSales).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 text-right text-sm" style={{ color: '#DC2626' }}>
+                    <td className="px-6 py-4 text-right text-sm" style={{ color: '#DC2626', whiteSpace: 'nowrap' }}>
                       {payout.commissionRate}% (৳{Number(payout.commissionAmount).toLocaleString('en-BD', { minimumFractionDigits: 2 })})
                     </td>
-                    <td className="px-6 py-4 text-right font-medium" style={{ color: '#059669' }}>
+                    <td className="px-6 py-4 text-right font-medium" style={{ color: '#059669', whiteSpace: 'nowrap' }}>
                       ৳{Number(payout.payoutAmount).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center" style={{ whiteSpace: 'nowrap' }}>
                       <PayoutStatusBadge status={payout.status} />
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-6 py-4 text-center" style={{ whiteSpace: 'nowrap' }}>
                       {payout.status === 'PENDING' && (
                         <button
                           onClick={() => setSelectedPayout(payout)}
-                          className="px-3 py-1.5 rounded text-sm text-white"
-                          style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+                          className="px-3 py-1.5 rounded text-sm text-white transition-colors"
+                          style={{
+                            background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                            whiteSpace: 'nowrap',
+                            cursor: 'pointer',
+                          }}
                         >
                           Mark Paid
                         </button>
                       )}
                       {payout.status === 'PAID' && payout.reference && (
-                        <span className="text-xs" style={{ color: '#6B7280' }}>
+                        <span className="text-xs" style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>
                           Ref: {payout.reference}
                         </span>
                       )}
@@ -309,22 +352,35 @@ export default function VendorPayoutsPage() {
 
       {/* Calculate Modal */}
       {showCalcModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div
+            className="w-full bg-white rounded-lg shadow-xl p-8"
+            style={{ maxWidth: '600px', minWidth: '320px', maxHeight: '90vh', overflowY: 'auto' }}
+          >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-serif font-bold" style={{ color: '#2C2C2C' }}>Calculate Vendor Earnings</h2>
-              <button onClick={() => { setShowCalcModal(false); setCalcResult(null) }} className="p-1 hover:bg-gray-100 rounded">
-                <span style={{ color: '#6B7280', fontSize: 20 }}>&times;</span>
+              <h2
+                className="text-xl font-serif font-bold"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Calculate Vendor Earnings
+              </h2>
+              <button onClick={() => { setShowCalcModal(false); setCalcResult(null) }} className="p-2 hover:bg-gray-100 rounded">
+                <span style={{ color: '#6B7280', fontSize: 20, lineHeight: 1 }}>&times;</span>
               </button>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>Vendor</label>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                >
+                  Vendor
+                </label>
                 <select
                   value={calcVendorId}
                   onChange={(e) => { setCalcVendorId(e.target.value); setCalcResult(null) }}
-                  className="w-full px-4 py-2 border rounded-md"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
                   style={{ borderColor: '#d1d5db' }}
                 >
                   <option value="">Select vendor</option>
@@ -335,48 +391,81 @@ export default function VendorPayoutsPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>Period Start</label>
-                  <input type="date" value={calcPeriodStart} onChange={(e) => { setCalcPeriodStart(e.target.value); setCalcResult(null) }}
-                    className="w-full px-4 py-2 border rounded-md" style={{ borderColor: '#d1d5db' }} />
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                  >
+                    Period Start
+                  </label>
+                  <input
+                    type="date"
+                    value={calcPeriodStart}
+                    onChange={(e) => { setCalcPeriodStart(e.target.value); setCalcResult(null) }}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#d1d5db' }}
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>Period End</label>
-                  <input type="date" value={calcPeriodEnd} onChange={(e) => { setCalcPeriodEnd(e.target.value); setCalcResult(null) }}
-                    className="w-full px-4 py-2 border rounded-md" style={{ borderColor: '#d1d5db' }} />
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                  >
+                    Period End
+                  </label>
+                  <input
+                    type="date"
+                    value={calcPeriodEnd}
+                    onChange={(e) => { setCalcPeriodEnd(e.target.value); setCalcResult(null) }}
+                    className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#d1d5db' }}
+                  />
                 </div>
               </div>
 
               <button
                 onClick={handleCalculate}
                 disabled={calculating || !calcVendorId || !calcPeriodStart || !calcPeriodEnd}
-                className="w-full px-4 py-2 rounded-md text-white disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+                className="w-full px-4 py-2 rounded-md text-white transition-colors"
+                style={{
+                  background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                  cursor: (calculating || !calcVendorId || !calcPeriodStart || !calcPeriodEnd) ? 'not-allowed' : 'pointer',
+                  opacity: (calculating || !calcVendorId || !calcPeriodStart || !calcPeriodEnd) ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
               >
                 {calculating ? 'Calculating...' : 'Calculate'}
               </button>
 
               {calcResult && (
-                <div className="p-4 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
-                  <h3 className="font-medium mb-3" style={{ color: '#2C2C2C' }}>
+                <div className="p-4 rounded-lg" style={{ backgroundColor: '#F5F5F5', width: '100%', minWidth: '280px' }}>
+                  <h3
+                    className="font-medium mb-3"
+                    style={{
+                      color: '#2C2C2C',
+                      whiteSpace: 'normal',
+                      wordBreak: 'normal',
+                      overflowWrap: 'normal',
+                    }}
+                  >
                     {calcResult.vendor.shopName} Earnings
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span style={{ color: '#6B7280' }}>Orders</span>
-                      <span style={{ color: '#2C2C2C' }}>{calcResult.orderCount}</span>
+                      <span style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Orders</span>
+                      <span style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>{calcResult.orderCount}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: '#6B7280' }}>Total Sales</span>
-                      <span style={{ color: '#2C2C2C' }}>৳{calcResult.totalSales.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
+                      <span style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Total Sales</span>
+                      <span style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>৳{calcResult.totalSales.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span style={{ color: '#6B7280' }}>Commission ({calcResult.commissionRate}%)</span>
-                      <span style={{ color: '#DC2626' }}>-৳{calcResult.commissionAmount.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
+                      <span style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Commission ({calcResult.commissionRate}%)</span>
+                      <span style={{ color: '#DC2626', whiteSpace: 'nowrap' }}>-৳{calcResult.commissionAmount.toLocaleString('en-BD', { minimumFractionDigits: 2 })}</span>
                     </div>
-                    <div className="border-t pt-2" style={{ borderColor: '#E5E7EB' }}>
+                    <div className="pt-2" style={{ borderTop: '1px solid #E5E7EB' }}>
                       <div className="flex justify-between">
-                        <span className="font-medium" style={{ color: '#2C2C2C' }}>Payout Amount</span>
-                        <span className="font-bold" style={{ color: '#059669' }}>
+                        <span className="font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Payout Amount</span>
+                        <span className="font-bold" style={{ color: '#059669', whiteSpace: 'nowrap' }}>
                           ৳{calcResult.payoutAmount.toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
@@ -387,8 +476,13 @@ export default function VendorPayoutsPage() {
                     <button
                       onClick={handleCreatePayout}
                       disabled={creatingPayout}
-                      className="w-full mt-4 px-4 py-2 rounded-md text-white disabled:opacity-50"
-                      style={{ backgroundColor: '#059669' }}
+                      className="w-full mt-4 px-4 py-2 rounded-md text-white transition-colors"
+                      style={{
+                        backgroundColor: '#059669',
+                        cursor: creatingPayout ? 'not-allowed' : 'pointer',
+                        opacity: creatingPayout ? 0.5 : 1,
+                        whiteSpace: 'nowrap',
+                      }}
                     >
                       {creatingPayout ? 'Creating...' : 'Create Payout Record'}
                     </button>

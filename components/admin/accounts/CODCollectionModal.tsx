@@ -47,41 +47,52 @@ export default function CODCollectionModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div
+        className="w-full bg-white rounded-lg shadow-xl p-8"
+        style={{ maxWidth: '600px', minWidth: '320px' }}
+      >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-serif font-bold" style={{ color: '#2C2C2C' }}>
+          <h2
+            className="text-xl font-serif font-bold"
+            style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+          >
             Record COD Collection
           </h2>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded">
             <X size={20} style={{ color: '#6B7280' }} />
           </button>
         </div>
 
         {/* Order Info */}
-        <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#F5F5F5' }}>
+        <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: '#F5F5F5', width: '100%', minWidth: '280px' }}>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p style={{ color: '#6B7280' }}>Order</p>
-              <p className="font-medium" style={{ color: '#8e2157' }}>
+              <p style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Order</p>
+              <p className="font-medium" style={{ color: '#8e2157', whiteSpace: 'nowrap' }}>
                 {collection.order?.orderNumber || '—'}
               </p>
             </div>
             <div>
-              <p style={{ color: '#6B7280' }}>Customer</p>
-              <p className="font-medium" style={{ color: '#2C2C2C' }}>
+              <p style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Customer</p>
+              <p className="font-medium" style={{
+                color: '#2C2C2C',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'anywhere',
+              }}>
                 {collection.order?.user?.name || collection.order?.user?.email || '—'}
               </p>
             </div>
             <div>
-              <p style={{ color: '#6B7280' }}>Expected Amount</p>
-              <p className="font-bold text-lg" style={{ color: '#2C2C2C' }}>
+              <p style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Expected Amount</p>
+              <p className="font-bold text-lg" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>
                 ৳{Number(collection.expectedAmount).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
               </p>
             </div>
             <div>
-              <p style={{ color: '#6B7280' }}>Status</p>
-              <p className="font-medium" style={{ color: '#2C2C2C' }}>
+              <p style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Status</p>
+              <p className="font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>
                 {collection.status}
               </p>
             </div>
@@ -90,7 +101,10 @@ export default function CODCollectionModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+            >
               Collected Amount (৳)
             </label>
             <div className="flex gap-2">
@@ -101,15 +115,20 @@ export default function CODCollectionModal({
                 value={collectedAmount}
                 onChange={(e) => setCollectedAmount(e.target.value)}
                 placeholder="0.00"
-                className="flex-1 px-4 py-2 border rounded-md"
+                className="flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
                 style={{ borderColor: '#d1d5db' }}
                 required
               />
               <button
                 type="button"
                 onClick={handleFillExpected}
-                className="px-3 py-2 border rounded-md text-sm hover:bg-gray-50"
-                style={{ borderColor: '#d1d5db', color: '#8e2157' }}
+                className="px-3 py-2 border rounded-md text-sm transition-colors"
+                style={{
+                  borderColor: '#d1d5db',
+                  color: '#8e2157',
+                  backgroundColor: '#ffffff',
+                  whiteSpace: 'nowrap',
+                }}
               >
                 Full Amount
               </button>
@@ -117,7 +136,10 @@ export default function CODCollectionModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+            >
               Notes
             </label>
             <textarea
@@ -125,8 +147,13 @@ export default function CODCollectionModal({
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Any notes about this collection..."
               rows={3}
-              className="w-full px-4 py-2 border rounded-md"
-              style={{ borderColor: '#d1d5db' }}
+              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+              style={{
+                borderColor: '#d1d5db',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+              }}
             />
           </div>
 
@@ -134,16 +161,26 @@ export default function CODCollectionModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border rounded-md hover:bg-gray-50"
-              style={{ borderColor: '#d1d5db', color: '#6B7280' }}
+              className="flex-1 px-4 py-2 border rounded-md transition-colors"
+              style={{
+                borderColor: '#d1d5db',
+                color: '#6B7280',
+                backgroundColor: '#ffffff',
+                whiteSpace: 'nowrap',
+              }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 px-4 py-2 rounded-md text-white disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+              className="flex-1 px-4 py-2 rounded-md text-white transition-colors"
+              style={{
+                background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.5 : 1,
+                whiteSpace: 'nowrap',
+              }}
             >
               {submitting ? 'Recording...' : 'Mark as Collected'}
             </button>

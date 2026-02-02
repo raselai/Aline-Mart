@@ -244,26 +244,35 @@ export default function TransactionsPage() {
 
       {/* Add Transaction Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-8" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div
+            className="w-full bg-white rounded-lg shadow-xl p-8"
+            style={{ maxWidth: '600px', minWidth: '320px' }}
+          >
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-serif font-bold" style={{ color: '#2C2C2C' }}>
+              <h2
+                className="text-xl font-serif font-bold"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
                 Manual Transaction
               </h2>
-              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded">
+              <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-100 rounded">
                 <X size={20} style={{ color: '#6B7280' }} />
               </button>
             </div>
 
             <form onSubmit={handleAddTransaction} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                >
                   Type
                 </label>
                 <select
                   value={formType}
                   onChange={(e) => setFormType(e.target.value as TransactionType)}
-                  className="w-full px-4 py-2 border rounded-md"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
                   style={{ borderColor: '#d1d5db' }}
                 >
                   <option value="ADJUSTMENT">Adjustment</option>
@@ -275,7 +284,10 @@ export default function TransactionsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                >
                   Amount (৳)
                 </label>
                 <input
@@ -284,14 +296,17 @@ export default function TransactionsPage() {
                   value={formAmount}
                   onChange={(e) => setFormAmount(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-4 py-2 border rounded-md"
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
                   style={{ borderColor: '#d1d5db' }}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                >
                   Description
                 </label>
                 <input
@@ -299,13 +314,21 @@ export default function TransactionsPage() {
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Description of the transaction"
-                  className="w-full px-4 py-2 border rounded-md"
-                  style={{ borderColor: '#d1d5db' }}
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+                  style={{
+                    borderColor: '#d1d5db',
+                    whiteSpace: 'normal',
+                    wordBreak: 'normal',
+                    overflowWrap: 'normal',
+                  }}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: '#2C2C2C' }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                >
                   Reference
                 </label>
                 <input
@@ -313,8 +336,13 @@ export default function TransactionsPage() {
                   value={formReference}
                   onChange={(e) => setFormReference(e.target.value)}
                   placeholder="Optional reference number"
-                  className="w-full px-4 py-2 border rounded-md"
-                  style={{ borderColor: '#d1d5db' }}
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2"
+                  style={{
+                    borderColor: '#d1d5db',
+                    whiteSpace: 'normal',
+                    wordBreak: 'normal',
+                    overflowWrap: 'normal',
+                  }}
                 />
               </div>
 
@@ -322,16 +350,26 @@ export default function TransactionsPage() {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 px-4 py-2 border rounded-md hover:bg-gray-50"
-                  style={{ borderColor: '#d1d5db', color: '#6B7280' }}
+                  className="flex-1 px-4 py-2 border rounded-md transition-colors"
+                  style={{
+                    borderColor: '#d1d5db',
+                    color: '#6B7280',
+                    backgroundColor: '#ffffff',
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2 rounded-md text-white disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+                  className="flex-1 px-4 py-2 rounded-md text-white transition-colors"
+                  style={{
+                    background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                    cursor: submitting ? 'not-allowed' : 'pointer',
+                    opacity: submitting ? 0.5 : 1,
+                    whiteSpace: 'nowrap',
+                  }}
                 >
                   {submitting ? 'Creating...' : 'Create'}
                 </button>

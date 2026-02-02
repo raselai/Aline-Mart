@@ -159,68 +159,111 @@ export default function CODCollectionsPage() {
       </div>
 
       {/* Collections Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div
+        className="bg-white rounded-lg shadow-sm"
+        style={{ width: '100%', minWidth: '320px', overflow: 'hidden' }}
+      >
         {loading ? (
           <div className="p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: '#8e2157' }} />
-            <p className="mt-4" style={{ color: '#6B7280' }}>Loading COD collections...</p>
+            <p
+              className="mt-4"
+              style={{
+                color: '#6B7280',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              Loading COD collections...
+            </p>
           </div>
         ) : collections.length === 0 ? (
           <div className="p-12 text-center">
             <Banknote className="w-16 h-16 mx-auto mb-4" style={{ color: '#9CA3AF' }} />
-            <p className="text-lg mb-2" style={{ color: '#6B7280' }}>No COD collections found</p>
-            <p className="text-sm" style={{ color: '#9CA3AF' }}>COD orders will appear here automatically</p>
+            <p
+              className="text-lg mb-2"
+              style={{
+                color: '#6B7280',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              No COD collections found
+            </p>
+            <p
+              className="text-sm"
+              style={{
+                color: '#9CA3AF',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+                display: 'block',
+                minWidth: '100%',
+              }}
+            >
+              COD orders will appear here automatically
+            </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: '800px' }}>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse' }}>
               <thead style={{ backgroundColor: '#F5F5F5' }}>
                 <tr>
-                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Order</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Customer</th>
-                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Date</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Expected</th>
-                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Collected</th>
-                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Status</th>
-                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Action</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Order</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Customer</th>
+                  <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Date</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Expected</th>
+                  <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Collected</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Status</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {collections.map((col) => {
                   const statusConf = STATUS_CONFIG[col.status]
                   return (
-                    <tr key={col.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: '#E5E7EB' }}>
-                      <td className="px-6 py-4 font-mono text-sm" style={{ color: '#8e2157' }}>
+                    <tr key={col.id} className="hover:bg-gray-50 transition-colors" style={{ borderTop: '1px solid #E5E7EB' }}>
+                      <td className="px-6 py-4 text-sm" style={{ color: '#8e2157', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', whiteSpace: 'nowrap' }}>
                         {col.order?.orderNumber || '—'}
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: '#2C2C2C' }}>
+                      <td className="px-6 py-4 text-sm" style={{ color: '#2C2C2C', whiteSpace: 'normal', wordBreak: 'normal', overflowWrap: 'normal' }}>
                         {col.order?.shippingAddress?.fullName || col.order?.user?.name || '—'}
                       </td>
-                      <td className="px-6 py-4 text-sm" style={{ color: '#6B7280' }}>
+                      <td className="px-6 py-4 text-sm" style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>
                         {formatDate(col.createdAt)}
                       </td>
-                      <td className="px-6 py-4 text-right font-medium" style={{ color: '#2C2C2C' }}>
+                      <td className="px-6 py-4 text-right font-medium" style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}>
                         ৳{Number(col.expectedAmount).toLocaleString('en-BD', { minimumFractionDigits: 2 })}
                       </td>
-                      <td className="px-6 py-4 text-right font-medium" style={{ color: col.collectedAmount ? '#059669' : '#9CA3AF' }}>
+                      <td className="px-6 py-4 text-right font-medium" style={{ color: col.collectedAmount ? '#059669' : '#9CA3AF', whiteSpace: 'nowrap' }}>
                         {col.collectedAmount
                           ? `৳${Number(col.collectedAmount).toLocaleString('en-BD', { minimumFractionDigits: 2 })}`
                           : '—'}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center" style={{ whiteSpace: 'nowrap' }}>
                         <span
                           className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                          style={{ color: statusConf.color, backgroundColor: statusConf.bg }}
+                          style={{ color: statusConf.color, backgroundColor: statusConf.bg, whiteSpace: 'nowrap' }}
                         >
                           {statusConf.label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center" style={{ whiteSpace: 'nowrap' }}>
                         {col.status === 'PENDING' && (
                           <button
                             onClick={() => setSelectedCollection(col)}
-                            className="px-3 py-1.5 rounded text-sm text-white"
-                            style={{ background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)' }}
+                            className="px-3 py-1.5 rounded text-sm text-white transition-colors"
+                            style={{
+                              background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                              whiteSpace: 'nowrap',
+                              cursor: 'pointer',
+                            }}
                           >
                             Collect
                           </button>
