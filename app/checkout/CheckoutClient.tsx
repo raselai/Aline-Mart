@@ -11,7 +11,7 @@ import type { ContactStepData, ShippingStepData, PaymentStepData } from '@/types
 
 export default function CheckoutClient() {
   const router = useRouter()
-  const { items, clearCart } = useCart()
+  const { items } = useCart()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
@@ -95,8 +95,9 @@ export default function CheckoutClient() {
         window.location.href = paymentUrl
       } else {
         // Cash on Delivery - go to confirmation
-        clearCart()
-        router.push(`/orders/${order.orderNumber}/confirmation`)
+        // Don't clearCart() here — it triggers the empty-cart useEffect redirect to /cart
+        // Instead pass clearCart=true so the confirmation page clears it after loading
+        window.location.href = `/orders/${order.orderNumber}/confirmation?clearCart=true`
       }
     } catch (error) {
       console.error('Checkout error:', error)

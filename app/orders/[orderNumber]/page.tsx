@@ -1,9 +1,9 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Package, MapPin, CreditCard } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { formatPrice, getPaymentMethodName, getOrderStatusColor } from '@/lib/order-utils'
+import { ArrowLeft, Package, MapPin, CreditCard, CheckCircle2, Truck, Home } from 'lucide-react'
+import { formatPrice, getPaymentMethodName } from '@/lib/order-utils'
+import { OrderItem, OrderStatus } from '@/types/order'
 
 interface OrderPageProps {
   params: Promise<{ orderNumber: string }>
@@ -33,6 +33,30 @@ async function getOrderDetails(orderNumber: string) {
   }
 }
 
+const ORDER_STEPS: { key: OrderStatus; label: string; icon: typeof Package }[] = [
+  { key: 'PENDING', label: 'Order Placed', icon: CheckCircle2 },
+  { key: 'PROCESSING', label: 'Processing', icon: Package },
+  { key: 'SHIPPED', label: 'Shipped', icon: Truck },
+  { key: 'DELIVERED', label: 'Delivered', icon: Home },
+]
+
+function getStepIndex(status: OrderStatus): number {
+  if (status === 'CANCELLED') return -1
+  const idx = ORDER_STEPS.findIndex((s) => s.key === status)
+  return idx >= 0 ? idx : 0
+}
+
+function getStatusInlineStyle(status: string): React.CSSProperties {
+  const styles: Record<string, React.CSSProperties> = {
+    PENDING: { background: '#fef9c3', color: '#854d0e', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+    PROCESSING: { background: '#dbeafe', color: '#1e40af', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+    SHIPPED: { background: '#f3e8ff', color: '#6b21a8', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+    DELIVERED: { background: '#dcfce7', color: '#166534', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+    CANCELLED: { background: '#fee2e2', color: '#991b1b', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+  }
+  return styles[status] || { background: '#f3f4f6', color: '#374151', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 }
+}
+
 export default async function OrderPage({ params }: OrderPageProps) {
   const { orderNumber } = await params
   const order = await getOrderDetails(orderNumber)
@@ -47,124 +71,422 @@ export default async function OrderPage({ params }: OrderPageProps) {
     day: 'numeric',
   })
 
+  const currentStepIndex = getStepIndex(order.status as OrderStatus)
+  const isCancelled = order.status === 'CANCELLED'
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <Button variant="ghost" asChild className="mb-4">
-            <Link href="/products">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Shopping
-            </Link>
-          </Button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-serif font-bold mb-2">Order Details</h1>
-              <p className="text-gray-600">
-                Order Number: <span className="font-mono font-semibold text-burgundy">{order.orderNumber}</span>
-              </p>
-              <p className="text-sm text-gray-500">Placed on {orderDate}</p>
-            </div>
-            <div>
-              <span className={`px-4 py-2 rounded-full text-sm font-medium ${getOrderStatusColor(order.status)}`}>
-                {order.status}
+    <div style={{ maxWidth: '960px', minWidth: '320px', margin: '0 auto', padding: '32px 16px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '32px' }}>
+        <Link
+          href="/products"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '0.875rem',
+            color: '#6B7280',
+            textDecoration: 'none',
+            marginBottom: '16px',
+            padding: '8px 0',
+          }}
+        >
+          <ArrowLeft style={{ width: '16px', height: '16px' }} />
+          <span>Back to Shopping</span>
+        </Link>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h1
+              style={{
+                fontFamily: 'var(--font-serif, Playfair Display, serif)',
+                fontSize: '1.875rem',
+                fontWeight: 700,
+                color: '#1a1a1a',
+                marginBottom: '8px',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              Order Details
+            </h1>
+            <p
+              style={{
+                color: '#6B7280',
+                fontSize: '0.95rem',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              Order Number:{' '}
+              <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#8e2157' }}>
+                {order.orderNumber}
               </span>
-            </div>
+            </p>
+            <p
+              style={{
+                fontSize: '0.875rem',
+                color: '#9ca3af',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              Placed on {orderDate}
+            </p>
           </div>
+          <span style={getStatusInlineStyle(order.status)}>
+            {order.status}
+          </span>
         </div>
+      </div>
 
-        {/* Order Information Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Shipping Address */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="h-5 w-5 text-burgundy" />
-              <h2 className="font-semibold text-lg">Shipping Address</h2>
-            </div>
-            <div className="text-sm text-gray-700 space-y-1">
-              <p className="font-medium">{order.shippingAddress.fullName}</p>
-              <p>{order.shippingAddress.addressLine1}</p>
-              {order.shippingAddress.addressLine2 && (
-                <p>{order.shippingAddress.addressLine2}</p>
-              )}
-              <p>{order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}</p>
-              <p>{order.shippingAddress.country}</p>
-              <p className="mt-2">Phone: {order.shippingAddress.phone}</p>
-            </div>
+      {/* Order Tracking Stepper */}
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '32px 24px',
+          marginBottom: '24px',
+        }}
+      >
+        <h2
+          style={{
+            fontFamily: 'var(--font-serif, Playfair Display, serif)',
+            fontSize: '1.125rem',
+            fontWeight: 600,
+            marginBottom: '28px',
+            color: '#1a1a1a',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            overflowWrap: 'break-word',
+          }}
+        >
+          Order Progress
+        </h2>
+        {isCancelled ? (
+          <div
+            style={{
+              textAlign: 'center',
+              padding: '16px',
+              background: '#fef2f2',
+              borderRadius: '8px',
+              color: '#991b1b',
+              fontWeight: 600,
+            }}
+          >
+            This order has been cancelled.
           </div>
-
-          {/* Payment Information */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="h-5 w-5 text-burgundy" />
-              <h2 className="font-semibold text-lg">Payment Information</h2>
-            </div>
-            <div className="text-sm text-gray-700 space-y-2">
-              <div>
-                <p className="text-gray-600">Payment Method</p>
-                <p className="font-medium">{getPaymentMethodName(order.paymentMethod)}</p>
-              </div>
-              {order.paystationTransactionId && (
-                <div>
-                  <p className="text-gray-600">Transaction ID</p>
-                  <p className="font-mono text-xs">{order.paystationTransactionId}</p>
-                </div>
-              )}
-              <div className="pt-2 border-t border-gray-200">
-                <p className="text-gray-600">Total Paid</p>
-                <p className="text-2xl font-bold text-burgundy">{formatPrice(order.total)}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Order Items */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-6">
-            <Package className="h-5 w-5 text-burgundy" />
-            <h2 className="font-semibold text-lg">Order Items</h2>
-          </div>
-
-          <div className="space-y-6">
-            {order.items.map((item: any) => (
-              <div key={item.id} className="flex justify-between items-start pb-6 border-b border-gray-200 last:border-0 last:pb-0">
-                <div className="flex-1">
-                  <h3 className="font-medium text-lg mb-1">{item.productName}</h3>
-                  <p className="text-sm text-gray-600 mb-1">{item.brandName}</p>
-                  <p className="text-sm text-gray-500 mb-2">{item.variantName}</p>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-gray-600">Quantity: <span className="font-medium">{item.quantity}</span></span>
-                    <span className="text-gray-600">Price: <span className="font-medium">{formatPrice(item.price)}</span></span>
+        ) : (
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative' }}>
+            {/* Progress line behind steps */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '20px',
+                left: '40px',
+                right: '40px',
+                height: '3px',
+                background: '#e5e7eb',
+                zIndex: 0,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                top: '20px',
+                left: '40px',
+                width: `${currentStepIndex >= ORDER_STEPS.length - 1 ? 100 : (currentStepIndex / (ORDER_STEPS.length - 1)) * 100}%`,
+                maxWidth: 'calc(100% - 80px)',
+                height: '3px',
+                background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                zIndex: 1,
+                transition: 'width 0.5s ease',
+              }}
+            />
+            {ORDER_STEPS.map((step, index) => {
+              const isCompleted = index <= currentStepIndex
+              const isCurrent = index === currentStepIndex
+              const StepIcon = step.icon
+              return (
+                <div
+                  key={step.key}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    flex: 1,
+                    position: 'relative',
+                    zIndex: 2,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: isCompleted
+                        ? 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)'
+                        : '#ffffff',
+                      border: isCompleted ? 'none' : '2px solid #d1d5db',
+                      boxShadow: isCurrent ? '0 0 0 4px rgba(142, 33, 87, 0.15)' : 'none',
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    <StepIcon
+                      style={{
+                        width: '18px',
+                        height: '18px',
+                        color: isCompleted ? '#ffffff' : '#9ca3af',
+                      }}
+                    />
                   </div>
+                  <span
+                    style={{
+                      marginTop: '8px',
+                      fontSize: '0.75rem',
+                      fontWeight: isCurrent ? 700 : isCompleted ? 600 : 400,
+                      color: isCompleted ? '#8e2157' : '#9ca3af',
+                      textAlign: 'center',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                    }}
+                  >
+                    {step.label}
+                  </span>
                 </div>
-                <div className="text-right">
-                  <p className="text-xl font-bold text-burgundy">{formatPrice(item.total)}</p>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Order Information Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '24px' }}>
+        {/* Shipping Address */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <MapPin style={{ width: '20px', height: '20px', color: '#8e2157' }} />
+            <h2
+              style={{
+                fontWeight: 600,
+                fontSize: '1.05rem',
+                color: '#1a1a1a',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              Shipping Address
+            </h2>
+          </div>
+          <div style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.7 }}>
+            <p style={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {order.shippingAddress.fullName}
+            </p>
+            <p style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {order.shippingAddress.addressLine1}
+            </p>
+            {order.shippingAddress.addressLine2 && (
+              <p style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                {order.shippingAddress.addressLine2}
+              </p>
+            )}
+            <p style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {order.shippingAddress.city}, {order.shippingAddress.state} {order.shippingAddress.zipCode}
+            </p>
+            <p style={{ whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              {order.shippingAddress.country}
+            </p>
+            <p style={{ marginTop: '8px', whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+              Phone: {order.shippingAddress.phone}
+            </p>
+          </div>
+        </div>
+
+        {/* Payment Information */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <CreditCard style={{ width: '20px', height: '20px', color: '#8e2157' }} />
+            <h2
+              style={{
+                fontWeight: 600,
+                fontSize: '1.05rem',
+                color: '#1a1a1a',
+                whiteSpace: 'normal',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word',
+              }}
+            >
+              Payment Information
+            </h2>
+          </div>
+          <div style={{ fontSize: '0.875rem', color: '#374151', lineHeight: 1.7 }}>
+            <div>
+              <p style={{ color: '#6B7280', fontSize: '0.8rem', whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                Payment Method
+              </p>
+              <p style={{ fontWeight: 500, whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                {getPaymentMethodName(order.paymentMethod)}
+              </p>
+            </div>
+            {order.paystationTransactionId && (
+              <div style={{ marginTop: '12px' }}>
+                <p style={{ color: '#6B7280', fontSize: '0.8rem', whiteSpace: 'normal', wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                  Transaction ID
+                </p>
+                <p style={{ fontFamily: 'monospace', fontSize: '0.75rem', whiteSpace: 'normal', wordBreak: 'break-all', overflowWrap: 'break-word' }}>
+                  {order.paystationTransactionId}
+                </p>
+              </div>
+            )}
+            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
+              <p style={{ color: '#6B7280', fontSize: '0.8rem' }}>Total Paid</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#8e2157' }}>
+                {formatPrice(order.total)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Order Items */}
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '12px',
+          padding: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+          <Package style={{ width: '20px', height: '20px', color: '#8e2157' }} />
+          <h2
+            style={{
+              fontWeight: 600,
+              fontSize: '1.05rem',
+              color: '#1a1a1a',
+              whiteSpace: 'normal',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
+            }}
+          >
+            Order Items
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {order.items.map((item: OrderItem, index: number) => (
+            <div
+              key={item.id}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                paddingBottom: index < order.items.length - 1 ? '24px' : '0',
+                borderBottom: index < order.items.length - 1 ? '1px solid #e5e7eb' : 'none',
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <h3
+                  style={{
+                    fontWeight: 500,
+                    fontSize: '1.05rem',
+                    color: '#1a1a1a',
+                    marginBottom: '4px',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {item.productName}
+                </h3>
+                <p
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#6B7280',
+                    marginBottom: '4px',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {item.brandName}
+                </p>
+                <p
+                  style={{
+                    fontSize: '0.875rem',
+                    color: '#9ca3af',
+                    marginBottom: '8px',
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                  }}
+                >
+                  {item.variantName}
+                </p>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '0.875rem' }}>
+                  <span style={{ color: '#6B7280' }}>
+                    Quantity: <span style={{ fontWeight: 500, color: '#374151' }}>{item.quantity}</span>
+                  </span>
+                  <span style={{ color: '#6B7280' }}>
+                    Price: <span style={{ fontWeight: 500, color: '#374151' }}>{formatPrice(item.price)}</span>
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+              <div style={{ textAlign: 'right', marginLeft: '16px' }}>
+                <p style={{ fontSize: '1.125rem', fontWeight: 700, color: '#8e2157', whiteSpace: 'nowrap' }}>
+                  {formatPrice(item.total)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
 
-          {/* Order Summary */}
-          <div className="border-t border-gray-200 mt-6 pt-6 space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Subtotal</span>
-              <span className="font-medium">{formatPrice(order.total - order.shippingCost)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Shipping</span>
-              <span className="font-medium">
-                {order.shippingCost === 0 ? (
-                  <span className="text-green-600">FREE</span>
-                ) : (
-                  formatPrice(order.shippingCost)
-                )}
-              </span>
-            </div>
-            <div className="flex justify-between text-2xl font-bold pt-3 border-t border-gray-200">
-              <span>Total</span>
-              <span className="text-burgundy">{formatPrice(order.total)}</span>
-            </div>
+        {/* Order Summary */}
+        <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '24px', paddingTop: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '8px' }}>
+            <span style={{ color: '#6B7280' }}>Subtotal</span>
+            <span style={{ fontWeight: 500, color: '#374151' }}>{formatPrice(order.total - order.shippingCost)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '16px' }}>
+            <span style={{ color: '#6B7280' }}>Shipping</span>
+            <span style={{ fontWeight: 500, color: order.shippingCost === 0 ? '#16a34a' : '#374151' }}>
+              {order.shippingCost === 0 ? 'FREE' : formatPrice(order.shippingCost)}
+            </span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              paddingTop: '16px',
+              borderTop: '1px solid #e5e7eb',
+            }}
+          >
+            <span style={{ color: '#1a1a1a' }}>Total</span>
+            <span style={{ color: '#8e2157' }}>{formatPrice(order.total)}</span>
           </div>
         </div>
       </div>
