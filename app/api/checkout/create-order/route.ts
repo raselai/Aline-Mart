@@ -10,7 +10,7 @@ import type { CartItem } from '@/types/checkout'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { cartItems, ...formData } = body
+    const { cartItems, saveAddress, selectedAddressId, ...formData } = body
 
     // Validate form data
     const validation = checkoutSchema.safeParse(formData)
@@ -84,26 +84,59 @@ export async function POST(request: NextRequest) {
       userId = newUser.id
     }
 
-    // Create shipping address
-    const { data: address, error: addressError } = await supabase
-      .from('Address')
-      .insert({
-        id: crypto.randomUUID(),
-        userId,
-        fullName: data.fullName,
-        phone: data.phone,
-        addressLine1: data.addressLine1,
-        addressLine2: data.addressLine2 || null,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zipCode,
-        country: data.country,
-      })
-      .select('id')
-      .single()
+    // Resolve shipping address
+    let addressId: string
 
-    if (addressError || !address) {
-      throw new Error('Failed to create address')
+    if (selectedAddressId) {
+      // Reuse existing saved address — verify ownership
+      const { data: existingAddress } = await supabase
+        .from('Address')
+        .select('id, userId')
+        .eq('id', selectedAddressId)
+        .single()
+
+      if (!existingAddress || existingAddress.userId !== userId) {
+        return NextResponse.json(
+          { error: 'Selected address not found or does not belong to this user' },
+          { status: 400 }
+        )
+      }
+
+      addressId = existingAddress.id
+    } else {
+      // Create new shipping address
+      const { data: address, error: addressError } = await supabase
+        .from('Address')
+        .insert({
+          id: crypto.randomUUID(),
+          userId,
+          fullName: data.fullName,
+          phone: data.phone,
+          addressLine1: data.addressLine1,
+          addressLine2: data.addressLine2 || null,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          country: data.country,
+          isDefault: saveAddress ? true : undefined,
+        })
+        .select('id')
+        .single()
+
+      if (addressError || !address) {
+        throw new Error('Failed to create address')
+      }
+
+      // If saving as default, unset other defaults
+      if (saveAddress) {
+        await supabase
+          .from('Address')
+          .update({ isDefault: false })
+          .eq('userId', userId)
+          .neq('id', address.id)
+      }
+
+      addressId = address.id
     }
 
     // Create order with PENDING status
@@ -117,7 +150,7 @@ export async function POST(request: NextRequest) {
         userId,
         total,
         status: 'PENDING',
-        shippingAddressId: address.id,
+        shippingAddressId: addressId,
         paymentMethod: data.paymentMethod,
         shippingCost,
       })

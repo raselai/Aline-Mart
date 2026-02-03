@@ -3,21 +3,26 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
+import { useAuth } from '@/hooks/useAuth'
 import ContactStep from './components/ContactStep'
 import ShippingStep from './components/ShippingStep'
 import PaymentStep from './components/PaymentStep'
 import OrderSummary from './components/OrderSummary'
-import type { ContactStepData, ShippingStepData, PaymentStepData } from '@/types/checkout'
+import type { ContactStepData, ShippingStepData, PaymentStepData, SavedAddress } from '@/types/checkout'
 
 export default function CheckoutClient() {
   const router = useRouter()
   const { items } = useCart()
+  const { isAuthenticated, userEmail } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
   const [contactData, setContactData] = useState<ContactStepData>()
   const [shippingData, setShippingData] = useState<ShippingStepData>()
   const [paymentData, setPaymentData] = useState<PaymentStepData>()
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
+  const [saveAddress, setSaveAddress] = useState(false)
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -25,6 +30,23 @@ export default function CheckoutClient() {
       router.push('/cart')
     }
   }, [items.length, router])
+
+  // Fetch saved addresses for authenticated users
+  useEffect(() => {
+    if (!isAuthenticated || !userEmail) return
+    async function fetchAddresses() {
+      try {
+        const res = await fetch(`/api/addresses?email=${encodeURIComponent(userEmail!)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSavedAddresses(data.addresses || [])
+        }
+      } catch {
+        // silently fail
+      }
+    }
+    fetchAddresses()
+  }, [isAuthenticated, userEmail])
 
   if (items.length === 0) {
     return null
@@ -35,8 +57,15 @@ export default function CheckoutClient() {
     setCurrentStep(2)
   }
 
-  const handleShippingComplete = (data: ShippingStepData) => {
+  const handleShippingComplete = (
+    data: ShippingStepData,
+    options?: { saveAddress?: boolean; selectedAddressId?: string | null }
+  ) => {
     setShippingData(data)
+    if (options) {
+      setSaveAddress(options.saveAddress ?? false)
+      setSelectedAddressId(options.selectedAddressId ?? null)
+    }
     setCurrentStep(3)
   }
 
@@ -67,6 +96,8 @@ export default function CheckoutClient() {
           ...shippingData,
           ...data,
           cartItems,
+          saveAddress,
+          selectedAddressId,
         }),
       })
 
@@ -132,6 +163,8 @@ export default function CheckoutClient() {
               onComplete={handleShippingComplete}
               onEdit={() => setCurrentStep(2)}
               disabled={!contactData}
+              savedAddresses={isAuthenticated ? savedAddresses : undefined}
+              isAuthenticated={isAuthenticated}
             />
 
             {/* Step 3: Payment */}
