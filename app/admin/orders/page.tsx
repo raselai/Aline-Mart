@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock, ImageOff, Printer } from 'lucide-react'
+import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock, ImageOff, Printer, Download } from 'lucide-react'
 import { getOrderStatusColor, getPaymentMethodName, getStatusDisplayName, getAvailableStatusTransitions, formatPrice } from '@/lib/order-utils'
 import type { AdminOrderListItem, OrderWithDetails, OrderStatus, OrderItemStatus, PaymentMethod } from '@/types/order'
 
@@ -1216,6 +1216,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [exporting, setExporting] = useState(false)
 
   // Modal state
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null)
@@ -1332,6 +1333,41 @@ export default function AdminOrdersPage() {
     setSelectedOrder(null)
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({
+        search: searchQuery,
+        status: filterStatus,
+        paymentMethod: filterPayment,
+        dateFrom,
+        dateTo,
+        sort: sortBy,
+        order: sortOrder,
+      })
+
+      const response = await fetch(`/api/admin/orders/export?${params.toString()}`)
+      if (!response.ok) {
+        throw new Error('Failed to export orders')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `orders-export-${new Date().toISOString().substring(0, 10)}.csv`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting orders:', error)
+      alert('Failed to export orders')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div style={{ minWidth: '320px', width: '100%' }}>
       {/* Page Header */}
@@ -1363,6 +1399,18 @@ export default function AdminOrdersPage() {
             Manage customer orders and shipments
           </p>
         </div>
+        <button
+          onClick={handleExport}
+          disabled={loading || exporting}
+          className="px-4 py-2 rounded-md text-white font-medium flex items-center gap-2 disabled:opacity-60"
+          style={{
+            background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+            cursor: loading || exporting ? 'not-allowed' : 'pointer',
+          }}
+        >
+          <Download size={16} />
+          {exporting ? 'Exporting...' : 'Export CSV'}
+        </button>
       </div>
 
       {/* Filters and Search */}

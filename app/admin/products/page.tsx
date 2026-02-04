@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { Plus, Search, Edit, Trash2, Copy } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Copy, Download } from 'lucide-react'
 
 interface Product {
   id: string
@@ -56,6 +56,7 @@ export default function AdminProductsPage() {
   const [filterCategory, setFilterCategory] = useState('')
   const [filterStock, setFilterStock] = useState('')
   const [filterVendor, setFilterVendor] = useState('')
+  const [exporting, setExporting] = useState(false)
 
   // Fetch filters on mount
   useEffect(() => {
@@ -128,6 +129,37 @@ export default function AdminProductsPage() {
     }
   }
 
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const params = new URLSearchParams({
+        search: searchQuery,
+        brand: filterBrand,
+        category: filterCategory,
+        stock: filterStock,
+        vendor: filterVendor,
+      })
+
+      const response = await fetch(`/api/admin/products/export?${params.toString()}`)
+      if (!response.ok) throw new Error('Failed to export products')
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = `products-export-${new Date().toISOString().substring(0, 10)}.csv`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error exporting products:', error)
+      alert('Failed to export products')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div style={{ minWidth: '320px', width: '100%' }}>
       {/* Page Header */}
@@ -163,23 +195,38 @@ export default function AdminProductsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => router.push('/admin/products/new')}
-          className="flex items-center gap-2 px-6 py-3 text-white rounded-md font-medium transition-all"
-          style={{
-            background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
-            minWidth: '140px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #a02865 0%, #6d0a3c 100%)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)'
-          }}
-        >
-          <Plus size={20} />
-          <span style={{ whiteSpace: 'nowrap' }}>Add Product</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExport}
+            disabled={loading || exporting}
+            className="flex items-center gap-2 px-4 py-3 text-white rounded-md font-medium transition-all disabled:opacity-60"
+            style={{
+              background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+              minWidth: '130px',
+              cursor: loading || exporting ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <Download size={18} />
+            <span style={{ whiteSpace: 'nowrap' }}>{exporting ? 'Exporting...' : 'Export CSV'}</span>
+          </button>
+          <button
+            onClick={() => router.push('/admin/products/new')}
+            className="flex items-center gap-2 px-6 py-3 text-white rounded-md font-medium transition-all"
+            style={{
+              background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+              minWidth: '140px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #a02865 0%, #6d0a3c 100%)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)'
+            }}
+          >
+            <Plus size={20} />
+            <span style={{ whiteSpace: 'nowrap' }}>Add Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Filters and Search */}
