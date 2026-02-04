@@ -27,6 +27,7 @@ interface Product {
   name: string
   slug: string
   description: string | null
+  shortDescription?: string | null
   price: number
   salePrice?: number
   weight?: string | null
@@ -35,10 +36,10 @@ interface Product {
   warranty?: string | null
   vendor?: string | null
   status?: 'DRAFT' | 'ACTIVE' | null
-  costPrice?: number | null
   discountType?: 'percent' | 'flat' | null
   discountValue?: number | null
   inStock: boolean
+  stock?: number
   featured: boolean
   isNew: boolean
   brandId: string
@@ -80,11 +81,12 @@ export default function ProductDetailClient({
 }: ProductDetailClientProps) {
   const { addItem, isInCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
+  const initialVariant = product.variants.find((variant) => variant.stock > 0) || product.variants[0]
 
   // State
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
-  const [selectedColor, setSelectedColor] = useState<string | null>(null)
-  const [selectedSize, setSelectedSize] = useState<string | null>(null)
+  const [selectedColor, setSelectedColor] = useState<string | null>(initialVariant?.color || null)
+  const [selectedSize, setSelectedSize] = useState<string | null>(initialVariant?.size || null)
   const [quantity, setQuantity] = useState(1)
   const [expandedSections, setExpandedSections] = useState({
     shipping: true,
@@ -111,29 +113,52 @@ export default function ProductDetailClient({
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // Get unique colors and sizes from variants
+  const normalizedVariants = product.variants || []
+  const hasVariants = normalizedVariants.length > 0
+  const hasColorOptions = normalizedVariants.some((variant) => Boolean(variant.color))
+  const hasSizeOptions = normalizedVariants.some((variant) => Boolean(variant.size))
+
   const availableColors = Array.from(
-    new Set(product.variants.map((v) => v.color).filter(Boolean))
+    new Set(normalizedVariants.map((variant) => variant.color).filter(Boolean))
   ) as string[]
   const availableSizes = Array.from(
-    new Set(product.variants.map((v) => v.size).filter(Boolean))
+    new Set(normalizedVariants.map((variant) => variant.size).filter(Boolean))
   ) as string[]
 
-  // Check if product has variants
-  const hasVariants = product.variants && product.variants.length > 0
-
-  // Get selected variant or first available variant
   const selectedVariant = hasVariants
-    ? product.variants.find(
-        (v) =>
-          (selectedColor ? v.color === selectedColor : true) &&
-          (selectedSize ? v.size === selectedSize : true)
-      ) || product.variants[0]
+    ? normalizedVariants.find(
+        (variant) =>
+          (!hasColorOptions || variant.color === selectedColor) &&
+          (!hasSizeOptions || variant.size === selectedSize)
+      ) || null
     : null
 
-  // Calculate stock - products without variants are treated as having 1 stock if inStock is true
-  const maxStock = hasVariants ? (selectedVariant?.stock || 0) : (product.inStock ? 1 : 0)
-  const isProductInStock = product.inStock && maxStock > 0
+  const isColorEnabled = (color: string) => {
+    return normalizedVariants.some(
+      (variant) =>
+        variant.color === color &&
+        (!hasSizeOptions || !selectedSize || variant.size === selectedSize) &&
+        variant.stock > 0
+    )
+  }
+
+  const isSizeEnabled = (size: string) => {
+    return normalizedVariants.some(
+      (variant) =>
+        variant.size === size &&
+        (!hasColorOptions || !selectedColor || variant.color === selectedColor) &&
+        variant.stock > 0
+    )
+  }
+
+  const isVariantSelectionComplete =
+    !hasVariants ||
+    ((!hasColorOptions || Boolean(selectedColor)) && (!hasSizeOptions || Boolean(selectedSize)))
+
+  const hasValidVariantSelection = !hasVariants || Boolean(selectedVariant)
+
+  const maxStock = hasVariants ? (selectedVariant?.stock || 0) : (product.stock || 0)
+  const isProductInStock = product.inStock && hasValidVariantSelection && maxStock > 0
 
   // Calculate price
   const displayPrice = product.salePrice || product.price
@@ -149,13 +174,18 @@ export default function ProductDetailClient({
 
   // Handlers
   const handleAddToCart = () => {
+    if (hasVariants && !selectedVariant) {
+      console.log('Cannot add to cart: invalid color/size combination')
+      return
+    }
+
     if (!isProductInStock) {
       console.log('Cannot add to cart: Product out of stock')
       return
     }
 
     // For products without variants, use product.id as the variant identifier
-    const cartItemId = selectedVariant?.id || `${product.id}-default`
+    const cartItemId = hasVariants ? (selectedVariant?.id || '') : `${product.id}-default`
 
     console.log('Adding to cart:', {
       productId: product.id,
@@ -173,8 +203,8 @@ export default function ProductDetailClient({
       brand: product.brand.name,
       price: displayPrice,
       image: product.images[0]?.url || '',
-      color: selectedColor || undefined,
-      size: selectedSize || undefined,
+      color: selectedVariant?.color || selectedColor || undefined,
+      size: selectedVariant?.size || selectedSize || undefined,
       sku: selectedVariant?.sku || `${product.slug}-default`,
       stock: maxStock,
     })
@@ -251,8 +281,8 @@ export default function ProductDetailClient({
   }
 
   const isInWishlistState = isInWishlist(product.id)
-  const cartItemId = selectedVariant?.id || `${product.id}-default`
-  const isInCartState = isInCart(cartItemId)
+  const cartItemId = hasVariants ? (selectedVariant?.id || '') : `${product.id}-default`
+  const isInCartState = cartItemId ? isInCart(cartItemId) : false
 
   return (
     <div className="min-h-screen bg-white">
@@ -366,7 +396,7 @@ export default function ProductDetailClient({
               </span>
               {hasDiscount && (
                 <>
-                  <span className="text-xl text-secondary line-through">
+                  <span className="text-xl text-gray-600 line-through">
                     ${product.price.toFixed(2)}
                   </span>
                   <span className="text-sm font-semibold text-white bg-burgundy px-2 py-1 rounded">
@@ -376,22 +406,29 @@ export default function ProductDetailClient({
               )}
             </div>
 
-            {(product.costPrice || discountLabel) && (
+            {discountLabel && (
               <div className="mb-6 text-sm text-charcoal/70 space-y-1">
-                {product.costPrice && (
-                  <p>Cost Price: ${product.costPrice.toFixed(2)}</p>
-                )}
-                {discountLabel && (
-                  <p>Discount: {discountLabel}</p>
-                )}
+                <p>Discount: {discountLabel}</p>
               </div>
             )}
 
-            {/* Description */}
-            {product.description && (
-              <p className="text-charcoal leading-relaxed mb-6">
-                {product.description}
+            {/* Short Description */}
+            {product.shortDescription && (
+              <p className="text-charcoal/80 leading-relaxed mb-4">
+                {product.shortDescription}
               </p>
+            )}
+
+            {/* Full Description */}
+            {product.description && (
+              <div className="mb-6">
+                {product.shortDescription && (
+                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Description</p>
+                )}
+                <p className="text-charcoal leading-relaxed">
+                  {product.description}
+                </p>
+              </div>
             )}
 
             {/* Color Selector */}
@@ -401,20 +438,26 @@ export default function ProductDetailClient({
                   Color: {selectedColor || 'Select a color'}
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {availableColors.map((color) => (
+                  {availableColors.map((color) => {
+                    const enabled = isColorEnabled(color)
+                    return (
                     <button
                       key={color}
-                      onClick={() => setSelectedColor(color)}
+                      onClick={() => enabled && setSelectedColor(color)}
+                      disabled={!enabled}
                       className={cn(
                         'px-4 py-2 border-2 rounded-md text-sm font-medium transition-all',
                         selectedColor === color
                           ? 'border-burgundy bg-burgundy text-white'
-                          : 'border-gray-200 text-charcoal hover:border-burgundy'
+                          : enabled
+                            ? 'border-gray-200 text-charcoal hover:border-burgundy'
+                            : 'border-gray-100 text-gray-300 cursor-not-allowed'
                       )}
                     >
                       {color}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -431,20 +474,26 @@ export default function ProductDetailClient({
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {availableSizes.map((size) => (
+                  {availableSizes.map((size) => {
+                    const enabled = isSizeEnabled(size)
+                    return (
                     <button
                       key={size}
-                      onClick={() => setSelectedSize(size)}
+                      onClick={() => enabled && setSelectedSize(size)}
+                      disabled={!enabled}
                       className={cn(
                         'px-4 py-2 border-2 rounded-md text-sm font-medium transition-all min-w-[60px]',
                         selectedSize === size
                           ? 'border-burgundy bg-burgundy text-white'
-                          : 'border-gray-200 text-charcoal hover:border-burgundy'
+                          : enabled
+                            ? 'border-gray-200 text-charcoal hover:border-burgundy'
+                            : 'border-gray-100 text-gray-300 cursor-not-allowed'
                       )}
                     >
                       {size}
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -477,7 +526,9 @@ export default function ProductDetailClient({
 
                 {/* Stock Status */}
                 <div className="text-sm">
-                  {isProductInStock ? (
+                  {!isVariantSelectionComplete ? (
+                    <span className="text-amber-700 font-medium">Select options to continue</span>
+                  ) : isProductInStock ? (
                     <span className="text-green-600 font-medium flex items-center gap-1">
                       <Check className="w-4 h-4" />
                       In Stock ({maxStock} available)
@@ -493,7 +544,7 @@ export default function ProductDetailClient({
             <div className="flex gap-3 mb-8">
               <Button
                 onClick={handleAddToCart}
-                disabled={!isProductInStock}
+                disabled={!isProductInStock || !isVariantSelectionComplete}
                 className="flex-1 gradient-primary text-white py-6 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isInCartState ? 'Added to Cart' : 'Add to Cart'}
@@ -691,7 +742,7 @@ export default function ProductDetailClient({
             {/* Add to Cart Button */}
             <Button
               onClick={handleAddToCart}
-              disabled={!isProductInStock}
+              disabled={!isProductInStock || !isVariantSelectionComplete}
               className="gradient-primary text-white px-6 py-3 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
               {isInCartState ? 'Added' : 'Add to Cart'}

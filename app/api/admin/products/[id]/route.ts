@@ -1,6 +1,40 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
+import {
+  buildVariantSku,
+  normalizeVariantText,
+  validateVariants,
+  type EditableVariant,
+} from '@/lib/variant-utils'
+
+function sanitizeVariants(variants: unknown[] | undefined, slug: string): EditableVariant[] {
+  if (!Array.isArray(variants)) return []
+
+  return variants.map((variant, index) => {
+    const variantData = (variant && typeof variant === 'object') ? (variant as Record<string, unknown>) : {}
+    const color = normalizeVariantText(typeof variantData.color === 'string' ? variantData.color : null)
+    const size = normalizeVariantText(typeof variantData.size === 'string' ? variantData.size : null)
+    const fallbackSku = buildVariantSku(slug, color, size, index)
+    const skuValue = typeof variantData.sku === 'string' ? variantData.sku : ''
+    const sku = skuValue.trim() || fallbackSku
+    const stockValue = Number(variantData.stock)
+    const stock = Number.isFinite(stockValue) ? Math.max(0, stockValue) : 0
+    const priceModifierValue = Number(variantData.priceModifier)
+    const priceModifier = Number.isFinite(priceModifierValue)
+      ? priceModifierValue
+      : 0
+
+    return {
+      id: typeof variantData.id === 'string' ? variantData.id : undefined,
+      color,
+      size,
+      sku,
+      stock,
+      priceModifier,
+    }
+  })
+}
 
 /**
  * GET /api/admin/products/[id]
@@ -112,6 +146,7 @@ export async function PATCH(
       name,
       slug,
       description,
+      shortDescription,
       price,
       salePrice,
       costPrice,
@@ -128,15 +163,33 @@ export async function PATCH(
       warranty,
       vendor,
       status,
+      stock,
       images,
       variants
     } = body
+
+    if (variants !== undefined) {
+      const normalizedVariants = sanitizeVariants(variants, slug || id)
+      const variantValidationErrors = validateVariants(normalizedVariants)
+      if (variantValidationErrors.length > 0) {
+        return NextResponse.json(
+          {
+            error: 'Invalid variant data',
+            code: 'INVALID_VARIANTS',
+            variantErrors: variantValidationErrors,
+          },
+          { status: 400 }
+        )
+      }
+      body.variants = normalizedVariants
+    }
 
     // Update product basic info
     const updateData: any = {}
     if (name !== undefined) updateData.name = name
     if (slug !== undefined) updateData.slug = slug
     if (description !== undefined) updateData.description = description
+    if (shortDescription !== undefined) updateData.shortDescription = shortDescription || null
     if (price !== undefined) updateData.price = parseFloat(price)
     if (salePrice !== undefined) updateData.salePrice = salePrice ? parseFloat(salePrice) : null
     if (costPrice !== undefined) updateData.costPrice = costPrice ? parseFloat(costPrice) : null
@@ -153,6 +206,7 @@ export async function PATCH(
     if (warranty !== undefined) updateData.warranty = warranty ? String(warranty) : null
     if (vendor !== undefined) updateData.vendor = vendor ? String(vendor) : null
     if (status !== undefined) updateData.status = status === 'DRAFT' ? 'DRAFT' : 'ACTIVE'
+    if (stock !== undefined) updateData.stock = parseInt(stock) || 0
 
     const { data: product, error: productError } = await supabase
       .from('Product')
@@ -201,7 +255,7 @@ export async function PATCH(
     }
 
     // Update variants if provided
-    if (variants !== undefined) {
+    if (body.variants !== undefined) {
       // Delete existing variants
       const { error: deleteVariantError } = await supabase
         .from('ProductVariant')
@@ -214,15 +268,15 @@ export async function PATCH(
       }
 
       // Insert new variants
-      if (variants.length > 0) {
-        const variantInserts = variants.map((variant: any, index: number) => ({
+      if (body.variants.length > 0) {
+        const variantInserts = body.variants.map((variant: EditableVariant, index: number) => ({
           id: variant.id || variant.sku || `var_${id}_${index}_${Date.now()}`, // Use existing ID, SKU, or generate unique ID
           productId: id,
           color: variant.color || null,
           size: variant.size || null,
           sku: variant.sku,
-          stock: variant.stock || 0,
-          priceModifier: variant.priceModifier || 0
+          stock: variant.stock ?? 0,
+          priceModifier: variant.priceModifier ?? 0
         }))
 
         const { error: insertVariantError } = await supabase

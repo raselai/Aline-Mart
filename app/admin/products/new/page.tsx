@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, X, Upload, Image as ImageIcon } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import {
+  buildVariantCombinationKey,
+  buildVariantSku,
+  parseVariantList,
+  validateVariants,
+  type EditableVariant,
+} from '@/lib/variant-utils'
 
 interface Brand {
   id: string
@@ -93,9 +100,13 @@ export default function NewProductPage() {
   const [shippingFee, setShippingFee] = useState('')
   const [warranty, setWarranty] = useState('')
   const [vendor, setVendor] = useState('')
+  const [stock, setStock] = useState('0')
   const [productStatus, setProductStatus] = useState<'DRAFT' | 'ACTIVE'>('ACTIVE')
   const [images, setImages] = useState<ProductImage[]>([])
   const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [variantErrors, setVariantErrors] = useState<string[]>([])
+  const [matrixColors, setMatrixColors] = useState('')
+  const [matrixSizes, setMatrixSizes] = useState('')
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({})
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({})
   const subcategoryOptions = mainCategoryId
@@ -224,20 +235,77 @@ export default function NewProductPage() {
   }
 
   const addVariant = () => {
+    const sku = buildVariantSku(slug || name, '', '', variants.length)
     setVariants([
       ...variants,
-      { color: '', size: '', sku: '', stock: 0, priceModifier: 0, status: 'in' }
+      { color: '', size: '', sku, stock: 0, priceModifier: 0, status: 'in' }
     ])
+    setVariantErrors([])
   }
 
   const removeVariant = (index: number) => {
     setVariants(variants.filter((_, i) => i !== index))
+    setVariantErrors([])
   }
 
   const updateVariant = (index: number, field: keyof ProductVariant, value: string | number) => {
     const updated = [...variants]
     updated[index] = { ...updated[index], [field]: value }
     setVariants(updated)
+    setVariantErrors([])
+  }
+
+  const regenerateVariantSku = (index: number) => {
+    const variant = variants[index]
+    if (!variant) return
+    updateVariant(index, 'sku', buildVariantSku(slug || name, variant.color, variant.size, index))
+  }
+
+  const normalizeVariantsForSubmit = (input: ProductVariant[]): EditableVariant[] => {
+    return input.map((variant, index) => ({
+      color: variant.color.trim() || null,
+      size: variant.size.trim() || null,
+      sku: variant.sku.trim() || buildVariantSku(slug || name, variant.color, variant.size, index),
+      stock: variant.status === 'out' ? 0 : Math.max(0, Number(variant.stock) || 0),
+      priceModifier: Number.isFinite(variant.priceModifier) ? variant.priceModifier : 0,
+    }))
+  }
+
+  const generateVariantMatrix = () => {
+    const colors = parseVariantList(matrixColors)
+    const sizes = parseVariantList(matrixSizes)
+    const colorValues = colors.length > 0 ? colors : ['']
+    const sizeValues = sizes.length > 0 ? sizes : ['']
+
+    if (colors.length === 0 && sizes.length === 0) {
+      alert('Add at least one color or one size before generating variants.')
+      return
+    }
+
+    const existingKeys = new Set(
+      variants.map((variant) => buildVariantCombinationKey(variant.color, variant.size))
+    )
+    const nextVariants = [...variants]
+
+    colorValues.forEach((color) => {
+      sizeValues.forEach((size) => {
+        const key = buildVariantCombinationKey(color, size)
+        if (existingKeys.has(key)) return
+
+        nextVariants.push({
+          color,
+          size,
+          sku: buildVariantSku(slug || name, color, size, nextVariants.length),
+          stock: 0,
+          priceModifier: 0,
+          status: 'in',
+        })
+        existingKeys.add(key)
+      })
+    })
+
+    setVariants(nextVariants)
+    setVariantErrors([])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -262,14 +330,20 @@ export default function NewProductPage() {
         return
       }
 
-      const finalDescription = shortDescription.trim()
-        ? `${shortDescription.trim()}\n\n${description.trim()}`
-        : description
+      const normalizedVariants = normalizeVariantsForSubmit(variants)
+      const localVariantErrors = validateVariants(normalizedVariants)
+      if (localVariantErrors.length > 0) {
+        setVariantErrors(localVariantErrors.map((error) => error.message))
+        alert(localVariantErrors[0].message)
+        setLoading(false)
+        return
+      }
 
       const productData = {
         name,
         slug,
-        description: finalDescription,
+        shortDescription: shortDescription.trim() || null,
+        description: description.trim(),
         price: parseFloat(price),
         salePrice: salePrice ? parseFloat(salePrice) : null,
         costPrice: costPrice ? parseFloat(costPrice) : null,
@@ -278,6 +352,7 @@ export default function NewProductPage() {
         brandId, // Keep as string (database uses string IDs)
         categoryId: selectedCategoryId, // Keep as string (database uses string IDs)
         inStock,
+        stock: parseInt(stock) || 0,
         featured,
         isNew,
         weight: weight.trim() || null,
@@ -287,15 +362,7 @@ export default function NewProductPage() {
         vendor: vendor.trim() || null,
         status: productStatus,
         images: images.filter(img => img.url), // Only include images with URLs
-        variants: variants
-          .filter(v => v.sku)
-          .map(v => ({
-            color: v.color || null,
-            size: v.size || null,
-            sku: v.sku,
-            stock: v.status === 'out' ? 0 : v.stock,
-            priceModifier: Number.isFinite(v.priceModifier) ? v.priceModifier : 0,
-          }))
+        variants: normalizedVariants
       }
 
       console.log('Submitting product data:', productData)
@@ -311,6 +378,9 @@ export default function NewProductPage() {
       if (!response.ok) {
         const error = await response.json()
         console.error('Server error response:', error)
+        if (Array.isArray(error.variantErrors)) {
+          setVariantErrors(error.variantErrors.map((item: { message?: string }) => item.message || 'Invalid variant'))
+        }
         throw new Error(error.error || 'Failed to create product')
       }
 
@@ -969,10 +1039,69 @@ export default function NewProductPage() {
             </button>
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <input
+              type="text"
+              value={matrixColors}
+              onChange={(e) => setMatrixColors(e.target.value)}
+              placeholder="Colors (comma-separated)"
+              className="px-3 py-2 border border-gray-300 rounded-md"
+              style={{ borderColor: '#d1d5db' }}
+            />
+            <input
+              type="text"
+              value={matrixSizes}
+              onChange={(e) => setMatrixSizes(e.target.value)}
+              placeholder="Sizes (comma-separated)"
+              className="px-3 py-2 border border-gray-300 rounded-md"
+              style={{ borderColor: '#d1d5db' }}
+            />
+            <button
+              type="button"
+              onClick={generateVariantMatrix}
+              className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-gray-50"
+              style={{ borderColor: '#d1d5db', color: '#2C2C2C' }}
+            >
+              Generate Matrix
+            </button>
+          </div>
+
+          {variantErrors.length > 0 && (
+            <div className="mb-4 p-3 border rounded-md bg-red-50" style={{ borderColor: '#FCA5A5' }}>
+              <p className="text-sm font-semibold mb-1" style={{ color: '#B91C1C' }}>Fix variant issues:</p>
+              {variantErrors.map((error, index) => (
+                <p key={`${error}-${index}`} className="text-sm" style={{ color: '#B91C1C' }}>
+                  {error}
+                </p>
+              ))}
+            </div>
+          )}
+
           {variants.length === 0 ? (
-            <p style={{ color: '#6B7280', textAlign: 'center', padding: '2rem 0' }}>
-              No variants added yet
-            </p>
+            <div className="space-y-4">
+              <div className="p-4 border rounded-md" style={{ borderColor: '#E5E7EB' }}>
+                <label
+                  htmlFor="stock"
+                  className="block text-sm font-medium mb-2"
+                  style={{ color: '#2C2C2C' }}
+                >
+                  Stock Quantity
+                </label>
+                <input
+                  type="number"
+                  id="stock"
+                  value={stock}
+                  onChange={(e) => setStock(e.target.value)}
+                  min="0"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                  style={{ borderColor: '#d1d5db' }}
+                  placeholder="0"
+                />
+                <p className="mt-1 text-sm" style={{ color: '#6B7280' }}>
+                  Set stock quantity for products without variants. Add variants above for per-variant stock.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-4">
               {variants.map((variant, index) => (
@@ -1028,6 +1157,14 @@ export default function NewProductPage() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md"
                         style={{ borderColor: '#d1d5db' }}
                       />
+                      <button
+                        type="button"
+                        onClick={() => regenerateVariantSku(index)}
+                        className="mt-1 text-xs hover:underline"
+                        style={{ color: '#8e2157' }}
+                      >
+                        Auto SKU
+                      </button>
                     </div>
                     <div>
                       <label

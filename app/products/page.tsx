@@ -165,18 +165,21 @@ async function fetchProducts(params: {
     if (error) throw error
 
     // Transform products to match expected format
-    const transformedProducts = (products || []).map((product: any) => ({
-      ...product,
-      brand: Array.isArray(product.brand) ? product.brand[0] : product.brand,
-      category: Array.isArray(product.category) ? product.category[0] : product.category,
-      salePrice: product.salePrice || undefined,
-      images: (product.images || [])
-        .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
-        .map((img: any) => ({
-          url: img.url,
-          alt: img.alt || undefined
-        }))
-    }))
+    const transformedProducts = (products || []).map((product: any) => {
+      const { costPrice: _costPrice, ...safeProduct } = product
+      return {
+        ...safeProduct,
+        brand: Array.isArray(product.brand) ? product.brand[0] : product.brand,
+        category: Array.isArray(product.category) ? product.category[0] : product.category,
+        salePrice: product.salePrice || undefined,
+        images: (product.images || [])
+          .sort((a: any, b: any) => (a.order || 0) - (b.order || 0))
+          .map((img: any) => ({
+            url: img.url,
+            alt: img.alt || undefined
+          }))
+      }
+    })
 
     return {
       products: transformedProducts,

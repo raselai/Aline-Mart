@@ -77,11 +77,17 @@ export async function GET(
       .order('createdAt', { ascending: false })
       .limit(6)
 
+    const { costPrice: _costPrice, ...safeProduct } = product as any
+    const safeRelatedProducts = (relatedProducts || []).map((relatedProduct: any) => {
+      const { costPrice: _relatedCostPrice, ...safeRelatedProduct } = relatedProduct
+      return safeRelatedProduct
+    })
+
     return NextResponse.json({
       success: true,
       data: {
-        product,
-        relatedProducts: relatedProducts || [],
+        product: safeProduct,
+        relatedProducts: safeRelatedProducts,
       },
     })
   } catch (error) {

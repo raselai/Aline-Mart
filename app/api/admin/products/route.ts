@@ -1,6 +1,40 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
+import {
+  buildVariantSku,
+  normalizeVariantText,
+  validateVariants,
+  type EditableVariant,
+} from '@/lib/variant-utils'
+
+function sanitizeVariants(variants: unknown[] | undefined, slug: string): EditableVariant[] {
+  if (!Array.isArray(variants)) return []
+
+  return variants.map((variant, index) => {
+    const variantData = (variant && typeof variant === 'object') ? (variant as Record<string, unknown>) : {}
+    const color = normalizeVariantText(typeof variantData.color === 'string' ? variantData.color : null)
+    const size = normalizeVariantText(typeof variantData.size === 'string' ? variantData.size : null)
+    const fallbackSku = buildVariantSku(slug, color, size, index)
+    const skuValue = typeof variantData.sku === 'string' ? variantData.sku : ''
+    const sku = skuValue.trim() || fallbackSku
+    const stockValue = Number(variantData.stock)
+    const stock = Number.isFinite(stockValue) ? Math.max(0, stockValue) : 0
+    const priceModifierValue = Number(variantData.priceModifier)
+    const priceModifier = Number.isFinite(priceModifierValue)
+      ? priceModifierValue
+      : 0
+
+    return {
+      id: typeof variantData.id === 'string' ? variantData.id : undefined,
+      color,
+      size,
+      sku,
+      stock,
+      priceModifier,
+    }
+  })
+}
 
 /**
  * GET /api/admin/products
@@ -181,6 +215,7 @@ export async function POST(request: Request) {
       name,
       slug,
       description,
+      shortDescription,
       price,
       salePrice,
       costPrice,
@@ -197,6 +232,7 @@ export async function POST(request: Request) {
       warranty,
       vendor,
       status,
+      stock,
       images,
       variants
     } = body
@@ -220,6 +256,19 @@ export async function POST(request: Request) {
       )
     }
 
+    const normalizedVariants = sanitizeVariants(variants, slug)
+    const variantValidationErrors = validateVariants(normalizedVariants)
+    if (variantValidationErrors.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Invalid variant data',
+          code: 'INVALID_VARIANTS',
+          variantErrors: variantValidationErrors,
+        },
+        { status: 400 }
+      )
+    }
+
     // Generate product ID from slug (format: prod_slug)
     const productId = `prod_${slug}`
 
@@ -229,6 +278,7 @@ export async function POST(request: Request) {
       name,
       slug,
       description: description || '',
+      shortDescription: shortDescription || null,
       price: parseFloat(price),
       salePrice: salePrice ? parseFloat(salePrice) : null,
       costPrice: costPrice !== undefined && costPrice !== null && costPrice !== '' ? parseFloat(costPrice) : null,
@@ -245,6 +295,7 @@ export async function POST(request: Request) {
       warranty: warranty ? String(warranty) : null,
       vendor: vendor ? String(vendor) : null,
       status: status === 'DRAFT' ? 'DRAFT' : 'ACTIVE',
+      stock: stock !== undefined && stock !== null ? parseInt(stock) || 0 : 0,
     }
 
     console.log('💾 Inserting product:', productData)
@@ -288,15 +339,15 @@ export async function POST(request: Request) {
     }
 
     // Add product variants
-    if (variants && variants.length > 0) {
-      const variantInserts = variants.map((variant: any, index: number) => ({
+    if (normalizedVariants.length > 0) {
+      const variantInserts = normalizedVariants.map((variant: EditableVariant, index: number) => ({
         id: variant.sku || `var_${productId}_${index}`, // Use SKU as ID or generate one
         productId: product.id,
         color: variant.color || null,
         size: variant.size || null,
         sku: variant.sku,
-        stock: variant.stock || 0,
-        priceModifier: variant.priceModifier || 0
+        stock: variant.stock ?? 0,
+        priceModifier: variant.priceModifier ?? 0
       }))
 
       console.log('🎨 Inserting variants:', variantInserts.length)

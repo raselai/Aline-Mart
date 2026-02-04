@@ -54,7 +54,8 @@ async function fetchProduct(slug: string) {
       return null
     }
 
-    return product
+    const { costPrice: _costPrice, ...safeProduct } = product as any
+    return safeProduct
   } catch (error) {
     console.error('Error fetching product:', error)
     return null
@@ -140,9 +141,15 @@ async function fetchProductWithRelated(slug: string) {
       .order('createdAt', { ascending: false })
       .limit(6)
 
+    const { costPrice: _costPrice, ...safeProduct } = product as any
+    const safeRelatedProducts = (relatedProducts || []).map((relatedProduct: any) => {
+      const { costPrice: _relatedCostPrice, ...safeRelatedProduct } = relatedProduct
+      return safeRelatedProduct
+    })
+
     return {
-      product,
-      relatedProducts: relatedProducts || []
+      product: safeProduct,
+      relatedProducts: safeRelatedProducts
     }
   } catch (error) {
     console.error('Error fetching product with related:', error)
