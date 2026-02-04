@@ -181,7 +181,7 @@ export default function CheckoutClient() {
 
           {/* Right: Order Summary */}
           <div className="lg:col-span-1">
-            <OrderSummary paymentMethod={paymentData?.paymentMethod} />
+            <OrderSummary />
           </div>
         </div>
         </div>

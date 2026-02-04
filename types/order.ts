@@ -1,5 +1,6 @@
 export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
 export type PaymentMethod = 'PAYSTATION' | 'COD'
+export type PaymentStatus = 'UNPAID' | 'PAID' | 'FAILED'
 
 export interface Order {
   id: string
@@ -10,6 +11,8 @@ export interface Order {
   shippingAddressId: string
   paymentMethod: PaymentMethod
   shippingCost: number
+  paymentStatus?: PaymentStatus
+  paymentChannel?: string | null
   paystationTransactionId?: string | null
   cancellationReason?: string | null
   createdAt: string
@@ -70,6 +73,7 @@ export interface AdminOrderListItem {
   total: number
   status: OrderStatus
   paymentMethod: PaymentMethod
+  paymentStatus?: PaymentStatus
   createdAt: string
   user: {
     name: string | null

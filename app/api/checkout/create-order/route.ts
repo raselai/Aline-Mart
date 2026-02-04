@@ -1,7 +1,8 @@
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
-import { generateOrderNumber, calculateOrderTotal } from '@/lib/order-utils'
+import { generateOrderNumber } from '@/lib/order-utils'
+import { getShippingConfig, calculateShippingCost, parseProductWeight } from '@/lib/shipping'
 import { validateStock, decrementStockWithLog } from '@/lib/inventory'
 import { createTransaction } from '@/lib/accounts'
 import { checkoutSchema } from '@/types/checkout'
@@ -45,12 +46,41 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createServerClient()
 
-    // Calculate totals
+    // Calculate subtotal
     const subtotal = (cartItems as CartItem[]).reduce(
       (sum, item) => sum + item.price * item.quantity,
       0
     )
-    const shippingCost = data.paymentMethod === 'COD' ? 50 : 0
+
+    // Fetch product weights and cost data for shipping + order items
+    const productIds = (cartItems as CartItem[]).map((item) => item.productId)
+    const productDataMap: Record<string, { costPrice: number | null; vendor: string | null; weight: number }> = {}
+
+    if (productIds.length > 0) {
+      const { data: products } = await supabase
+        .from('Product')
+        .select('id, costPrice, vendor, weight')
+        .in('id', productIds)
+
+      if (products) {
+        for (const product of products) {
+          productDataMap[product.id] = {
+            costPrice: product.costPrice ?? null,
+            vendor: product.vendor ?? null,
+            weight: parseProductWeight(product.weight),
+          }
+        }
+      }
+    }
+
+    // Calculate weight-based shipping
+    let totalWeightKg = 0
+    for (const item of cartItems as CartItem[]) {
+      totalWeightKg += (productDataMap[item.productId]?.weight ?? 0) * item.quantity
+    }
+
+    const shippingConfig = await getShippingConfig()
+    const shippingCost = calculateShippingCost(shippingConfig, totalWeightKg)
     const total = subtotal + shippingCost
 
     // Create or get guest user
@@ -150,6 +180,7 @@ export async function POST(request: NextRequest) {
         userId,
         total,
         status: 'PENDING',
+        paymentStatus: 'UNPAID',
         shippingAddressId: addressId,
         paymentMethod: data.paymentMethod,
         shippingCost,
@@ -159,26 +190,6 @@ export async function POST(request: NextRequest) {
 
     if (orderError || !order) {
       throw new Error('Failed to create order')
-    }
-
-    // Fetch cost prices and vendor from Product table to capture at order time
-    const productIds = (cartItems as CartItem[]).map((item) => item.productId)
-    const productDataMap: Record<string, { costPrice: number | null; vendor: string | null }> = {}
-
-    if (productIds.length > 0) {
-      const { data: products } = await supabase
-        .from('Product')
-        .select('id, costPrice, vendor')
-        .in('id', productIds)
-
-      if (products) {
-        for (const product of products) {
-          productDataMap[product.id] = {
-            costPrice: product.costPrice ?? null,
-            vendor: product.vendor ?? null,
-          }
-        }
-      }
     }
 
     // Create order items with sub-order numbers

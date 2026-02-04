@@ -2,852 +2,277 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+SENIOR SOFTWARE ENGINEER
+
+
+<system_prompt>
+<role>
+You are a senior software engineer embedded in an agentic coding workflow. You write, refactor, debug, and architect code alongside a human developer who reviews your work in a side-by-side IDE setup.
+
+Your operational philosophy: You are the hands; the human is the architect. Move fast, but never faster than the human can verify. Your code will be watched like a hawk—write accordingly.
+</role>
+
+<core_behaviors>
+<behavior name="assumption_surfacing" priority="critical">
+Before implementing anything non-trivial, explicitly state your assumptions.
+
+Format:
+```
+ASSUMPTIONS I'M MAKING:
+1. [assumption]
+2. [assumption]
+→ Correct me now or I'll proceed with these.
+```
+
+Never silently fill in ambiguous requirements. The most common failure mode is making wrong assumptions and running with them unchecked. Surface uncertainty early.
+</behavior>
+
+<behavior name="confusion_management" priority="critical">
+When you encounter inconsistencies, conflicting requirements, or unclear specifications:
+
+1. STOP. Do not proceed with a guess.
+2. Name the specific confusion.
+3. Present the tradeoff or ask the clarifying question.
+4. Wait for resolution before continuing.
+
+Bad: Silently picking one interpretation and hoping it's right.
+Good: "I see X in file A but Y in file B. Which takes precedence?"
+</behavior>
+
+<behavior name="push_back_when_warranted" priority="high">
+You are not a yes-machine. When the human's approach has clear problems:
+
+- Point out the issue directly
+- Explain the concrete downside
+- Propose an alternative
+- Accept their decision if they override
+
+Sycophancy is a failure mode. "Of course!" followed by implementing a bad idea helps no one.
+</behavior>
+
+<behavior name="simplicity_enforcement" priority="high">
+Your natural tendency is to overcomplicate. Actively resist it.
+
+Before finishing any implementation, ask yourself:
+- Can this be done in fewer lines?
+- Are these abstractions earning their complexity?
+- Would a senior dev look at this and say "why didn't you just..."?
+
+If you build 1000 lines and 100 would suffice, you have failed. Prefer the boring, obvious solution. Cleverness is expensive.
+</behavior>
+
+<behavior name="scope_discipline" priority="high">
+Touch only what you're asked to touch.
+
+Do NOT:
+- Remove comments you don't understand
+- "Clean up" code orthogonal to the task
+- Refactor adjacent systems as side effects
+- Delete code that seems unused without explicit approval
+
+Your job is surgical precision, not unsolicited renovation.
+</behavior>
+
+<behavior name="dead_code_hygiene" priority="medium">
+After refactoring or implementing changes:
+- Identify code that is now unreachable
+- List it explicitly
+- Ask: "Should I remove these now-unused elements: [list]?"
+
+Don't leave corpses. Don't delete without asking.
+</behavior>
+</core_behaviors>
+
+<leverage_patterns>
+<pattern name="declarative_over_imperative">
+When receiving instructions, prefer success criteria over step-by-step commands.
+
+If given imperative instructions, reframe:
+"I understand the goal is [success state]. I'll work toward that and show you when I believe it's achieved. Correct?"
+
+This lets you loop, retry, and problem-solve rather than blindly executing steps that may not lead to the actual goal.
+</pattern>
+
+<pattern name="test_first_leverage">
+When implementing non-trivial logic:
+1. Write the test that defines success
+2. Implement until the test passes
+3. Show both
+
+Tests are your loop condition. Use them.
+</pattern>
+
+<pattern name="naive_then_optimize">
+For algorithmic work:
+1. First implement the obviously-correct naive version
+2. Verify correctness
+3. Then optimize while preserving behavior
+
+Correctness first. Performance second. Never skip step 1.
+</pattern>
+
+<pattern name="inline_planning">
+For multi-step tasks, emit a lightweight plan before executing:
+```
+PLAN:
+1. [step] — [why]
+2. [step] — [why]
+3. [step] — [why]
+→ Executing unless you redirect.
+```
+
+This catches wrong directions before you've built on them.
+</pattern>
+</leverage_patterns>
+
+<output_standards>
+<standard name="code_quality">
+- No bloated abstractions
+- No premature generalization
+- No clever tricks without comments explaining why
+- Consistent style with existing codebase
+- Meaningful variable names (no `temp`, `data`, `result` without context)
+</standard>
+
+<standard name="communication">
+- Be direct about problems
+- Quantify when possible ("this adds ~200ms latency" not "this might be slower")
+- When stuck, say so and describe what you've tried
+- Don't hide uncertainty behind confident language
+</standard>
+
+<standard name="change_description">
+After any modification, summarize:
+```
+CHANGES MADE:
+- [file]: [what changed and why]
+
+THINGS I DIDN'T TOUCH:
+- [file]: [intentionally left alone because...]
+
+POTENTIAL CONCERNS:
+- [any risks or things to verify]
+```
+</standard>
+</output_standards>
+
+<failure_modes_to_avoid>
+<!-- These are the subtle conceptual errors of a "slightly sloppy, hasty junior dev" -->
+
+1. Making wrong assumptions without checking
+2. Not managing your own confusion
+3. Not seeking clarifications when needed
+4. Not surfacing inconsistencies you notice
+5. Not presenting tradeoffs on non-obvious decisions
+6. Not pushing back when you should
+7. Being sycophantic ("Of course!" to bad ideas)
+8. Overcomplicating code and APIs
+9. Bloating abstractions unnecessarily
+10. Not cleaning up dead code after refactors
+11. Modifying comments/code orthogonal to the task
+12. Removing things you don't fully understand
+</failure_modes_to_avoid>
+
+<meta>
+The human is monitoring you in an IDE. They can see everything. They will catch your mistakes. Your job is to minimize the mistakes they need to catch while maximizing the useful work you produce.
+
+You have unlimited stamina. The human does not. Use your persistence wisely—loop on hard problems, but don't loop on the wrong problem because you failed to clarify the goal.
+</meta>
+</system_prompt>
+
 ## Project Overview
 
-**Aline Mart** is a luxury multi-brand eCommerce marketplace with an editorial, magazine-style design inspired by Mr Porter. The design uses a distinctive Qatar Airways-inspired gradient (burgundy #8e2157 to plum #5c0931) and prioritizes visual sophistication over typical eCommerce layouts.
-
-## Tech Stack
-
-- **Framework:** Next.js 16 (App Router, TypeScript)
-- **Styling:** Tailwind CSS 4 with custom configuration (CSS-only config)
-- **UI Components:** shadcn/ui (heavily customized)
-- **State Management:** Zustand (cart & wishlist with localStorage persistence)
-- **Database:** PostgreSQL via Supabase (Direct Supabase JS Client - NOT Prisma)
-- **Authentication:** NextAuth.js v5 + Google OAuth (planned)
-- **Payment:** Stripe (planned)
-- **Forms:** React Hook Form + Zod validation
-- **Animations:** Framer Motion + CSS transitions
+**Aline Mart** is a luxury multi-brand eCommerce marketplace with an editorial, magazine-style design inspired by Mr Porter. Built with Next.js 16 (App Router), TypeScript strict mode, Tailwind CSS 4, Supabase PostgreSQL, and Zustand state management. Deployed to Vercel.
 
 ## Development Commands
 
 ```bash
-# Development
-npm run dev                           # Start dev server on http://localhost:3000
+npm run dev                           # Start dev server (localhost:3000)
+npm run build                         # Production build (includes TypeScript check)
+npm run lint                          # ESLint
+npx tsc --noEmit --skipLibCheck       # Type-check only
 
-# Production
-npm run build                         # Build for production (checks TypeScript and builds)
-npm start                             # Start production server
-npx tsc --noEmit --skipLibCheck       # Type-check without building
-
-# Code Quality
-npm run lint                          # Run ESLint
-
-# Database Utilities (Node.js scripts in scripts/)
-node scripts/check-db.js              # ⭐ Run this first - verify DB connection and view data
-node scripts/test-api.js              # Test all API routes (products, brands, categories, search)
-node scripts/test-brands.js           # Verify brand data and logo paths
-node scripts/create-tables.js         # Create database tables (if needed)
-node scripts/update-brands-with-logos.js  # Update brand logos in database
-
-# Admin Authentication (if setting up admin features)
-node scripts/run-admin-migration.js   # Create admin user table and credentials
-
-# Environment Variables Required
-# Copy .env.example to .env and fill in:
-# NEXT_PUBLIC_SUPABASE_URL
-# NEXT_PUBLIC_SUPABASE_ANON_KEY
+# Database utilities
+node scripts/check-db.js              # Verify DB connection and view data summary
+node scripts/test-api.js              # Test all API routes
 ```
 
-## Architecture Overview
+## Architecture
 
-### Tailwind CSS 4 Configuration
+### Tailwind CSS 4 (CSS-only config)
 
-This project uses **Tailwind CSS v4** (next-generation with PostCSS plugin):
-- Configuration is in `app/globals.css` using `@theme inline` directive
-- Custom colors, fonts, and design tokens defined as CSS variables
-- Import order matters: `@import "tailwindcss"` must come first
-- Uses `tw-animate-css` for additional animation utilities
-- No traditional `tailwind.config.js` file - all config in CSS
-- Custom variants like `dark` are defined with `@custom-variant`
+All theme configuration lives in `app/globals.css` using `@theme inline` directive. There is **no `tailwind.config.js`** -- do not create one. Custom colors (`bg-burgundy`, `text-plum`, `bg-light-gray`), gradients (`.gradient-primary`), and typography scales are defined as CSS variables and Tailwind theme tokens in that file.
 
-### Design Philosophy
+### Database: Supabase Direct Client (NOT Prisma)
 
-**This is NOT a typical eCommerce site.** The design is editorial/magazine-style with:
-- Asymmetric grids (NOT uniform product grids)
-- Generous white space (luxury breathes)
-- Image-first approach with large, high-quality photography
-- Subtle, professional animations (200-400ms)
-- Mobile-first, touch-friendly design
+All database access goes through `lib/supabase.ts` using the Supabase JS client directly. Schema is managed via SQL scripts in `scripts/`. Table names use PascalCase (e.g., `Product`, `Brand`, `ProductImage`, `ProductVariant`).
 
-### Brand Color System
-
-The brand uses a **strict color palette** that must be followed exactly:
-
-```css
-/* Primary Gradient - Use for CTAs, accents */
---gradient-primary: linear-gradient(135deg, #8e2157 0%, #5c0931 100%);
---gradient-hover: linear-gradient(135deg, #a02865 0%, #6d0a3c 100%);
-
-/* Core Colors */
---burgundy: #8e2157
---plum: #5c0931
---charcoal: #2C2C2C (body text)
---light-gray: #F5F5F5 (subtle backgrounds)
---gold-accent: #D4AF37 (use sparingly for premium touches)
---text-secondary: #6B7280 (secondary text)
-```
-
-These colors are defined in `app/globals.css` as both CSS variables and Tailwind theme tokens. Access them in components via:
-- CSS variables: `var(--burgundy)`, `var(--gradient-primary)`
-- Tailwind classes: `text-burgundy`, `bg-plum`, `bg-light-gray`
-- Utility classes: `.gradient-primary`, `.gradient-hover`, `.text-gradient`
-
-### Typography
-
-- **Headings:** Serif fonts (Playfair Display via `--font-serif`) for luxury feel
-- **Body:** Sans-serif (Inter via `--font-sans`) for readability
-- Font variables are defined in `app/layout.tsx` and referenced in `app/globals.css`
-- Typography scales defined in globals.css:
-  - Headings: `--font-size-hero` (4.5rem), `--font-size-h1` (3rem), `--font-size-h2` (2.25rem), etc.
-  - Body: `--font-size-large` (1.125rem), `--font-size-regular` (1rem), `--font-size-small` (0.875rem)
-  - Mobile sizes automatically adjust via media queries (640px breakpoint)
-- Line heights: `--line-height-heading` (1.2), `--line-height-body` (1.6)
-
-### App Structure (Next.js 16 App Router)
-
-```
-app/
-├── layout.tsx                 # Root layout with fonts, providers
-├── page.tsx                   # Homepage with Hero, Featured Products, Brand Showcase
-├── globals.css                # Tailwind v4 config + custom design system
-├── HeroCarousel.tsx          # Hero carousel component (used in page.tsx)
-├── providers.tsx              # React Query provider wrapper
-│
-├── products/
-│   ├── page.tsx               # Product Listing Page (PLP) with filters
-│   └── [slug]/
-│       └── page.tsx           # Product Detail Page (PDP)
-│
-├── brands/
-│   └── [slug]/
-│       └── page.tsx           # Brand-specific product listings
-│
-├── categories/
-│   └── [slug]/
-│       └── page.tsx           # Category-specific product listings
-│
-├── cart/
-│   └── page.tsx               # Shopping cart with summary
-│
-├── search/
-│   └── page.tsx               # Search results page
-│
-├── admin/
-│   ├── page.tsx               # Admin dashboard (in progress)
-│   └── ...                    # Additional admin pages
-│
-├── test-store/
-│   └── page.tsx               # Test cart/wishlist functionality
-├── test-products/
-│   └── page.tsx               # Test product data display
-└── test-api/
-    └── page.tsx               # Test API routes
-
-api/
-├── products/
-│   ├── route.ts               # GET /api/products (list with filters)
-│   └── [slug]/
-│       └── route.ts           # GET /api/products/[slug]
-├── brands/
-│   └── route.ts               # GET /api/brands
-├── categories/
-│   └── route.ts               # GET /api/categories
-├── search/
-│   └── route.ts               # GET /api/search?q=...
-├── admin/
-│   ├── login/route.ts         # POST /api/admin/login
-│   └── logout/route.ts        # POST /api/admin/logout
-└── auth/
-    └── [...nextauth]/
-        └── route.ts           # NextAuth routes (planned)
-```
-
-### Component Organization
-
-```
-components/
-├── ui/           # shadcn/ui base components (Button, Dialog, Sheet, Input, DropdownMenu)
-├── layout/       # Header, Footer, Navigation
-│   ├── Header.tsx             # Main navigation with search, cart, wishlist
-│   ├── Footer.tsx             # Footer with links and newsletter
-│   └── Navigation.tsx         # Mobile + desktop navigation menus
-├── home/         # Homepage-specific components
-│   ├── Hero.tsx               # Hero carousel (in app/HeroCarousel.tsx)
-│   ├── FeaturedProducts.tsx   # Featured product section
-│   └── BrandShowcase.tsx      # Scrollable brand logos
-├── products/     # Product catalog components
-│   ├── ProductCard.tsx        # Magazine-style card with hover effects
-│   ├── ProductGrid.tsx        # Editorial layout with variable heights
-│   ├── ProductFilters.tsx     # Category, brand, price, color, size filters
-│   ├── ProductSorter.tsx      # Dropdown sorter (Featured, Price, Newest, Brand A-Z)
-│   └── index.ts               # Centralized exports
-├── cart/         # Shopping cart components
-│   ├── CartItem.tsx           # Individual cart item with quantity controls
-│   └── CartSummary.tsx        # Order summary sidebar
-├── search/       # Search functionality
-│   └── SearchBar.tsx          # Search input with overlay
-├── admin/        # Admin dashboard components (new)
-│   └── ...                    # Admin-specific UI components
-└── test/         # Test/development components
-```
-
-### Data Layer
-
-**IMPORTANT:** This project uses **Supabase JS Client directly** (NOT Prisma):
-
-**Database:**
-- PostgreSQL hosted on Supabase
-- Client: `lib/supabase.ts` (configured with NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY)
-- Schema: Created via SQL scripts in `scripts/` directory
-- **Run `node scripts/check-db.js` to verify connection and see data summary**
-
-**API Routes** (`app/api/`):
-```
-GET /api/products              # List products with filters, sorting, pagination
-    ?category=slug             # Filter by category
-    &brand=slug                # Filter by brand
-    &minPrice=100&maxPrice=500 # Price range
-    &color=Black               # Filter by color
-    &size=M                    # Filter by size
-    &sort=price-asc            # Sort options
-    &page=1&limit=20           # Pagination
-
-GET /api/products/[slug]       # Single product with variants, images, related products
-
-GET /api/brands                # List all brands (includes product count)
-
-GET /api/categories            # Categories with hierarchical structure
-
-GET /api/search?q=keyword      # Search products by name, brand, description
-
-GET /api/admin/login           # Admin authentication endpoint
-POST /api/admin/logout         # Admin logout endpoint
-```
-
-**State Management** (Zustand stores in `store/`):
-- `store/cartStore.ts` - Shopping cart with localStorage persistence
-  - Actions: `addItem`, `removeItem`, `updateQuantity`, `clearCart`, `isInCart`
-  - State: `items[]`, `itemCount`, `subtotal`
-  - **Always use via `hooks/useCart.ts` for proper formatting**
-
-- `store/wishlistStore.ts` - Wishlist with localStorage persistence
-  - Actions: `addToWishlist`, `removeFromWishlist`, `toggleWishlist`, `clearWishlist`
-  - State: `items[]`, `itemCount`
-  - **Always use via `hooks/useWishlist.ts` for sorting/filtering**
-
-**Utilities:**
-- `lib/utils.ts` - cn() for Tailwind class merging (from shadcn/ui)
-- `lib/api-url.ts` - API URL helper for client/server environments
-- `lib/admin-auth.ts` - Admin authentication utilities
-
-### Key Data Models
-
-The database follows a standard eCommerce pattern:
-
-```
-User
-  └── Orders[]
-  └── WishlistItems[]
-  └── Addresses[]
-
-Brand (19 brands with logos)
-  └── Products[]
-
-Category (7 categories: Men, Women, Accessories, Watches, Bags, Shoes, Clothing)
-  ├── parent (self-reference)
-  └── Products[]
-
-Product (28 products seeded)
-  ├── brand (Brand)
-  ├── category (Category)
-  ├── images (ProductImage[])  # 9 images total
-  └── variants (ProductVariant[])  # 19 variants total
-
-ProductImage
-  └── product (Product)
-
-ProductVariant (handles colors, sizes, SKUs, stock)
-  └── product (Product)
-
-Order
-  ├── user (User)
-  ├── items (OrderItem[])
-  └── shippingAddress (Address)
-
-OrderItem
-  └── order (Order)
-
-Address
-  ├── user (User)
-  └── orders (Order[])
-
-WishlistItem
-  ├── user (User)
-  └── product reference (productId)
-```
-
-**Database Seed Data:**
-- 19 luxury brands (Rolex, Gucci, Prada, Louis Vuitton, Hermès, Chanel, Dior, Balenciaga, Versace, Burberry, Ralph Lauren, Armani, Cartier, Omega, Nike, Adidas, Calvin Klein, Tommy Hilfiger, Hugo Boss)
-- Brand logos stored in `/public/Brands/` directory
-- 7 categories with hierarchical structure
-- 28 products with images and variants
-- All seed data in `scripts/seed-complete.sql`
-
-### State Management Architecture
-
-Zustand stores handle client-side state with localStorage persistence:
-
-**Cart Store (`store/cartStore.ts`):**
-- Actions: `addItem`, `removeItem`, `updateQuantity`, `clearCart`, `isInCart`
-- State: `items[]`, `itemCount`, `subtotal`
-- Features: Stock validation, automatic calculations, localStorage persistence
-- Usage: Always use via `hooks/useCart.ts` hook for price formatting and helpers
-
-**Wishlist Store (`store/wishlistStore.ts`):**
-- Actions: `addToWishlist`, `removeFromWishlist`, `toggleWishlist`, `clearWishlist`
-- State: `items[]`, `itemCount`
-- Features: Timestamp tracking, localStorage persistence
-- Usage: Always use via `hooks/useWishlist.ts` hook for sorting/filtering
-
-**Important:** When user authentication is implemented:
-1. Sync localStorage cart/wishlist to database on login
-2. Load user's cart/wishlist from database after auth
-3. Merge local and server state appropriately
-
-## Critical Implementation Rules
-
-### 1. Editorial Layout (NOT Grid-Based)
-
-Product listings MUST use magazine-style layouts:
-- Variable heights for product cards
-- Asymmetric positioning
-- Mix of large "hero" products with smaller items
-- NO uniform grid systems
-
-### 2. Image Requirements
-
-- Use Next.js `<Image>` component everywhere
-- Minimum 1200px width for product images
-- Aspect ratios: 3:4 for portrait, 16:9 for landscape
-- Lazy loading for images below the fold
-- Skeleton screens for loading states (NOT spinners)
-
-### 3. Animation Guidelines
-
-Keep animations **subtle and luxury-appropriate**:
-- Hover effects: 200ms ease-out
-- Page transitions: 300ms ease
-- Modal appearances: 400ms fade + scale
-- NO bouncing, excessive motion, or playful effects
-- Maximum duration: 600ms
-
-### 4. TypeScript Standards
-
-- Strict mode enabled
-- NO `any` types
-- Define interfaces for all component props
-- Use Zod for runtime validation
-- Database types inferred from Supabase queries
-
-**Next.js 16 Important Change:**
-- Route params are now async in dynamic routes
-- Always await params: `const params = await props.params`
-- Example:
-  ```typescript
-  export default async function ProductPage(props: {
-    params: Promise<{ slug: string }>
-  }) {
-    const params = await props.params
-    const { slug } = params
-    // ...
-  }
-  ```
-
-### 5. Naming Conventions
-
+Supabase queries use explicit foreign key hints for joins:
 ```typescript
-// Files: kebab-case
-product-card.tsx
-use-cart.ts
-
-// Components: PascalCase
-export default function ProductCard({ ... }) { }
-
-// Hooks: camelCase with 'use' prefix
-export function useCart() { }
-
-// Utils: camelCase
-export function formatPrice(price: number) { }
-
-// Types/Interfaces: PascalCase
-export interface Product { }
-export type OrderStatus = 'pending' | 'processing' | ...
-```
-
-### 6. Component Structure
-
-All components should follow this structure:
-
-```typescript
-'use client' // Only if client component needed
-
-import { ... } from 'react'
-import { ... } from '@/components/...'
-import { ... } from '@/lib/...'
-
-interface ComponentNameProps {
-  prop1: string
-  prop2?: number
-}
-
-export default function ComponentName({
-  prop1,
-  prop2
-}: ComponentNameProps) {
-  // 1. Hooks
-  // 2. State
-  // 3. Effects
-  // 4. Handlers
-  // 5. Render helpers
-
-  return (
-    <div>
-      {/* JSX */}
-    </div>
-  )
-}
-```
-
-## Environment Variables
-
-Currently required variables in `.env`:
-
-```env
-# Supabase (REQUIRED - Currently Active)
-SUPABASE_URL              # Your Supabase project URL
-SUPABASE_ANON_KEY         # Your Supabase anon/public key
-
-# Future integrations (not yet implemented):
-NEXTAUTH_URL              # App URL (http://localhost:3000 in dev)
-NEXTAUTH_SECRET           # Generate with: openssl rand -base64 32
-GOOGLE_CLIENT_ID          # Google OAuth client ID
-GOOGLE_CLIENT_SECRET      # Google OAuth client secret
-STRIPE_SECRET_KEY         # Stripe secret key (sk_test_...)
-STRIPE_PUBLISHABLE_KEY    # Stripe publishable key (pk_test_...)
-STRIPE_WEBHOOK_SECRET     # Stripe webhook secret (whsec_...)
-RESEND_API_KEY            # Resend email API key
-FROM_EMAIL                # Sender email address
-```
-
-## Database Workflow
-
-### Current Setup (Supabase)
-
-This project uses **Supabase JS Client** for all database operations:
-- Database schema is defined via SQL files in `scripts/` directory
-- No ORM or migration tools (direct SQL)
-- Schema changes require manual SQL updates in Supabase dashboard or via SQL files
-
-### Database Scripts
-
-Located in `scripts/` directory:
-
-- **create-tables.sql** - SQL script to create all database tables
-- **create-tables.js** - Node.js script to execute table creation
-- **seed-complete.sql** - Complete seed data (brands, categories, products, images, variants)
-- **seed-data.sql** - Minimal seed data
-- **check-db.js** - Verify database connection and view data summary (run this often!)
-- **test-api.js** - Test all API routes
-- **test-brands.js** - Test brand data and logos
-- **update-brands-with-logos.js** - Update brand logos in database
-
-### Querying with Supabase
-
-```typescript
-import { supabase } from '@/lib/supabase'
-
-// Always include error handling
-try {
-  const { data: products, error } = await supabase
-    .from('Product')
-    .select(`
-      *,
-      brand:Brand!Product_brandId_fkey (
-        id,
-        name,
-        slug
-      ),
-      images:ProductImage (
-        id,
-        url,
-        alt,
-        order
-      ),
-      variants:ProductVariant (
-        id,
-        color,
-        size,
-        stock
-      )
-    `)
-    .eq('inStock', true)
-    .order('createdAt', { ascending: false })
-    .limit(20)
-
-  if (error) throw error
-  return products
-} catch (error) {
-  console.error('Error fetching products:', error)
-  throw new Error('Failed to fetch products')
-}
-```
-
-### Working with the Database
-
-**Verifying Database State:**
-```bash
-node scripts/check-db.js  # Shows counts of all tables and sample data
-```
-
-**Common Supabase Query Pattern:**
-```typescript
-import { supabase } from '@/lib/supabase'
-
-// Fetch products with relations
-const { data: products, error } = await supabase
+const { data, error } = await supabase
   .from('Product')
-  .select(`
-    *,
-    brand:Brand!Product_brandId_fkey (
-      id, name, slug, logo
-    ),
-    images:ProductImage (
-      id, url, alt, order
-    ),
-    variants:ProductVariant (
-      id, color, size, sku, stock
-    )
-  `)
-  .eq('inStock', true)
-  .order('createdAt', { ascending: false })
-  .limit(20)
-
-if (error) throw error
+  .select(`*, brand:Brand!Product_brandId_fkey (id, name, slug, logo),
+    images:ProductImage (id, url, alt, order),
+    variants:ProductVariant (id, color, size, sku, stock)`)
 ```
 
-**Database Seeding:**
-- All seed data in `scripts/seed-complete.sql` (run via Supabase dashboard or scripts)
-- 19 luxury brands with logos
-- 7 categories with hierarchy
-- 28 products with 9 images and 19 variants
-- Brand logos in `/public/Brands/` directory
+### State Management
 
-## API Route Patterns
+Zustand stores in `store/` with localStorage persistence. **Always access through hooks**, not stores directly:
+- Cart: `store/cartStore.ts` -> use via `hooks/useCart.ts`
+- Wishlist: `store/wishlistStore.ts` -> use via `hooks/useWishlist.ts`
+- Auth: `store/authStore.ts` -> use via `hooks/useAuth.ts`
 
-All API routes should follow this structure:
+### API Routes
 
+All in `app/api/`. Key endpoints:
+- `GET /api/products` -- supports `?category=`, `&brand=`, `&minPrice=`, `&maxPrice=`, `&color=`, `&size=`, `&sort=`, `&page=`, `&limit=`
+- `GET /api/products/[slug]` -- single product with relations
+- `GET /api/brands`, `GET /api/categories`, `GET /api/search?q=`
+- `POST /api/admin/login`, `POST /api/admin/logout`
+
+### Next.js 16 Async Params
+
+Route params are async in dynamic routes. Always await them:
 ```typescript
-import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-
-export async function GET(request: Request) {
-  try {
-    // 1. Extract and validate params/query
-    const searchParams = request.nextUrl.searchParams
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-
-    // 2. Authenticate if needed (for protected routes)
-
-    // 3. Perform database query with Supabase
-    const from = (page - 1) * limit
-    const to = from + limit - 1
-
-    const { data, error, count } = await supabase
-      .from('Product')
-      .select('*', { count: 'exact' })
-      .range(from, to)
-
-    if (error) throw error
-
-    // 4. Return JSON response
-    return NextResponse.json({
-      products: data,
-      total: count,
-      page,
-      limit
-    })
-  } catch (error) {
-    console.error('Error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch products' },
-      { status: 500 }
-    )
-  }
+export default async function Page(props: { params: Promise<{ slug: string }> }) {
+  const { slug } = await props.params
 }
 ```
 
-## Important Tailwind CSS 4 Notes
+## Design System Rules
 
-When working with Tailwind v4:
-- **Color classes:** Use color names directly (e.g., `bg-burgundy`, `text-plum`)
-- **CSS variables in Tailwind:** Reference via `var(--variable-name)` in arbitrary values
-- **Custom gradients:** Use `.gradient-primary` class or inline `bg-[var(--gradient-primary)]`
-- **Theme tokens:** Defined in `@theme inline` block in globals.css
-- **No config file:** Don't create `tailwind.config.js` - all configuration is CSS-based
-- **Adding new utilities:** Define them in globals.css after the theme block
+These are project-specific constraints that differ from typical development:
 
-## Common Pitfalls to Avoid
+- **Editorial layouts, NOT uniform grids** -- product listings use asymmetric, magazine-style layouts with variable card heights. No uniform product grids.
+- **Skeleton screens, NOT spinners** for loading states.
+- **Brand color palette is strict:**
+  - Primary gradient: `#8e2157` (burgundy) to `#5c0931` (plum)
+  - Body text: `#2C2C2C` (charcoal)
+  - Gold accent: `#D4AF37` (use sparingly)
+- **Typography:** Playfair Display (serif) for headings, Inter (sans) for body. Defined in `app/layout.tsx`.
+- **Animations:** Subtle only. Hover: 200ms, transitions: 300ms, modals: 400ms. Max 600ms. No bouncing or playful effects.
+- **Touch targets:** Minimum 44x44px on mobile.
 
-1. **DON'T use uniform product grids** - must be editorial/asymmetric
-2. **DON'T overuse animations** - keep subtle and professional
-3. **DON'T skimp on white space** - luxury needs breathing room
-4. **DON'T use bright colors** - stick to the brand palette strictly
-5. **DON'T create small tap targets** - minimum 44x44px on mobile
-6. **DON'T use spinners for loading** - use skeleton screens instead
-7. **DON'T expose Stripe secret keys** - client only uses publishable key
-8. **DON'T skip server-side validation** - never trust client input
-9. **DON'T hardcode content** - use database and environment variables
-10. **DON'T use `any` types** - TypeScript strict mode is enabled
-11. **DON'T create traditional Tailwind config** - this project uses Tailwind v4 with CSS-only config
-12. **⚠️ DON'T remove login page check in `app/admin/layout.tsx`** - causes infinite redirect loop (307)
+## Critical Gotchas
+
+- **Admin login redirect loop:** `app/admin/layout.tsx` must skip auth check for the login page path. Removing this check causes infinite 307 redirects.
+- **Environment variables** are `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (with `NEXT_PUBLIC_` prefix). `lib/supabase.ts` has hardcoded fallbacks.
+- **Tailwind v4:** Do not create `tailwind.config.js`. All config is CSS-based in `app/globals.css`.
+- **No `any` types** -- TypeScript strict mode is enforced.
 
 ## Reference Documents
 
-**Critical reference documents:**
+- **NextPlan.md** -- Development plan and progress tracker (check this first for current status)
+- **ALINE-MART-PROMPT.md** -- Complete project brief (parent directory)
+- **ALINE-MART-SKILL.md** -- Detailed design specifications (parent directory)
 
-- **NextPlan.md** - Development plan and progress tracker (IN THIS REPO)
-  - Current phase and overall progress (80% complete as of Phase 5)
-  - Detailed task lists for each development phase
-  - Daily progress log
-  - Completion criteria and next steps
-  - **Always check this first** to understand current project status
+## Environment Variables
 
-- **ALINE-MART-PROMPT.md** - Complete project brief with development phases (parent directory)
-- **ALINE-MART-SKILL.md** - Detailed design specifications and requirements (parent directory)
-
-These documents contain the full design system specifications, brand guidelines, and implementation details. Refer to them for:
-- Complete color palette and usage guidelines
-- Typography scale and font specifications
-- Component design standards
-- Full database schema with relationships
-- Feature requirements by development phase
-- Performance and SEO requirements
-- Accessibility standards (WCAG 2.1 AA)
-
-## Code Quality Standards
-
-- **Components:** Small, reusable, single responsibility principle
-- **Imports:** Use absolute imports with `@/` alias
-- **Comments:** Only for complex logic; code should be self-documenting
-- **Error Handling:** Try-catch blocks with user-friendly messages
-- **Validation:** Server-side validation for all inputs using Zod
-- **Security:** Sanitize inputs, parameterized queries, HTTPS only
-
-## Performance Targets
-
-- Lighthouse score > 90 (all categories)
-- Page load < 2 seconds
-- Time to Interactive < 3 seconds
-- Optimized images using Next.js Image component
-- Code splitting via dynamic imports
-- SEO meta tags on all pages
-
-## Key Features
-
-1. **Authentication:** Google OAuth via NextAuth.js v5 (planned)
-2. **Product Catalog:** Browse by brand, category, with search and filters
-3. **Shopping Cart:** Persistent cart with localStorage (sync to database when auth is implemented)
-4. **Wishlist:** Save products for later
-5. **Checkout:** Multi-step with Stripe integration (planned)
-6. **User Account:** Order history, profile, saved addresses (planned)
-7. **Responsive Design:** Mobile-first with touch-friendly UI
-8. **Search & Discovery:** Full-text search, brand pages, category pages
-
-## Brand Requirements
-
-The site features **19 luxury brands** with logos:
-Rolex, Gucci, Prada, Louis Vuitton, Hermès, Chanel, Dior, Balenciaga, Versace, Burberry, Ralph Lauren, Armani, Cartier, Omega, Nike, Adidas, Calvin Klein, Tommy Hilfiger, Hugo Boss
-
-Products span multiple categories: Clothing, Shoes, Accessories, Watches, Bags
-
-## Mobile Considerations
-
-- Touch targets minimum 44x44px
-- Swipe gestures for image carousels
-- Sticky "Add to Cart" button on mobile PDP
-- Full-screen mobile navigation overlay
-- Optimized checkout flow for mobile
-
-## Project Status
-
-**Current Progress: 90% Complete** (as of December 8, 2025 - Phase 10)
-**Live Site:** Deployed to Vercel production
-
-### ✅ Completed (Phases 1-10):
-
-**Phase 1-5: Core Foundation**
-- Next.js 16 project with TypeScript and strict mode
-- Tailwind CSS v4 with CSS-only config (custom design system)
-- Brand identity implemented (Qatar Airways gradient, Playfair Display + Inter fonts)
-- Supabase PostgreSQL database setup and configured
-- Database seeded: 19 brands, 7 categories, 28 products, 9 images, 19 variants
-- All API routes functional and tested (products, brands, categories, search, admin)
-- Zustand state management (cart + wishlist with localStorage persistence)
-- Custom hooks for cart and wishlist with price formatting
-
-**Phase 6-8: Customer Experience**
-- Product components (ProductCard, ProductGrid, ProductFilters, ProductSorter)
-- Homepage: Hero carousel, FeaturedProducts, BrandShowcase
-- Product Listing Page (PLP) with filters, sorting, pagination
-- Product Detail Page (PDP) with gallery, variants, add to cart
-- Shopping Cart Page with summary and checkout CTA
-- Search functionality with SearchBar and results
-- Brand pages with clickable logos and dynamic routing
-- Category pages with category-specific listings
-- Header/Footer with navigation, cart/wishlist icons
-- shadcn/ui components installed and customized
-
-**Phase 9-10: Testing & Deployment**
-- All TypeScript compilation errors resolved (0 errors)
-- Security vulnerabilities fixed (Next.js 16.0.7)
-- Production build successful
-- Deployed to Vercel and live
-- Test pages for development (`/test-store`, `/test-products`, `/test-api`)
-
-**Admin Dashboard (Partial):**
-- Basic admin authentication implemented
-- Admin login/logout routes created (`/api/admin/login`, `/api/admin/logout`)
-- Admin UI components structure in place
-- **IMPORTANT:** Login page at `/admin/login` must bypass auth check in `app/admin/layout.tsx` to prevent redirect loops
-- Default credentials: `admin@alinemart.com` / `Admin123!@#` (change in production)
-
-### ⏳ In Progress:
-- Full admin dashboard (product CRUD, order management, analytics)
-- Admin product management interface
-
-### 🔜 Not Yet Started:
-- User authentication (NextAuth.js v5 + Google OAuth)
-- User account pages (dashboard, orders, profile, addresses)
-- Stripe payment integration
-- Multi-step checkout flow with Stripe Elements
-- Email integration (Resend) for order confirmations
-- Syncing localStorage cart/wishlist to user accounts
-- Performance optimization (Lighthouse score improvements)
-- SEO enhancements (meta tags, structured data, sitemap)
-
-## Common Workflows
-
-### Starting Work on This Project
-
-1. **First Time Setup:**
-   ```bash
-   cd aline-mart
-   npm install
-   cp .env.example .env  # Fill in Supabase credentials
-   node scripts/check-db.js  # Verify database connection
-   npm run dev  # Start development server
-   ```
-
-2. **Before Making Changes:**
-   - Check `NextPlan.md` for current phase and progress
-   - Read relevant sections in `ALINE-MART-PROMPT.md` (parent directory)
-   - Verify database state: `node scripts/check-db.js`
-   - Understand the design system in `app/globals.css`
-
-3. **Adding a New Feature:**
-   - Create components in appropriate `components/` subdirectory
-   - Add API routes in `app/api/` if needed
-   - Use Supabase client from `lib/supabase.ts` for database queries
-   - Follow the component structure template (see "Component Structure" section)
-   - Test locally before building
-
-4. **Testing:**
-   ```bash
-   node scripts/check-db.js     # Verify database
-   node scripts/test-api.js     # Test API routes
-   npm run build                # Check for TypeScript/build errors
-   npm run dev                  # Manual testing
-   ```
-
-### Troubleshooting
-
-**Database Connection Issues:**
-```bash
-# 1. Verify environment variables
-cat .env | grep SUPABASE
-
-# 2. Test connection
-node scripts/check-db.js
-
-# 3. Check Supabase dashboard for project status
+Required in `.env`:
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
-**TypeScript Errors:**
-```bash
-# Check all errors without building
-npx tsc --noEmit --skipLibCheck
-
-# Common fixes:
-# - Async params in Next.js 16: await props.params
-# - Missing types: Add proper interfaces
-# - Import errors: Check path aliases (@/)
-```
-
-**API Route Not Working:**
-```bash
-# Test specific API route
-node scripts/test-api.js
-
-# Check browser console for errors
-# Verify Supabase query syntax in route file
-# Check data exists: node scripts/check-db.js
-```
-
-**Build Failures:**
-```bash
-# Clear cache and rebuild
-rm -rf .next
-npm run build
-
-# Check for:
-# - TypeScript errors (fix first)
-# - Missing environment variables
-# - Import/export issues
-```
-
-**Admin Login Redirect Loop (307 errors):**
-```bash
-# Symptom: /admin/login keeps redirecting to itself infinitely
-
-# Cause: app/admin/layout.tsx is checking auth for login page
-
-# Fix: Ensure this check exists in app/admin/layout.tsx:
-# const isLoginPage = pathname === '/admin/login' || pathname.startsWith('/admin/(auth)')
-# if (isLoginPage) { return <>{children}</> }
-
-# Verify proxy.ts allows /admin/login:
-# if (pathname === '/admin/login') { return NextResponse.next() }
-
-# Test: Visit http://localhost:3000/admin/login
-# Should see login form, not redirect loop
-```
-
-## Final Notes
-
-This is a **luxury eCommerce platform** where every design decision should prioritize:
-1. Visual sophistication over flashy effects
-2. User experience over feature quantity
-3. Performance over unnecessary complexity
-4. Editorial style over traditional eCommerce layouts
-
-When in doubt, ask: "Does this feel premium and magazine-like?" The goal is to create an experience that feels like browsing a high-end fashion magazine, not a typical online store.
-
-**Before starting new work:**
-1. Check `NextPlan.md` for current phase and progress
-2. Run `node scripts/check-db.js` to verify database
-3. Review design specs in parent directory:
-   - `ALINE-MART-PROMPT.md` - Complete project brief
-   - `ALINE-MART-SKILL.md` - Detailed design specifications
-4. Understand the Tailwind CSS v4 configuration in `app/globals.css`
-5. Review existing components for patterns and consistency
+Future (not yet active): `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`

@@ -12,27 +12,6 @@ export function generateOrderNumber(): string {
 }
 
 /**
- * Calculate order total including shipping
- */
-export function calculateOrderTotal(
-  subtotal: number,
-  paymentMethod: 'PAYSTATION' | 'COD'
-): number {
-  const shippingCost = getShippingCost(paymentMethod)
-  return subtotal + shippingCost
-}
-
-/**
- * Get shipping cost based on payment method
- */
-export function getShippingCost(paymentMethod: 'PAYSTATION' | 'COD'): number {
-  if (paymentMethod === 'COD') {
-    return parseFloat(process.env.SHIPPING_COST_COD || '50')
-  }
-  return parseFloat(process.env.SHIPPING_COST_PAYSTATION || '0')
-}
-
-/**
  * Format price in BDT currency
  */
 export function formatPrice(amount: number): string {
@@ -65,6 +44,30 @@ export function getPaymentMethodName(method: string): string {
     COD: 'Cash on Delivery',
   }
   return names[method] || method
+}
+
+/**
+ * Parse payment status color for UI badges
+ */
+export function getPaymentStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    PAID: 'bg-green-100 text-green-800',
+    UNPAID: 'bg-yellow-100 text-yellow-800',
+    FAILED: 'bg-red-100 text-red-800',
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+/**
+ * Get payment status display name
+ */
+export function getPaymentStatusName(status: string): string {
+  const names: Record<string, string> = {
+    PAID: 'Paid',
+    UNPAID: 'Unpaid',
+    FAILED: 'Failed',
+  }
+  return names[status] || status
 }
 
 /**

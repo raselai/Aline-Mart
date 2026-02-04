@@ -19,10 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     const isSandbox = process.env.PAYSTATION_SANDBOX_MODE === 'true'
+    const paymentMethod = searchParams.get('payment_method')
 
     // Server-side verification: the ONLY secure way to confirm payment
     let verifiedStatus = status
     let verifiedTrxId = trxId || `MOCK-${Date.now()}`
+    let paymentChannel: string | null = paymentMethod || null
 
     if (isSandbox) {
       // In sandbox mode, trust the callback params (only for dev)
@@ -41,10 +43,30 @@ export async function GET(request: NextRequest) {
 
       verifiedStatus = verification.data.trx_status
       verifiedTrxId = verification.data.trx_id
+      // In production, payment_method comes from the verification response
+      paymentChannel = verification.data.payment_method || paymentChannel
     }
 
     // Check if payment was actually successful
     if (verifiedStatus !== 'Success') {
+      // Mark the order as FAILED before redirecting
+      const failSupabase = await createServerClient()
+      const { data: failedOrder } = await failSupabase
+        .from('Order')
+        .select('id')
+        .eq('orderNumber', invoiceNumber)
+        .single()
+
+      if (failedOrder) {
+        await failSupabase
+          .from('Order')
+          .update({
+            paymentStatus: 'FAILED',
+            updatedAt: new Date().toISOString(),
+          })
+          .eq('id', failedOrder.id)
+      }
+
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/checkout?payment=failed`
       )
@@ -79,11 +101,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Update order status to PROCESSING
+    // Update order status to PROCESSING with payment confirmation
     const { error: updateError } = await supabase
       .from('Order')
       .update({
         status: 'PROCESSING',
+        paymentStatus: 'PAID',
+        paymentChannel: paymentChannel,
         paystationTransactionId: verifiedTrxId,
         updatedAt: new Date().toISOString(),
       })

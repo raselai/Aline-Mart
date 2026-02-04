@@ -23,6 +23,7 @@ export interface Product {
   name: string
   slug: string
   description: string
+  shortDescription?: string | null
   price: number
   salePrice?: number
   weight?: string | null
@@ -40,6 +41,7 @@ export interface Product {
   featured: boolean
   isNew: boolean
   inStock: boolean
+  stock?: number
   createdAt: Date
   updatedAt: Date
 }

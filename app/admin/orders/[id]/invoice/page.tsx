@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Printer, ArrowLeft } from 'lucide-react'
-import { formatPrice, getPaymentMethodName, getStatusDisplayName } from '@/lib/order-utils'
+import { formatPrice, getPaymentMethodName } from '@/lib/order-utils'
 import type { OrderWithDetails } from '@/types/order'
 import { useParams } from 'next/navigation'
 
@@ -509,53 +509,27 @@ export default function InvoicePage() {
             backgroundColor: '#FAFAF8',
           }}
         >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gap: '24px',
-              marginBottom: '24px',
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase',
-                  color: '#9CA3AF',
-                  marginBottom: '8px',
-                }}
-              >
-                Payment Method
+          <div style={{ marginBottom: '24px' }}>
+            <p
+              style={{
+                fontSize: '10px',
+                fontWeight: 600,
+                letterSpacing: '2px',
+                textTransform: 'uppercase',
+                color: '#9CA3AF',
+                marginBottom: '8px',
+              }}
+            >
+              Payment Method
+            </p>
+            <p style={{ fontSize: '14px', fontWeight: 500, color: '#2C2C2C', margin: 0 }}>
+              {getPaymentMethodName(order.paymentMethod)}
+            </p>
+            {order.paystationTransactionId && (
+              <p style={{ fontSize: '12px', color: '#6B7280', margin: '4px 0 0' }}>
+                Transaction: {order.paystationTransactionId}
               </p>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: '#2C2C2C', margin: 0 }}>
-                {getPaymentMethodName(order.paymentMethod)}
-              </p>
-              {order.paystationTransactionId && (
-                <p style={{ fontSize: '12px', color: '#6B7280', margin: '4px 0 0' }}>
-                  Transaction: {order.paystationTransactionId}
-                </p>
-              )}
-            </div>
-            <div>
-              <p
-                style={{
-                  fontSize: '10px',
-                  fontWeight: 600,
-                  letterSpacing: '2px',
-                  textTransform: 'uppercase',
-                  color: '#9CA3AF',
-                  marginBottom: '8px',
-                }}
-              >
-                Order Status
-              </p>
-              <p style={{ fontSize: '14px', fontWeight: 500, color: '#2C2C2C', margin: 0 }}>
-                {getStatusDisplayName(order.status)}
-              </p>
-            </div>
+            )}
           </div>
 
           <div

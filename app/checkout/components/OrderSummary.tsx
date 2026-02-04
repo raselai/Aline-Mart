@@ -1,19 +1,48 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useCart } from '@/hooks/useCart'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/order-utils'
 
-interface OrderSummaryProps {
-  paymentMethod?: 'PAYSTATION' | 'COD'
-}
-
-export default function OrderSummary({ paymentMethod }: OrderSummaryProps) {
+export default function OrderSummary() {
   const { items, subtotal } = useCart()
+  const [shippingCost, setShippingCost] = useState<number | null>(null)
 
-  // Calculate shipping based on payment method
-  const shippingCost = paymentMethod === 'COD' ? 50 : 0
-  const total = subtotal + shippingCost
+  useEffect(() => {
+    if (items.length === 0) return
+
+    const controller = new AbortController()
+
+    async function fetchShipping() {
+      try {
+        const res = await fetch('/api/shipping/calculate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          }),
+          signal: controller.signal,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setShippingCost(data.shippingCost)
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Failed to fetch shipping cost:', err)
+        }
+      }
+    }
+
+    fetchShipping()
+    return () => controller.abort()
+  }, [items])
+
+  const total = subtotal + (shippingCost ?? 0)
 
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-white sticky top-4">
@@ -64,24 +93,12 @@ export default function OrderSummary({ paymentMethod }: OrderSummaryProps) {
         {/* Shipping */}
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Shipping</span>
-          {shippingCost === 0 ? (
-            <span className="font-medium text-green-600">FREE</span>
+          {shippingCost === null ? (
+            <span className="text-gray-400 text-xs">Calculating...</span>
           ) : (
             <span className="font-medium">{formatPrice(shippingCost)}</span>
           )}
         </div>
-
-        {/* Payment Method Info */}
-        {paymentMethod && (
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs font-medium text-gray-700 mb-1">Payment Method</p>
-            <p className="text-sm">
-              {paymentMethod === 'PAYSTATION'
-                ? 'PayStation (Online)'
-                : 'Cash on Delivery'}
-            </p>
-          </div>
-        )}
 
         {/* Total */}
         <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">

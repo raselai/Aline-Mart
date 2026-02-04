@@ -11,12 +11,13 @@ export default function LayoutWrapper({
 }) {
   const pathname = usePathname()
   const isAdminPage = pathname?.startsWith('/admin') || false
+  const isAuthPage = pathname?.startsWith('/auth') || false
 
   return (
     <>
-      {!isAdminPage && <Header />}
+      {!isAdminPage && !isAuthPage && <Header />}
       <main className="min-h-screen">{children}</main>
-      {!isAdminPage && <Footer />}
+      {!isAdminPage && !isAuthPage && <Footer />}
     </>
   )
 }

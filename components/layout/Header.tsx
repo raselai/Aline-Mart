@@ -10,8 +10,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { useCart } from '@/hooks/useCart'
 import { useWishlist } from '@/hooks/useWishlist'
 import type { Category } from '@/types'
-// Temporarily disabled until authentication is fully configured
-// import { useSession, signIn, signOut } from 'next-auth/react'
+import { useAuth } from '@/hooks/useAuth'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,10 +46,7 @@ export default function Header() {
   const { itemCount: cartItemCount } = useCart()
   const { itemCount: wishlistItemCount } = useWishlist()
 
-  // Get session - temporarily disabled
-  // const { data: session, status } = useSession()
-  const session: any = null
-  const status = 'unauthenticated' as 'loading' | 'authenticated' | 'unauthenticated'
+  const { isAuthenticated, isLoading: authLoading, userName, userEmail, userAvatar, signOut } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -303,19 +299,19 @@ export default function Header() {
               </button>
 
               {/* Desktop: User Account / Sign In */}
-              {status === 'loading' ? (
+              {authLoading ? (
                 <div className="hidden lg:block w-[22px] h-[22px]" />
-              ) : session ? (
+              ) : isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       aria-label="Account"
                       className="hidden lg:flex items-center gap-2 hover:opacity-70 transition-opacity duration-200"
                     >
-                      {session.user?.image ? (
+                      {userAvatar ? (
                         <Image
-                          src={session.user.image}
-                          alt={session.user.name || 'User'}
+                          src={userAvatar}
+                          alt={userName || 'User'}
                           width={28}
                           height={28}
                           className="rounded-full"
@@ -328,9 +324,9 @@ export default function Header() {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{session.user?.name}</p>
+                        <p className="text-sm font-medium leading-none">{userName}</p>
                         <p className="text-xs leading-none text-muted-foreground">
-                          {session.user?.email}
+                          {userEmail}
                         </p>
                       </div>
                     </DropdownMenuLabel>
@@ -343,7 +339,7 @@ export default function Header() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => {/* signOut() - disabled */}}
+                      onClick={() => signOut()}
                       className="cursor-pointer text-red-600 focus:text-red-600"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -352,14 +348,12 @@ export default function Header() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Button
-                  onClick={() => {/* signIn('google') - disabled */}}
-                  variant="ghost"
-                  size="sm"
-                  className="hidden lg:inline-flex text-xs font-medium px-3 py-1 h-auto"
+                <Link
+                  href="/auth/login"
+                  className="hidden lg:inline-flex text-xs font-medium px-3 py-1 h-auto hover:opacity-70 transition-opacity"
                 >
                   Sign In
-                </Button>
+                </Link>
               )}
               <Link
                 href="/wishlist"
@@ -466,21 +460,21 @@ export default function Header() {
 
                     {/* Mobile Icons */}
                     <div className="flex flex-col space-y-4 pt-4 border-t border-light-gray">
-                      {session ? (
+                      {isAuthenticated ? (
                         <>
                           <div className="flex items-center space-x-3 py-2">
-                            {session.user?.image && (
+                            {userAvatar && (
                               <Image
-                                src={session.user.image}
-                                alt={session.user.name || 'User'}
+                                src={userAvatar}
+                                alt={userName || 'User'}
                                 width={32}
                                 height={32}
                                 className="rounded-full"
                               />
                             )}
                             <div>
-                              <p className="font-medium text-charcoal">{session.user?.name}</p>
-                              <p className="text-xs text-gray-500">{session.user?.email}</p>
+                              <p className="font-medium text-charcoal">{userName}</p>
+                              <p className="text-xs text-gray-500">{userEmail}</p>
                             </div>
                           </div>
                           <Link
@@ -493,7 +487,7 @@ export default function Header() {
                           </Link>
                           <button
                             onClick={() => {
-                              // signOut() - disabled
+                              signOut()
                               setIsMobileMenuOpen(false)
                             }}
                             className="flex items-center space-x-3 text-red-600 hover:text-red-700 transition-colors py-2"
@@ -503,16 +497,14 @@ export default function Header() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => {
-                            // signIn('google') - disabled
-                            setIsMobileMenuOpen(false)
-                          }}
+                        <Link
+                          href="/auth/login"
+                          onClick={() => setIsMobileMenuOpen(false)}
                           className="flex items-center space-x-3 text-charcoal hover:text-burgundy transition-colors py-2"
                         >
                           <User className="w-5 h-5" />
-                          <span className="font-medium">Sign In with Google</span>
-                        </button>
+                          <span className="font-medium">Sign In</span>
+                        </Link>
                       )}
                       <Link
                         href="/wishlist"

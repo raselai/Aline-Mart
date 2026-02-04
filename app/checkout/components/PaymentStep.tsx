@@ -60,9 +60,6 @@ export default function PaymentStep({
               ? 'PayStation (bKash / Nagad / Cards)'
               : 'Cash on Delivery (COD)'}
           </p>
-          {data?.paymentMethod === 'COD' && (
-            <p className="text-xs text-gray-500 mt-1">Shipping: ৳50</p>
-          )}
         </div>
       </div>
     )
@@ -97,9 +94,6 @@ export default function PaymentStep({
               <div className="flex items-center gap-2 mb-1">
                 <CreditCard className="h-5 w-5 text-burgundy" />
                 <span className="font-semibold">PayStation</span>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">
-                  FREE Shipping
-                </span>
               </div>
               <p className="text-sm text-gray-600">
                 Pay securely with bKash, Nagad, or Credit/Debit Cards
@@ -133,9 +127,6 @@ export default function PaymentStep({
               </div>
               <p className="text-sm text-gray-600">
                 Pay with cash when your order is delivered
-              </p>
-              <p className="text-xs text-orange-600 font-medium mt-1">
-                + ৳50 shipping charge
               </p>
             </div>
           </label>

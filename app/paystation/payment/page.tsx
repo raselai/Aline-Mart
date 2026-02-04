@@ -35,17 +35,33 @@ function PayStationPaymentContent() {
     let callbackUrl = ''
 
     if (action === 'success') {
-      // Simulate successful payment callback
+      // Simulate successful payment callback with payment method
+      const methodMap: Record<string, string> = {
+        bkash: 'bKash',
+        nagad: 'Nagad',
+        card: 'Card',
+      }
       const params = new URLSearchParams({
         invoice_number: invoiceNumber || '',
         status: 'Success',
         trx_id: `TXN${Date.now()}`,
+        payment_method: selectedMethod ? methodMap[selectedMethod] : '',
       })
       callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
     } else if (action === 'fail') {
-      callbackUrl = `/checkout?payment=failed&reason=Payment declined`
+      // Route through callback so the order gets marked as FAILED
+      const params = new URLSearchParams({
+        invoice_number: invoiceNumber || '',
+        status: 'Failed',
+      })
+      callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
     } else {
-      callbackUrl = `/checkout?payment=cancelled`
+      // Cancel also routes through callback to mark as FAILED
+      const params = new URLSearchParams({
+        invoice_number: invoiceNumber || '',
+        status: 'Cancelled',
+      })
+      callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
     }
 
     // Redirect to callback URL

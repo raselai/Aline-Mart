@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock, ImageOff, Printer, Download } from 'lucide-react'
-import { getOrderStatusColor, getPaymentMethodName, getStatusDisplayName, getAvailableStatusTransitions, formatPrice } from '@/lib/order-utils'
-import type { AdminOrderListItem, OrderWithDetails, OrderStatus, OrderItemStatus, PaymentMethod } from '@/types/order'
+import { getOrderStatusColor, getPaymentMethodName, getPaymentStatusColor, getPaymentStatusName, getStatusDisplayName, getAvailableStatusTransitions, formatPrice } from '@/lib/order-utils'
+import type { AdminOrderListItem, OrderWithDetails, OrderStatus, OrderItemStatus, PaymentMethod, PaymentStatus } from '@/types/order'
 
 interface OrderDetailsModalProps {
   order: OrderWithDetails | null
@@ -42,6 +42,15 @@ function ItemStatusBadge({ status }: { status: string }) {
       }}
     >
       {status}
+    </span>
+  )
+}
+
+function PaymentStatusBadge({ status }: { status: string }) {
+  const colorClass = getPaymentStatusColor(status)
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${colorClass}`}>
+      {getPaymentStatusName(status)}
     </span>
   )
 }
@@ -296,18 +305,59 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
                 padding: '18px 20px',
               }}
             >
-              <p style={sectionHeadingStyle}>Payment Method</p>
+              <p style={sectionHeadingStyle}>Payment</p>
               <p
                 style={{
                   fontSize: '15px',
                   fontWeight: 500,
                   color: '#2C2C2C',
                   margin: 0,
+                  marginBottom: '8px',
                   ...textStyle,
                 }}
               >
                 {getPaymentMethodName(order.paymentMethod)}
               </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <PaymentStatusBadge status={order.paymentStatus || 'UNPAID'} />
+                {order.paymentChannel && (
+                  <span
+                    style={{
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      backgroundColor: '#EFF6FF',
+                      color: '#1E40AF',
+                      border: '1px solid #BFDBFE',
+                    }}
+                  >
+                    {order.paymentChannel}
+                  </span>
+                )}
+              </div>
+              {order.paystationTransactionId && (
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#6B7280',
+                    marginTop: '8px',
+                    fontFamily: 'monospace',
+                    ...textStyle,
+                  }}
+                >
+                  TXN: {order.paystationTransactionId}
+                </p>
+              )}
+              {order.paymentMethod === 'PAYSTATION' && (order.paymentStatus || 'UNPAID') === 'UNPAID' && (
+                <p style={{ fontSize: '12px', color: '#D97706', marginTop: '8px', fontWeight: 500 }}>
+                  ⚠ Awaiting payment confirmation
+                </p>
+              )}
+              {order.paymentMethod === 'PAYSTATION' && order.paymentStatus === 'FAILED' && (
+                <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '8px', fontWeight: 500 }}>
+                  Payment failed or was cancelled
+                </p>
+              )}
             </div>
           </div>
 
@@ -1209,6 +1259,7 @@ export default function AdminOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterPayment, setFilterPayment] = useState('')
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [sortBy, setSortBy] = useState<'createdAt' | 'total' | 'orderNumber'>('createdAt')
@@ -1225,7 +1276,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [searchQuery, filterStatus, filterPayment, dateFrom, dateTo, sortBy, sortOrder, page])
+  }, [searchQuery, filterStatus, filterPayment, filterPaymentStatus, dateFrom, dateTo, sortBy, sortOrder, page])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -1234,6 +1285,7 @@ export default function AdminOrdersPage() {
         search: searchQuery,
         status: filterStatus,
         paymentMethod: filterPayment,
+        paymentStatus: filterPaymentStatus,
         dateFrom,
         dateTo,
         sort: sortBy,
@@ -1418,7 +1470,7 @@ export default function AdminOrdersPage() {
         className="bg-white rounded-lg shadow-sm p-6 mb-6"
         style={{ minWidth: '280px', width: '100%' }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
           {/* Search */}
           <div>
             <label htmlFor="search" className="block text-sm font-medium mb-2" style={{ color: '#2C2C2C' }}>
@@ -1478,6 +1530,25 @@ export default function AdminOrdersPage() {
               <option value="">All Methods</option>
               <option value="COD">Cash on Delivery</option>
               <option value="PAYSTATION">PayStation</option>
+            </select>
+          </div>
+
+          {/* Payment Status Filter */}
+          <div>
+            <label htmlFor="paymentStatus" className="block text-sm font-medium mb-2" style={{ color: '#2C2C2C' }}>
+              Pay Status
+            </label>
+            <select
+              id="paymentStatus"
+              value={filterPaymentStatus}
+              onChange={(e) => { setFilterPaymentStatus(e.target.value); setPage(1) }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+              style={{ borderColor: '#d1d5db' }}
+            >
+              <option value="">All</option>
+              <option value="UNPAID">Unpaid</option>
+              <option value="PAID">Paid</option>
+              <option value="FAILED">Failed</option>
             </select>
           </div>
 
@@ -1556,7 +1627,7 @@ export default function AdminOrdersPage() {
               No orders found
             </p>
             <p className="text-sm" style={{ color: '#9CA3AF' }}>
-              {searchQuery || filterStatus || filterPayment || dateFrom || dateTo
+              {searchQuery || filterStatus || filterPayment || filterPaymentStatus || dateFrom || dateTo
                 ? 'Try adjusting your filters'
                 : 'Orders will appear here when customers make purchases'}
             </p>
@@ -1615,15 +1686,18 @@ export default function AdminOrdersPage() {
                       <p className="font-medium" style={{ color: '#2C2C2C' }}>{formatPrice(order.total)}</p>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <span
-                        className="px-2 py-1 rounded text-xs font-medium"
-                        style={{
-                          backgroundColor: order.paymentMethod === 'COD' ? '#FEF3C7' : '#DBEAFE',
-                          color: order.paymentMethod === 'COD' ? '#92400E' : '#1E40AF'
-                        }}
-                      >
-                        {order.paymentMethod === 'COD' ? 'COD' : 'PayStation'}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                        <span
+                          className="px-2 py-1 rounded text-xs font-medium"
+                          style={{
+                            backgroundColor: order.paymentMethod === 'COD' ? '#FEF3C7' : '#DBEAFE',
+                            color: order.paymentMethod === 'COD' ? '#92400E' : '#1E40AF'
+                          }}
+                        >
+                          {order.paymentMethod === 'COD' ? 'COD' : 'PayStation'}
+                        </span>
+                        <PaymentStatusBadge status={order.paymentStatus || 'UNPAID'} />
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <OrderStatusBadge status={order.status} />
