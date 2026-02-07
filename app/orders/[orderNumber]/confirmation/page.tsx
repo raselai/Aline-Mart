@@ -35,14 +35,14 @@ async function getOrderDetails(orderNumber: string) {
 }
 
 const ORDER_STEPS: { key: OrderStatus; label: string; icon: typeof Package }[] = [
-  { key: 'PENDING', label: 'Order Placed', icon: CheckCircle2 },
-  { key: 'PROCESSING', label: 'Processing', icon: Package },
-  { key: 'SHIPPED', label: 'Shipped', icon: Truck },
+  { key: 'NEW', label: 'Order Placed', icon: CheckCircle2 },
+  { key: 'PENDING', label: 'Pending', icon: Package },
+  { key: 'CONFIRM', label: 'Confirmed', icon: Truck },
   { key: 'DELIVERED', label: 'Delivered', icon: Home },
 ]
 
 function getStepIndex(status: OrderStatus): number {
-  if (status === 'CANCELLED') return -1
+  if (status === 'CANCEL') return -1
   const idx = ORDER_STEPS.findIndex((s) => s.key === status)
   return idx >= 0 ? idx : 0
 }
@@ -62,7 +62,7 @@ export default async function OrderConfirmationPage({
 
   const shouldClearCart = clearCart === 'true'
   const currentStepIndex = getStepIndex(order.status as OrderStatus)
-  const isCancelled = order.status === 'CANCELLED'
+  const isCancelled = order.status === 'CANCEL'
 
   return (
     <div style={{ maxWidth: '900px', minWidth: '320px', margin: '0 auto', paddingTop: '120px', paddingBottom: '48px', paddingLeft: '16px', paddingRight: '16px' }}>

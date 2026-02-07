@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Save, Check, AlertCircle, Globe, Mail, Search, Truck } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Save, Check, AlertCircle, Globe, Mail, Search, Truck, ImageIcon, Upload, X } from 'lucide-react'
 
-type TabType = 'general' | 'seo' | 'email' | 'shipping'
+type TabType = 'general' | 'seo' | 'email' | 'shipping' | 'hero'
 
 interface Settings {
   // General
@@ -30,6 +30,18 @@ interface Settings {
   // Shipping
   shipping_base_fee?: string
   shipping_rate_per_kg?: string
+
+  // Hero
+  hero_tagline?: string
+  hero_headline?: string
+  hero_subheadline?: string
+  hero_cta_text?: string
+  hero_cta_link?: string
+  hero_stat_1_number?: string
+  hero_stat_1_label?: string
+  hero_stat_2_number?: string
+  hero_stat_2_label?: string
+  hero_images?: string
 }
 
 export default function SettingsPage() {
@@ -38,6 +50,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Success/error messages
   const [successMessage, setSuccessMessage] = useState('')
@@ -102,11 +117,63 @@ export default function SettingsPage() {
     }
   }
 
+  // Hero image helpers
+  const getHeroImages = (): string[] => {
+    try {
+      const parsed = JSON.parse(settings.hero_images || '[]')
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+
+  const setHeroImages = (images: string[]) => {
+    handleChange('hero_images', JSON.stringify(images))
+  }
+
+  const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    try {
+      setUploading(true)
+      const formData = new FormData()
+      formData.append('image', file)
+
+      const response = await fetch('/api/admin/hero/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed')
+      }
+
+      const current = getHeroImages()
+      setHeroImages([...current, data.url])
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to upload image'
+      setErrorMessage(message)
+      setTimeout(() => setErrorMessage(''), 5000)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const removeHeroImage = (index: number) => {
+    const current = getHeroImages()
+    setHeroImages(current.filter((_, i) => i !== index))
+  }
+
   const tabs = [
     { id: 'general' as TabType, label: 'General', icon: Globe },
     { id: 'seo' as TabType, label: 'SEO & Meta', icon: Search },
     { id: 'email' as TabType, label: 'Email', icon: Mail },
-    { id: 'shipping' as TabType, label: 'Shipping', icon: Truck }
+    { id: 'shipping' as TabType, label: 'Shipping', icon: Truck },
+    { id: 'hero' as TabType, label: 'Hero', icon: ImageIcon }
   ]
 
   return (
@@ -1001,6 +1068,441 @@ export default function SettingsPage() {
                           Products without a weight value are treated as 0kg (only the base fee applies).
                         </p>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Hero Settings Tab */}
+                {activeTab === 'hero' && (
+                  <div className="space-y-6" style={{ maxWidth: '700px', minWidth: '320px' }}>
+                    <div>
+                      <h3
+                        className="text-lg font-serif font-bold mb-4"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal'
+                        }}
+                      >
+                        Hero Carousel
+                      </h3>
+                      <p
+                        className="text-sm mb-6"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal',
+                          display: 'block',
+                          minWidth: '100%'
+                        }}
+                      >
+                        Configure the homepage hero section text, CTA, stats, and carousel images
+                      </p>
+                    </div>
+
+                    {/* Tagline */}
+                    <div>
+                      <label
+                        htmlFor="hero_tagline"
+                        className="block text-sm font-medium mb-2"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Tagline
+                      </label>
+                      <input
+                        type="text"
+                        id="hero_tagline"
+                        value={settings.hero_tagline || ''}
+                        onChange={(e) => handleChange('hero_tagline', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        style={{
+                          fontSize: '14px',
+                          color: '#2C2C2C'
+                        }}
+                        placeholder="Est. 2024"
+                      />
+                      <p
+                        className="mt-1 text-xs"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal'
+                        }}
+                      >
+                        Small text above the headline (e.g. &quot;Est. 2024&quot;)
+                      </p>
+                    </div>
+
+                    {/* Headline */}
+                    <div>
+                      <label
+                        htmlFor="hero_headline"
+                        className="block text-sm font-medium mb-2"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Headline
+                      </label>
+                      <input
+                        type="text"
+                        id="hero_headline"
+                        value={settings.hero_headline || ''}
+                        onChange={(e) => handleChange('hero_headline', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        style={{
+                          fontSize: '14px',
+                          color: '#2C2C2C'
+                        }}
+                        placeholder="World's Finest Brands, One Destination"
+                      />
+                      <p
+                        className="mt-1 text-xs"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal'
+                        }}
+                      >
+                        Main hero heading. Text after the first comma appears on a second line in italic
+                      </p>
+                    </div>
+
+                    {/* Subheadline */}
+                    <div>
+                      <label
+                        htmlFor="hero_subheadline"
+                        className="block text-sm font-medium mb-2"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        Subheadline
+                      </label>
+                      <textarea
+                        id="hero_subheadline"
+                        value={settings.hero_subheadline || ''}
+                        onChange={(e) => handleChange('hero_subheadline', e.target.value)}
+                        rows={2}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md resize-none"
+                        style={{
+                          fontSize: '14px',
+                          color: '#2C2C2C'
+                        }}
+                        placeholder="Discover curated luxury from Rolex, Gucci, Prada, and the world's most prestigious houses"
+                      />
+                      <p
+                        className="mt-1 text-xs"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal'
+                        }}
+                      >
+                        Supporting text below the headline
+                      </p>
+                    </div>
+
+                    {/* CTA */}
+                    <div
+                      className="grid grid-cols-2 gap-4"
+                      style={{ minWidth: '280px' }}
+                    >
+                      <div>
+                        <label
+                          htmlFor="hero_cta_text"
+                          className="block text-sm font-medium mb-2"
+                          style={{
+                            color: '#2C2C2C',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          CTA Button Text
+                        </label>
+                        <input
+                          type="text"
+                          id="hero_cta_text"
+                          value={settings.hero_cta_text || ''}
+                          onChange={(e) => handleChange('hero_cta_text', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                          style={{
+                            fontSize: '14px',
+                            color: '#2C2C2C'
+                          }}
+                          placeholder="Explore Collection"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="hero_cta_link"
+                          className="block text-sm font-medium mb-2"
+                          style={{
+                            color: '#2C2C2C',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          CTA Link
+                        </label>
+                        <input
+                          type="text"
+                          id="hero_cta_link"
+                          value={settings.hero_cta_link || ''}
+                          onChange={(e) => handleChange('hero_cta_link', e.target.value)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                          style={{
+                            fontSize: '14px',
+                            color: '#2C2C2C'
+                          }}
+                          placeholder="/products"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div
+                      className="border-t pt-6"
+                      style={{ borderColor: '#E5E7EB' }}
+                    >
+                      <h4
+                        className="text-sm font-semibold mb-4"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        Stats
+                      </h4>
+                      <div
+                        className="grid grid-cols-2 gap-4"
+                        style={{ minWidth: '280px' }}
+                      >
+                        <div>
+                          <label
+                            htmlFor="hero_stat_1_number"
+                            className="block text-sm font-medium mb-2"
+                            style={{
+                              color: '#2C2C2C',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Stat 1 Number
+                          </label>
+                          <input
+                            type="text"
+                            id="hero_stat_1_number"
+                            value={settings.hero_stat_1_number || ''}
+                            onChange={(e) => handleChange('hero_stat_1_number', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                            style={{
+                              fontSize: '14px',
+                              color: '#2C2C2C'
+                            }}
+                            placeholder="20+"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="hero_stat_1_label"
+                            className="block text-sm font-medium mb-2"
+                            style={{
+                              color: '#2C2C2C',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Stat 1 Label
+                          </label>
+                          <input
+                            type="text"
+                            id="hero_stat_1_label"
+                            value={settings.hero_stat_1_label || ''}
+                            onChange={(e) => handleChange('hero_stat_1_label', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                            style={{
+                              fontSize: '14px',
+                              color: '#2C2C2C'
+                            }}
+                            placeholder="BRANDS"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="hero_stat_2_number"
+                            className="block text-sm font-medium mb-2"
+                            style={{
+                              color: '#2C2C2C',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Stat 2 Number
+                          </label>
+                          <input
+                            type="text"
+                            id="hero_stat_2_number"
+                            value={settings.hero_stat_2_number || ''}
+                            onChange={(e) => handleChange('hero_stat_2_number', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                            style={{
+                              fontSize: '14px',
+                              color: '#2C2C2C'
+                            }}
+                            placeholder="100+"
+                          />
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="hero_stat_2_label"
+                            className="block text-sm font-medium mb-2"
+                            style={{
+                              color: '#2C2C2C',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Stat 2 Label
+                          </label>
+                          <input
+                            type="text"
+                            id="hero_stat_2_label"
+                            value={settings.hero_stat_2_label || ''}
+                            onChange={(e) => handleChange('hero_stat_2_label', e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                            style={{
+                              fontSize: '14px',
+                              color: '#2C2C2C'
+                            }}
+                            placeholder="PRODUCTS"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Images */}
+                    <div
+                      className="border-t pt-6"
+                      style={{ borderColor: '#E5E7EB' }}
+                    >
+                      <h4
+                        className="text-sm font-semibold mb-4"
+                        style={{
+                          color: '#2C2C2C',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        Carousel Images
+                      </h4>
+                      <p
+                        className="text-sm mb-4"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal',
+                          display: 'block',
+                          minWidth: '100%'
+                        }}
+                      >
+                        Images rotate in the hero carousel. Recommended: landscape orientation, at least 1920px wide.
+                      </p>
+
+                      {/* Current Images Grid */}
+                      {getHeroImages().length > 0 && (
+                        <div
+                          className="grid grid-cols-3 gap-3 mb-4"
+                          style={{ minWidth: '280px' }}
+                        >
+                          {getHeroImages().map((url, index) => (
+                            <div
+                              key={index}
+                              className="relative group overflow-hidden"
+                              style={{
+                                aspectRatio: '16/9',
+                                borderRadius: '6px',
+                                border: '1px solid #E5E7EB'
+                              }}
+                            >
+                              <img
+                                src={url}
+                                alt={`Hero ${index + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'cover',
+                                  display: 'block'
+                                }}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none'
+                                  if (e.currentTarget.parentElement) {
+                                    e.currentTarget.parentElement.style.background = '#F3F4F6'
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() => removeHeroImage(index)}
+                                className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{
+                                  backgroundColor: '#DC2626',
+                                  color: '#FFFFFF',
+                                  cursor: 'pointer'
+                                }}
+                                title="Remove image"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                              <div
+                                className="absolute bottom-0 left-0 right-0 px-2 py-1"
+                                style={{
+                                  background: 'rgba(0,0,0,0.5)',
+                                  color: '#FFFFFF',
+                                  fontSize: '11px',
+                                  whiteSpace: 'nowrap',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis'
+                                }}
+                              >
+                                {index + 1}. {url.split('/').pop()}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Upload Button */}
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleHeroImageUpload}
+                      />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                        className="flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all"
+                        style={{
+                          color: '#6B7280',
+                          border: '2px dashed #D1D5DB',
+                          cursor: uploading ? 'not-allowed' : 'pointer',
+                          opacity: uploading ? 0.6 : 1,
+                          backgroundColor: 'transparent',
+                          whiteSpace: 'nowrap'
+                        }}
+                      >
+                        <Upload className="w-4 h-4" />
+                        {uploading ? 'Uploading...' : 'Upload Image'}
+                      </button>
+                      <p
+                        className="mt-2 text-xs"
+                        style={{
+                          color: '#6B7280',
+                          whiteSpace: 'normal',
+                          wordBreak: 'normal'
+                        }}
+                      >
+                        JPEG, PNG, or WebP. Max 5MB per image.
+                      </p>
                     </div>
                   </div>
                 )}

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
-import type { OrderStatus, PaymentMethod } from '@/types/order'
+import type { OrderStatus, ShippingStatus, PaymentMethod } from '@/types/order'
 
 function escapeCsvField(field: string | number | null | undefined): string {
   if (field === null || field === undefined) return ''
@@ -30,6 +30,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as OrderStatus | null
+    const shippingStatus = searchParams.get('shippingStatus') as ShippingStatus | null
     const paymentMethod = searchParams.get('paymentMethod') as PaymentMethod | null
     const search = searchParams.get('search') || ''
     const dateFrom = searchParams.get('dateFrom') || ''
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
         orderNumber,
         total,
         status,
+        shippingStatus,
         paymentMethod,
         shippingCost,
         createdAt,
@@ -72,6 +74,10 @@ export async function GET(request: Request) {
 
     if (status) {
       query = query.eq('status', status)
+    }
+
+    if (shippingStatus) {
+      query = query.eq('shippingStatus', shippingStatus)
     }
 
     if (paymentMethod) {
@@ -108,6 +114,7 @@ export async function GET(request: Request) {
       'orderNumber',
       'orderDate',
       'orderStatus',
+      'shippingStatus',
       'paymentMethod',
       'customerName',
       'customerEmail',
@@ -140,6 +147,7 @@ export async function GET(request: Request) {
           orderNumber: orderRow.orderNumber,
           orderDate: orderRow.createdAt,
           orderStatus: orderRow.status,
+          shippingStatus: orderRow.shippingStatus || 'PROCESSING',
           paymentMethod: orderRow.paymentMethod || 'COD',
           customerName: address?.fullName || user?.name || '',
           customerEmail: user?.email || '',
@@ -175,6 +183,7 @@ export async function GET(request: Request) {
           orderNumber: orderRow.orderNumber,
           orderDate: orderRow.createdAt,
           orderStatus: orderRow.status,
+          shippingStatus: orderRow.shippingStatus || 'PROCESSING',
           paymentMethod: orderRow.paymentMethod || 'COD',
           customerName: address?.fullName || user?.name || '',
           customerEmail: user?.email || '',

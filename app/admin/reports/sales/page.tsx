@@ -62,16 +62,24 @@ interface Category {
 function StatusBadge({ status }: { status: string }) {
   const getStatusStyle = () => {
     switch (status) {
+      case 'NEW':
+        return { backgroundColor: '#E0F2FE', color: '#0C4A6E' }
       case 'PENDING':
         return { backgroundColor: '#FEF3C7', color: '#92400E' }
-      case 'PROCESSING':
-        return { backgroundColor: '#DBEAFE', color: '#1E40AF' }
-      case 'SHIPPED':
+      case 'CONFIRM':
+        return { backgroundColor: '#D1FAE5', color: '#065F46' }
+      case 'CANCEL':
+        return { backgroundColor: '#FEE2E2', color: '#991B1B' }
+      case 'RETURN':
+        return { backgroundColor: '#FFEDD5', color: '#9A3412' }
+      case 'REFUND':
         return { backgroundColor: '#E0E7FF', color: '#3730A3' }
+      case 'PARTIAL_CONFIRMED':
+        return { backgroundColor: '#FEF3C7', color: '#92400E' }
       case 'DELIVERED':
         return { backgroundColor: '#D1FAE5', color: '#065F46' }
-      case 'CANCELLED':
-        return { backgroundColor: '#FEE2E2', color: '#991B1B' }
+      case 'RETURN_TO_VENDOR':
+        return { backgroundColor: '#FFE4E6', color: '#9F1239' }
       default:
         return { backgroundColor: '#F3F4F6', color: '#374151' }
     }
@@ -588,11 +596,15 @@ export default function SalesReportPage() {
               style={{ borderColor: '#d1d5db' }}
             >
               <option value="">All Statuses</option>
+              <option value="NEW">New</option>
               <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
+              <option value="CONFIRM">Confirm</option>
+              <option value="CANCEL">Cancel</option>
+              <option value="RETURN">Return</option>
+              <option value="REFUND">Refund</option>
+              <option value="PARTIAL_CONFIRMED">Partial Confirmed</option>
               <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="RETURN_TO_VENDOR">Return to Vendor</option>
             </select>
           </div>
         </div>

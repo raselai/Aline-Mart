@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Search, Eye, ChevronLeft, ChevronRight, X, Package, Truck, CheckCircle, XCircle, Clock, ImageOff, Printer, Download } from 'lucide-react'
-import { getOrderStatusColor, getPaymentMethodName, getPaymentStatusColor, getPaymentStatusName, getStatusDisplayName, getAvailableStatusTransitions, formatPrice } from '@/lib/order-utils'
-import type { AdminOrderListItem, OrderWithDetails, OrderStatus, OrderItemStatus, PaymentMethod, PaymentStatus } from '@/types/order'
+import { Search, Eye, ChevronLeft, ChevronRight, X, Package, ImageOff, Printer, Download, ChevronDown } from 'lucide-react'
+import { getOrderStatusColor, getShippingStatusColor, getPaymentMethodName, getPaymentStatusColor, getPaymentStatusName, getStatusDisplayName, getShippingStatusDisplayName, formatPrice, ORDER_STATUS_OPTIONS, SHIPPING_STATUS_OPTIONS } from '@/lib/order-utils'
+import type { AdminOrderListItem, OrderWithDetails, OrderStatus, OrderItemStatus, ShippingStatus, PaymentMethod, PaymentStatus } from '@/types/order'
 
 interface OrderDetailsModalProps {
   order: OrderWithDetails | null
   isOpen: boolean
   onClose: () => void
-  onStatusUpdate: (orderId: string, newStatus: OrderStatus, trackingNumber?: string, cancellationReason?: string) => Promise<void>
+  onStatusUpdate: (orderId: string, updates: { status?: OrderStatus; shippingStatus?: ShippingStatus; cancellationReason?: string }) => Promise<void>
   onItemCancel: (orderId: string, itemId: string, reason: string) => Promise<void>
 }
 
@@ -19,6 +19,15 @@ function OrderStatusBadge({ status }: { status: string }) {
   return (
     <span className={`px-3 py-1 rounded-full text-sm font-medium ${colorClass}`}>
       {getStatusDisplayName(status)}
+    </span>
+  )
+}
+
+function ShippingStatusBadge({ status }: { status: string }) {
+  const colorClass = getShippingStatusColor(status)
+  return (
+    <span className={`px-3 py-1 rounded-full text-sm font-medium ${colorClass}`}>
+      {getShippingStatusDisplayName(status)}
     </span>
   )
 }
@@ -57,50 +66,61 @@ function PaymentStatusBadge({ status }: { status: string }) {
 
 function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCancel }: OrderDetailsModalProps) {
   const [updating, setUpdating] = useState(false)
-  const [trackingNumber, setTrackingNumber] = useState('')
-  const [trackingFocused, setTrackingFocused] = useState(false)
-  const [showCancelForm, setShowCancelForm] = useState(false)
-  const [cancellationReason, setCancellationReason] = useState('')
-  const [cancelReasonFocused, setCancelReasonFocused] = useState(false)
   const [cancellingItemId, setCancellingItemId] = useState<string | null>(null)
   const [itemCancelReason, setItemCancelReason] = useState('')
   const [itemCancelFocused, setItemCancelFocused] = useState(false)
   const [itemUpdating, setItemUpdating] = useState(false)
+  // Cancel reason state — shared for both order status and shipping status
+  const [showCancelReason, setShowCancelReason] = useState<'order' | 'shipping' | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelReasonFocused, setCancelReasonFocused] = useState(false)
+  // Pending status value waiting for cancellation reason confirmation
+  const [pendingStatusChange, setPendingStatusChange] = useState<{ field: 'order' | 'shipping'; value: string } | null>(null)
 
   if (!isOpen || !order) return null
 
-  const availableTransitions = getAvailableStatusTransitions(order.status)
-
-  const handleStatusChange = async (newStatus: OrderStatus) => {
-    if (newStatus === 'CANCELLED' && !showCancelForm) {
-      setShowCancelForm(true)
+  const handleOrderStatusChange = async (newStatus: string) => {
+    if (newStatus === 'CANCEL') {
+      setShowCancelReason('order')
+      setPendingStatusChange({ field: 'order', value: newStatus })
       return
     }
-
     setUpdating(true)
     try {
-      await onStatusUpdate(
-        order.id,
-        newStatus,
-        newStatus === 'SHIPPED' ? trackingNumber : undefined,
-        newStatus === 'CANCELLED' ? cancellationReason : undefined
-      )
-      setShowCancelForm(false)
-      setCancellationReason('')
+      await onStatusUpdate(order.id, { status: newStatus as OrderStatus })
     } finally {
       setUpdating(false)
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    const iconStyle = { width: '18px', height: '18px' }
-    switch (status) {
-      case 'PENDING': return <Clock style={iconStyle} />
-      case 'PROCESSING': return <Package style={iconStyle} />
-      case 'SHIPPED': return <Truck style={iconStyle} />
-      case 'DELIVERED': return <CheckCircle style={iconStyle} />
-      case 'CANCELLED': return <XCircle style={iconStyle} />
-      default: return <Clock style={iconStyle} />
+  const handleShippingStatusChange = async (newStatus: string) => {
+    if (newStatus === 'CANCEL') {
+      setShowCancelReason('shipping')
+      setPendingStatusChange({ field: 'shipping', value: newStatus })
+      return
+    }
+    setUpdating(true)
+    try {
+      await onStatusUpdate(order.id, { shippingStatus: newStatus as ShippingStatus })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleConfirmCancel = async () => {
+    if (!pendingStatusChange || !cancelReason.trim()) return
+    setUpdating(true)
+    try {
+      if (pendingStatusChange.field === 'order') {
+        await onStatusUpdate(order.id, { status: pendingStatusChange.value as OrderStatus, cancellationReason: cancelReason })
+      } else {
+        await onStatusUpdate(order.id, { shippingStatus: pendingStatusChange.value as ShippingStatus, cancellationReason: cancelReason })
+      }
+      setShowCancelReason(null)
+      setCancelReason('')
+      setPendingStatusChange(null)
+    } finally {
+      setUpdating(false)
     }
   }
 
@@ -276,15 +296,16 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
         </div>
 
         <div style={{ padding: '28px' }}>
-          {/* Status & Payment Info */}
+          {/* Order Status & Shipping Status Dropdowns */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
               gap: '16px',
-              marginBottom: '28px',
+              marginBottom: '16px',
             }}
           >
+            {/* Order Status Dropdown */}
             <div
               style={{
                 backgroundColor: '#FAFAF8',
@@ -293,11 +314,52 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
               }}
             >
               <p style={sectionHeadingStyle}>Order Status</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {getStatusIcon(order.status)}
-                <OrderStatusBadge status={order.status} />
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={order.status}
+                  onChange={(e) => handleOrderStatusChange(e.target.value)}
+                  disabled={updating}
+                  style={{
+                    width: '100%',
+                    padding: '10px 36px 10px 14px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#2C2C2C',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E8E6E3',
+                    outline: 'none',
+                    cursor: updating ? 'not-allowed' : 'pointer',
+                    opacity: updating ? 0.6 : 1,
+                    appearance: 'none',
+                    transition: 'border-color 200ms',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#8e2157' }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E8E6E3' }}
+                >
+                  {ORDER_STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                  {/* Show current value if it's a legacy status not in options */}
+                  {!ORDER_STATUS_OPTIONS.find(o => o.value === order.status) && (
+                    <option value={order.status}>{getStatusDisplayName(order.status)}</option>
+                  )}
+                </select>
+                <ChevronDown
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '16px',
+                    height: '16px',
+                    color: '#6B7280',
+                    pointerEvents: 'none',
+                  }}
+                />
               </div>
             </div>
+
+            {/* Shipping Status Dropdown */}
             <div
               style={{
                 backgroundColor: '#FAFAF8',
@@ -305,60 +367,201 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
                 padding: '18px 20px',
               }}
             >
-              <p style={sectionHeadingStyle}>Payment</p>
+              <p style={sectionHeadingStyle}>Shipping Status</p>
+              <div style={{ position: 'relative' }}>
+                <select
+                  value={order.shippingStatus || 'PROCESSING'}
+                  onChange={(e) => handleShippingStatusChange(e.target.value)}
+                  disabled={updating}
+                  style={{
+                    width: '100%',
+                    padding: '10px 36px 10px 14px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#2C2C2C',
+                    backgroundColor: '#FFFFFF',
+                    border: '1px solid #E8E6E3',
+                    outline: 'none',
+                    cursor: updating ? 'not-allowed' : 'pointer',
+                    opacity: updating ? 0.6 : 1,
+                    appearance: 'none',
+                    transition: 'border-color 200ms',
+                  }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#8e2157' }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#E8E6E3' }}
+                >
+                  {SHIPPING_STATUS_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+                <ChevronDown
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: '16px',
+                    height: '16px',
+                    color: '#6B7280',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Cancellation Reason Form (shown when Cancel is selected on either dropdown) */}
+          {showCancelReason && (
+            <div
+              style={{
+                marginBottom: '16px',
+                padding: '18px 20px',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FECACA',
+              }}
+            >
+              <label
+                style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: '#991B1B',
+                  marginBottom: '8px',
+                }}
+              >
+                Reason for Cancellation ({showCancelReason === 'order' ? 'Order' : 'Shipping'})
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                onFocus={() => setCancelReasonFocused(true)}
+                onBlur={() => setCancelReasonFocused(false)}
+                placeholder="Enter the reason for cancellation..."
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  fontSize: '14px',
+                  color: '#2C2C2C',
+                  backgroundColor: '#FFFFFF',
+                  border: cancelReasonFocused ? '1px solid #DC2626' : '1px solid #FECACA',
+                  outline: 'none',
+                  transition: 'border-color 200ms',
+                  boxSizing: 'border-box',
+                  resize: 'vertical',
+                  fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
+                <button
+                  onClick={handleConfirmCancel}
+                  disabled={updating || !cancelReason.trim()}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    backgroundColor: '#DC2626',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    cursor: updating || !cancelReason.trim() ? 'not-allowed' : 'pointer',
+                    opacity: updating || !cancelReason.trim() ? 0.5 : 1,
+                    transition: 'all 200ms',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!updating && cancelReason.trim()) e.currentTarget.style.backgroundColor = '#B91C1C'
+                  }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#DC2626' }}
+                >
+                  {updating ? 'Updating...' : 'Confirm Cancellation'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCancelReason(null)
+                    setCancelReason('')
+                    setPendingStatusChange(null)
+                  }}
+                  disabled={updating}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    backgroundColor: 'transparent',
+                    color: '#6B7280',
+                    border: '1px solid #E8E6E3',
+                    cursor: updating ? 'not-allowed' : 'pointer',
+                    transition: 'all 200ms',
+                  }}
+                  onMouseEnter={(e) => { if (!updating) e.currentTarget.style.backgroundColor = '#F5F5F5' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Info */}
+          <div
+            style={{
+              backgroundColor: '#FAFAF8',
+              border: '1px solid #E8E6E3',
+              padding: '18px 20px',
+              marginBottom: '28px',
+            }}
+          >
+            <p style={sectionHeadingStyle}>Payment</p>
+            <p
+              style={{
+                fontSize: '15px',
+                fontWeight: 500,
+                color: '#2C2C2C',
+                margin: 0,
+                marginBottom: '8px',
+                ...textStyle,
+              }}
+            >
+              {getPaymentMethodName(order.paymentMethod)}
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <PaymentStatusBadge status={order.paymentStatus || 'UNPAID'} />
+              {order.paymentChannel && (
+                <span
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    backgroundColor: '#EFF6FF',
+                    color: '#1E40AF',
+                    border: '1px solid #BFDBFE',
+                  }}
+                >
+                  {order.paymentChannel}
+                </span>
+              )}
+            </div>
+            {order.paystationTransactionId && (
               <p
                 style={{
-                  fontSize: '15px',
-                  fontWeight: 500,
-                  color: '#2C2C2C',
-                  margin: 0,
-                  marginBottom: '8px',
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  marginTop: '8px',
+                  fontFamily: 'monospace',
                   ...textStyle,
                 }}
               >
-                {getPaymentMethodName(order.paymentMethod)}
+                TXN: {order.paystationTransactionId}
               </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <PaymentStatusBadge status={order.paymentStatus || 'UNPAID'} />
-                {order.paymentChannel && (
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                      backgroundColor: '#EFF6FF',
-                      color: '#1E40AF',
-                      border: '1px solid #BFDBFE',
-                    }}
-                  >
-                    {order.paymentChannel}
-                  </span>
-                )}
-              </div>
-              {order.paystationTransactionId && (
-                <p
-                  style={{
-                    fontSize: '12px',
-                    color: '#6B7280',
-                    marginTop: '8px',
-                    fontFamily: 'monospace',
-                    ...textStyle,
-                  }}
-                >
-                  TXN: {order.paystationTransactionId}
-                </p>
-              )}
-              {order.paymentMethod === 'PAYSTATION' && (order.paymentStatus || 'UNPAID') === 'UNPAID' && (
-                <p style={{ fontSize: '12px', color: '#D97706', marginTop: '8px', fontWeight: 500 }}>
-                  ⚠ Awaiting payment confirmation
-                </p>
-              )}
-              {order.paymentMethod === 'PAYSTATION' && order.paymentStatus === 'FAILED' && (
-                <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '8px', fontWeight: 500 }}>
-                  Payment failed or was cancelled
-                </p>
-              )}
-            </div>
+            )}
+            {order.paymentMethod === 'PAYSTATION' && (order.paymentStatus || 'UNPAID') === 'UNPAID' && (
+              <p style={{ fontSize: '12px', color: '#D97706', marginTop: '8px', fontWeight: 500 }}>
+                Awaiting payment confirmation
+              </p>
+            )}
+            {order.paymentMethod === 'PAYSTATION' && order.paymentStatus === 'FAILED' && (
+              <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '8px', fontWeight: 500 }}>
+                Payment failed or was cancelled
+              </p>
+            )}
           </div>
 
           {/* Customer Info */}
@@ -558,7 +761,7 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
                         </span>
                       )}
                     </div>
-                    {item.status === 'ACTIVE' && order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                    {item.status === 'ACTIVE' && order.status !== 'CANCEL' && order.status !== 'DELIVERED' && (
                       <button
                         onClick={() => {
                           if (isItemCancelling) {
@@ -1035,7 +1238,7 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
           })()}
 
           {/* Cancellation Reason (shown on cancelled orders) */}
-          {order.status === 'CANCELLED' && order.cancellationReason && (
+          {order.status === 'CANCEL' && order.cancellationReason && (
             <div style={{ marginBottom: '28px' }}>
               <p style={sectionHeadingStyle}>Cancellation Reason</p>
               <div
@@ -1061,192 +1264,7 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
             </div>
           )}
 
-          {/* Status Actions */}
-          {availableTransitions.length > 0 && (
-            <div>
-              <p style={sectionHeadingStyle}>Update Status</p>
-
-              {/* Tracking number input for shipping */}
-              {availableTransitions.includes('SHIPPED') && (
-                <div style={{ marginBottom: '16px' }}>
-                  <label
-                    htmlFor="tracking"
-                    style={{
-                      display: 'block',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      color: '#6B7280',
-                      marginBottom: '8px',
-                      whiteSpace: 'normal',
-                      wordBreak: 'normal',
-                    }}
-                  >
-                    Tracking Number (optional)
-                  </label>
-                  <input
-                    type="text"
-                    id="tracking"
-                    value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    onFocus={() => setTrackingFocused(true)}
-                    onBlur={() => setTrackingFocused(false)}
-                    placeholder="Enter tracking number..."
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      fontSize: '14px',
-                      color: '#2C2C2C',
-                      backgroundColor: '#FAFAF8',
-                      border: trackingFocused ? '1px solid #8e2157' : '1px solid #E8E6E3',
-                      outline: 'none',
-                      transition: 'border-color 200ms',
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </div>
-              )}
-
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                {availableTransitions.map((status) => {
-                  const isCancelled = status === 'CANCELLED'
-                  if (isCancelled && showCancelForm) return null
-                  return (
-                    <button
-                      key={status}
-                      onClick={() => handleStatusChange(status as OrderStatus)}
-                      disabled={updating}
-                      style={{
-                        padding: '12px 20px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        letterSpacing: '0.5px',
-                        border: isCancelled ? '1px solid #FECACA' : '1px solid #E8E6E3',
-                        backgroundColor: isCancelled ? '#FEF2F2' : '#FAFAF8',
-                        color: isCancelled ? '#991B1B' : '#8e2157',
-                        cursor: updating ? 'not-allowed' : 'pointer',
-                        opacity: updating ? 0.5 : 1,
-                        transition: 'all 200ms',
-                        whiteSpace: 'nowrap',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!updating) {
-                          e.currentTarget.style.backgroundColor = isCancelled ? '#FEE2E2' : '#fdf2f8'
-                          e.currentTarget.style.borderColor = isCancelled ? '#FCA5A5' : '#8e2157'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = isCancelled ? '#FEF2F2' : '#FAFAF8'
-                        e.currentTarget.style.borderColor = isCancelled ? '#FECACA' : '#E8E6E3'
-                      }}
-                    >
-                      {updating ? 'Updating...' : `Mark as ${getStatusDisplayName(status)}`}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Cancellation reason form */}
-              {showCancelForm && (
-                <div
-                  style={{
-                    marginTop: '16px',
-                    padding: '18px 20px',
-                    backgroundColor: '#FEF2F2',
-                    border: '1px solid #FECACA',
-                  }}
-                >
-                  <label
-                    htmlFor="cancelReason"
-                    style={{
-                      display: 'block',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#991B1B',
-                      marginBottom: '8px',
-                    }}
-                  >
-                    Reason for Cancellation
-                  </label>
-                  <textarea
-                    id="cancelReason"
-                    value={cancellationReason}
-                    onChange={(e) => setCancellationReason(e.target.value)}
-                    onFocus={() => setCancelReasonFocused(true)}
-                    onBlur={() => setCancelReasonFocused(false)}
-                    placeholder="Enter the reason for cancelling this order..."
-                    rows={3}
-                    style={{
-                      width: '100%',
-                      padding: '12px 14px',
-                      fontSize: '14px',
-                      color: '#2C2C2C',
-                      backgroundColor: '#FFFFFF',
-                      border: cancelReasonFocused ? '1px solid #DC2626' : '1px solid #FECACA',
-                      outline: 'none',
-                      transition: 'border-color 200ms',
-                      boxSizing: 'border-box',
-                      resize: 'vertical',
-                      fontFamily: 'inherit',
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '12px' }}>
-                    <button
-                      onClick={() => handleStatusChange('CANCELLED' as OrderStatus)}
-                      disabled={updating || !cancellationReason.trim()}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        backgroundColor: '#DC2626',
-                        color: '#FFFFFF',
-                        border: 'none',
-                        cursor: updating || !cancellationReason.trim() ? 'not-allowed' : 'pointer',
-                        opacity: updating || !cancellationReason.trim() ? 0.5 : 1,
-                        transition: 'all 200ms',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!updating && cancellationReason.trim()) {
-                          e.currentTarget.style.backgroundColor = '#B91C1C'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = '#DC2626'
-                      }}
-                    >
-                      {updating ? 'Cancelling...' : 'Confirm Cancellation'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCancelForm(false)
-                        setCancellationReason('')
-                      }}
-                      disabled={updating}
-                      style={{
-                        padding: '10px 20px',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        backgroundColor: 'transparent',
-                        color: '#6B7280',
-                        border: '1px solid #E8E6E3',
-                        cursor: updating ? 'not-allowed' : 'pointer',
-                        transition: 'all 200ms',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!updating) {
-                          e.currentTarget.style.backgroundColor = '#F5F5F5'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          {/* (Status actions are now handled by the dropdowns above) */}
         </div>
       </div>
     </div>
@@ -1258,6 +1276,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [filterShippingStatus, setFilterShippingStatus] = useState('')
   const [filterPayment, setFilterPayment] = useState('')
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -1276,7 +1295,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [searchQuery, filterStatus, filterPayment, filterPaymentStatus, dateFrom, dateTo, sortBy, sortOrder, page])
+  }, [searchQuery, filterStatus, filterShippingStatus, filterPayment, filterPaymentStatus, dateFrom, dateTo, sortBy, sortOrder, page])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -1284,6 +1303,7 @@ export default function AdminOrdersPage() {
       const params = new URLSearchParams({
         search: searchQuery,
         status: filterStatus,
+        shippingStatus: filterShippingStatus,
         paymentMethod: filterPayment,
         paymentStatus: filterPaymentStatus,
         dateFrom,
@@ -1326,17 +1346,17 @@ export default function AdminOrdersPage() {
     }
   }
 
-  const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus, trackingNumber?: string, cancellationReason?: string) => {
+  const handleStatusUpdate = async (orderId: string, updates: { status?: OrderStatus; shippingStatus?: ShippingStatus; cancellationReason?: string }) => {
     try {
       const response = await fetch(`/api/admin/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, trackingNumber, cancellationReason })
+        body: JSON.stringify(updates)
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to update order status')
+        throw new Error(data.error || 'Failed to update order')
       }
 
       const data = await response.json()
@@ -1348,8 +1368,8 @@ export default function AdminOrdersPage() {
         fetchOrderDetails(orderId)
       }
     } catch (error) {
-      console.error('Error updating order status:', error)
-      alert(error instanceof Error ? error.message : 'Failed to update order status')
+      console.error('Error updating order:', error)
+      alert(error instanceof Error ? error.message : 'Failed to update order')
     }
   }
 
@@ -1391,6 +1411,7 @@ export default function AdminOrdersPage() {
       const params = new URLSearchParams({
         search: searchQuery,
         status: filterStatus,
+        shippingStatus: filterShippingStatus,
         paymentMethod: filterPayment,
         dateFrom,
         dateTo,
@@ -1470,7 +1491,7 @@ export default function AdminOrdersPage() {
         className="bg-white rounded-lg shadow-sm p-6 mb-6"
         style={{ minWidth: '280px', width: '100%' }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-4">
           {/* Search */}
           <div>
             <label htmlFor="search" className="block text-sm font-medium mb-2" style={{ color: '#2C2C2C' }}>
@@ -1494,10 +1515,10 @@ export default function AdminOrdersPage() {
             </div>
           </div>
 
-          {/* Status Filter */}
+          {/* Order Status Filter */}
           <div>
             <label htmlFor="status" className="block text-sm font-medium mb-2" style={{ color: '#2C2C2C' }}>
-              Status
+              Order Status
             </label>
             <select
               id="status"
@@ -1506,12 +1527,29 @@ export default function AdminOrdersPage() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
               style={{ borderColor: '#d1d5db' }}
             >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
+              <option value="">All</option>
+              {ORDER_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Shipping Status Filter */}
+          <div>
+            <label htmlFor="shippingStatus" className="block text-sm font-medium mb-2" style={{ color: '#2C2C2C' }}>
+              Shipping
+            </label>
+            <select
+              id="shippingStatus"
+              value={filterShippingStatus}
+              onChange={(e) => { setFilterShippingStatus(e.target.value); setPage(1) }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+              style={{ borderColor: '#d1d5db' }}
+            >
+              <option value="">All</option>
+              {SHIPPING_STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
           </div>
 
@@ -1627,14 +1665,14 @@ export default function AdminOrdersPage() {
               No orders found
             </p>
             <p className="text-sm" style={{ color: '#9CA3AF' }}>
-              {searchQuery || filterStatus || filterPayment || filterPaymentStatus || dateFrom || dateTo
+              {searchQuery || filterStatus || filterShippingStatus || filterPayment || filterPaymentStatus || dateFrom || dateTo
                 ? 'Try adjusting your filters'
                 : 'Orders will appear here when customers make purchases'}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full" style={{ minWidth: '900px' }}>
+            <table className="w-full" style={{ minWidth: '1050px' }}>
               <thead style={{ backgroundColor: '#F5F5F5' }}>
                 <tr>
                   <th className="text-left px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Order #</th>
@@ -1643,7 +1681,8 @@ export default function AdminOrdersPage() {
                   <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Items</th>
                   <th className="text-right px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Total</th>
                   <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Payment</th>
-                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Status</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Order Status</th>
+                  <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Shipping</th>
                   <th className="text-center px-6 py-4 text-sm font-medium" style={{ color: '#2C2C2C' }}>Actions</th>
                 </tr>
               </thead>
@@ -1701,6 +1740,9 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <OrderStatusBadge status={order.status} />
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <ShippingStatusBadge status={order.shippingStatus || 'PROCESSING'} />
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>

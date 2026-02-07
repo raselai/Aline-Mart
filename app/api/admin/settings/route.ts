@@ -67,21 +67,13 @@ export async function PUT(request: Request) {
         // Update existing setting
         return await supabase
           .from('settings')
-          .update({
-            value,
-            updated_at: new Date().toISOString()
-          })
+          .update({ value })
           .eq('key', key)
       } else {
         // Insert new setting
         return await supabase
           .from('settings')
-          .insert({
-            key,
-            value,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+          .insert({ key, value })
       }
     })
 

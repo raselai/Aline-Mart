@@ -34,27 +34,32 @@ async function getOrderDetails(orderNumber: string) {
 }
 
 const ORDER_STEPS: { key: OrderStatus; label: string; icon: typeof Package }[] = [
-  { key: 'PENDING', label: 'Order Placed', icon: CheckCircle2 },
-  { key: 'PROCESSING', label: 'Processing', icon: Package },
-  { key: 'SHIPPED', label: 'Shipped', icon: Truck },
+  { key: 'NEW', label: 'Order Placed', icon: CheckCircle2 },
+  { key: 'PENDING', label: 'Pending', icon: Package },
+  { key: 'CONFIRM', label: 'Confirmed', icon: Truck },
   { key: 'DELIVERED', label: 'Delivered', icon: Home },
 ]
 
 function getStepIndex(status: OrderStatus): number {
-  if (status === 'CANCELLED') return -1
+  if (status === 'CANCEL') return -1
   const idx = ORDER_STEPS.findIndex((s) => s.key === status)
   return idx >= 0 ? idx : 0
 }
 
 function getStatusInlineStyle(status: string): React.CSSProperties {
+  const base = { padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 } as const
   const styles: Record<string, React.CSSProperties> = {
-    PENDING: { background: '#fef9c3', color: '#854d0e', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
-    PROCESSING: { background: '#dbeafe', color: '#1e40af', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
-    SHIPPED: { background: '#f3e8ff', color: '#6b21a8', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
-    DELIVERED: { background: '#dcfce7', color: '#166534', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
-    CANCELLED: { background: '#fee2e2', color: '#991b1b', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 },
+    NEW: { ...base, background: '#e0f2fe', color: '#0c4a6e' },
+    PENDING: { ...base, background: '#fef9c3', color: '#854d0e' },
+    CONFIRM: { ...base, background: '#dcfce7', color: '#166534' },
+    CANCEL: { ...base, background: '#fee2e2', color: '#991b1b' },
+    RETURN: { ...base, background: '#ffedd5', color: '#9a3412' },
+    REFUND: { ...base, background: '#f3e8ff', color: '#6b21a8' },
+    PARTIAL_CONFIRMED: { ...base, background: '#fef3c7', color: '#92400e' },
+    DELIVERED: { ...base, background: '#dcfce7', color: '#166534' },
+    RETURN_TO_VENDOR: { ...base, background: '#ffe4e6', color: '#9f1239' },
   }
-  return styles[status] || { background: '#f3f4f6', color: '#374151', padding: '6px 16px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 600 }
+  return styles[status] || { ...base, background: '#f3f4f6', color: '#374151' }
 }
 
 export default async function OrderPage({ params }: OrderPageProps) {
@@ -72,7 +77,7 @@ export default async function OrderPage({ params }: OrderPageProps) {
   })
 
   const currentStepIndex = getStepIndex(order.status as OrderStatus)
-  const isCancelled = order.status === 'CANCELLED'
+  const isCancelled = order.status === 'CANCEL'
 
   return (
     <div style={{ maxWidth: '960px', minWidth: '320px', margin: '0 auto', padding: '32px 16px' }}>

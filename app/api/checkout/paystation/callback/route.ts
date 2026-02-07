@@ -94,18 +94,18 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if already processed (idempotency)
-    if (order.status === 'PROCESSING' || order.status === 'SHIPPED' || order.status === 'DELIVERED') {
+    if (order.status === 'CONFIRM' || order.status === 'DELIVERED') {
       // Already processed, redirect to confirmation
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/orders/${order.orderNumber}/confirmation?clearCart=true`
       )
     }
 
-    // Update order status to PROCESSING with payment confirmation
+    // Update order status to CONFIRM with payment confirmation
     const { error: updateError } = await supabase
       .from('Order')
       .update({
-        status: 'PROCESSING',
+        status: 'CONFIRM',
         paymentStatus: 'PAID',
         paymentChannel: paymentChannel,
         paystationTransactionId: verifiedTrxId,

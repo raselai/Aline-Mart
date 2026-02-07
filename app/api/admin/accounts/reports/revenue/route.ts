@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     let ordersQuery = supabase
       .from('Order')
       .select('id, orderNumber, total, paymentMethod, status, createdAt')
-      .neq('status', 'CANCELLED')
+      .neq('status', 'CANCEL')
       .order('createdAt', { ascending: true })
 
     if (dateFrom) ordersQuery = ordersQuery.gte('createdAt', dateFrom)

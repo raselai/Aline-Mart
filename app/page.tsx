@@ -9,6 +9,57 @@ import HeroCarousel from "./HeroCarousel";
 
 export const revalidate = 300 // Revalidate every 5 minutes
 
+interface HeroSettings {
+  tagline?: string
+  headline?: string
+  subheadline?: string
+  ctaText?: string
+  ctaLink?: string
+  stat1Number?: string
+  stat1Label?: string
+  stat2Number?: string
+  stat2Label?: string
+  images?: string[]
+}
+
+async function getHeroSettings(): Promise<HeroSettings> {
+  try {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('key, value')
+      .like('key', 'hero_%')
+
+    if (error) throw error
+
+    const settings: HeroSettings = {}
+    data?.forEach((row: { key: string; value: string }) => {
+      switch (row.key) {
+        case 'hero_tagline': settings.tagline = row.value; break
+        case 'hero_headline': settings.headline = row.value; break
+        case 'hero_subheadline': settings.subheadline = row.value; break
+        case 'hero_cta_text': settings.ctaText = row.value; break
+        case 'hero_cta_link': settings.ctaLink = row.value; break
+        case 'hero_stat_1_number': settings.stat1Number = row.value; break
+        case 'hero_stat_1_label': settings.stat1Label = row.value; break
+        case 'hero_stat_2_number': settings.stat2Number = row.value; break
+        case 'hero_stat_2_label': settings.stat2Label = row.value; break
+        case 'hero_images':
+          try {
+            const parsed = JSON.parse(row.value)
+            if (Array.isArray(parsed)) settings.images = parsed
+          } catch {
+            // keep default images
+          }
+          break
+      }
+    })
+    return settings
+  } catch (error) {
+    console.error('Error fetching hero settings:', error)
+    return {}
+  }
+}
+
 interface Brand {
   id: string
   name: string
@@ -119,16 +170,17 @@ async function getNewArrivals(): Promise<Product[]> {
 
 export default async function Home() {
   // Fetch data in parallel
-  const [hotDeals, newArrivals, brands] = await Promise.all([
+  const [hotDeals, newArrivals, brands, heroSettings] = await Promise.all([
     getHotDeals(),
     getNewArrivals(),
-    getBrands()
+    getBrands(),
+    getHeroSettings()
   ])
 
   return (
     <div className="w-full overflow-hidden bg-white">
       {/* Hero Section with Carousel */}
-      <HeroCarousel />
+      <HeroCarousel {...heroSettings} />
 
       {/* Brand Philosophy Section */}
       <section className="py-8 md:py-20 lg:py-24 bg-white relative overflow-hidden">

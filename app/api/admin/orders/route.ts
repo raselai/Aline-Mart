@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
-import type { OrderStatus, PaymentMethod, PaymentStatus } from '@/types/order'
+import type { OrderStatus, ShippingStatus, PaymentMethod, PaymentStatus } from '@/types/order'
 
 /**
  * GET /api/admin/orders
@@ -22,6 +22,7 @@ export async function GET(request: Request) {
     // Extract query parameters
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as OrderStatus | null
+    const shippingStatus = searchParams.get('shippingStatus') as ShippingStatus | null
     const paymentMethod = searchParams.get('paymentMethod') as PaymentMethod | null
     const paymentStatus = searchParams.get('paymentStatus') as PaymentStatus | null
     const search = searchParams.get('search') || ''
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
         orderNumber,
         total,
         status,
+        shippingStatus,
         paymentMethod,
         paymentStatus,
         createdAt,
@@ -61,6 +63,11 @@ export async function GET(request: Request) {
     // Apply status filter
     if (status) {
       query = query.eq('status', status)
+    }
+
+    // Apply shipping status filter
+    if (shippingStatus) {
+      query = query.eq('shippingStatus', shippingStatus)
     }
 
     // Apply payment method filter
@@ -118,6 +125,7 @@ export async function GET(request: Request) {
       orderNumber: order.orderNumber,
       total: order.total,
       status: order.status,
+      shippingStatus: order.shippingStatus || 'PROCESSING',
       paymentMethod: order.paymentMethod || 'COD',
       paymentStatus: order.paymentStatus || 'UNPAID',
       createdAt: order.createdAt,

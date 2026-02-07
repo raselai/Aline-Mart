@@ -120,7 +120,7 @@ export interface WishlistItem {
   createdAt: Date
 }
 
-export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type OrderStatus = 'NEW' | 'PENDING' | 'CONFIRM' | 'CANCEL' | 'RETURN' | 'REFUND' | 'PARTIAL_CONFIRMED' | 'DELIVERED' | 'RETURN_TO_VENDOR'
 
 export interface CartItem {
   productId: string

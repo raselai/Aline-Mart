@@ -1,4 +1,5 @@
-export type OrderStatus = 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED'
+export type OrderStatus = 'NEW' | 'PENDING' | 'CONFIRM' | 'CANCEL' | 'RETURN' | 'REFUND' | 'PARTIAL_CONFIRMED' | 'DELIVERED' | 'RETURN_TO_VENDOR'
+export type ShippingStatus = 'PROCESSING' | 'READY_TO_DISPATCH' | 'IN_DESTINATION' | 'ON_THE_WAY' | 'DELIVERED' | 'CANCEL' | 'RETURN'
 export type PaymentMethod = 'PAYSTATION' | 'COD'
 export type PaymentStatus = 'UNPAID' | 'PAID' | 'FAILED'
 
@@ -8,6 +9,7 @@ export interface Order {
   userId: string
   total: number
   status: OrderStatus
+  shippingStatus: ShippingStatus
   shippingAddressId: string
   paymentMethod: PaymentMethod
   shippingCost: number
@@ -72,6 +74,7 @@ export interface AdminOrderListItem {
   orderNumber: string
   total: number
   status: OrderStatus
+  shippingStatus: ShippingStatus
   paymentMethod: PaymentMethod
   paymentStatus?: PaymentStatus
   createdAt: string
@@ -91,6 +94,7 @@ export interface AdminOrderListItem {
  */
 export interface OrderFilters {
   status?: OrderStatus
+  shippingStatus?: ShippingStatus
   paymentMethod?: PaymentMethod
   search?: string
   dateFrom?: string

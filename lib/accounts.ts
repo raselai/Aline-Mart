@@ -300,7 +300,7 @@ export async function calculateVendorEarnings(
 
   for (const item of orderItems || []) {
     const order = Array.isArray(item.order) ? item.order[0] : item.order
-    if (order && order.status !== 'CANCELLED') {
+    if (order && order.status !== 'CANCEL') {
       totalSales += Number(item.total)
       if (!countedOrders.has(order.id)) {
         countedOrders.add(order.id)

@@ -4,26 +4,64 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import Image from "next/image";
 
-export default function HeroCarousel() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
+interface HeroProps {
+  tagline?: string
+  headline?: string
+  subheadline?: string
+  ctaText?: string
+  ctaLink?: string
+  stat1Number?: string
+  stat1Label?: string
+  stat2Number?: string
+  stat2Label?: string
+  images?: string[]
+}
 
-  // Hero slider images
-  const heroImages = [
+const DEFAULTS: Required<HeroProps> = {
+  tagline: 'Est. 2024',
+  headline: "World's Finest Brands, One Destination",
+  subheadline: "Discover curated luxury from Rolex, Gucci, Prada, and the world's most prestigious houses",
+  ctaText: 'Explore Collection',
+  ctaLink: '/products',
+  stat1Number: '20+',
+  stat1Label: 'BRANDS',
+  stat2Number: '100+',
+  stat2Label: 'PRODUCTS',
+  images: [
     '/Hero/hero-1.jpg',
     '/Hero/hero-2.jpg',
     '/Hero/hero-3.jpg',
     '/Hero/hero-4.jpg',
     '/Hero/hero-5.jpg',
-  ];
+  ],
+}
+
+export default function HeroCarousel(props: HeroProps) {
+  const tagline = props.tagline || DEFAULTS.tagline
+  const headline = props.headline || DEFAULTS.headline
+  const subheadline = props.subheadline || DEFAULTS.subheadline
+  const ctaText = props.ctaText || DEFAULTS.ctaText
+  const ctaLink = props.ctaLink || DEFAULTS.ctaLink
+  const stat1Number = props.stat1Number || DEFAULTS.stat1Number
+  const stat1Label = props.stat1Label || DEFAULTS.stat1Label
+  const stat2Number = props.stat2Number || DEFAULTS.stat2Number
+  const stat2Label = props.stat2Label || DEFAULTS.stat2Label
+  const heroImages = props.images && props.images.length > 0 ? props.images : DEFAULTS.images
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  // Split headline at comma for the two-line editorial layout
+  const commaIndex = headline.indexOf(',')
+  const headlineLine1 = commaIndex >= 0 ? headline.slice(0, commaIndex + 1) : headline
+  const headlineLine2 = commaIndex >= 0 ? headline.slice(commaIndex + 1).trim() : ''
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
-    }, 4000); // Change slide every 4 seconds
+    }, 4000);
 
     return () => clearInterval(timer);
   }, [heroImages.length]);
@@ -93,10 +131,8 @@ export default function HeroCarousel() {
                   alt={`Hero slide ${index + 1}`}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.error(`Failed to load image: ${image}`);
                     e.currentTarget.style.display = 'none';
                   }}
-                  onLoad={() => console.log(`Loaded image: ${image}`)}
                 />
               </div>
             ))}
@@ -108,8 +144,9 @@ export default function HeroCarousel() {
 
         {/* Left burgundy section - placed ABOVE the images */}
         <div
-          className="absolute inset-y-0 left-0 right-0 bg-gradient-to-br from-burgundy via-plum to-burgundy z-10"
+          className="absolute inset-y-0 left-0 right-0 z-10"
           style={{
+            background: 'linear-gradient(to bottom right, #8e2157, #5c0931, #8e2157)',
             clipPath: 'polygon(0 0, 65% 0, 45% 100%, 0 100%)',
             animation: 'slideInLeft 1.2s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
@@ -125,32 +162,31 @@ export default function HeroCarousel() {
             {/* Decorative Accent */}
             <div className="flex items-center gap-2 md:gap-3 opacity-90">
               <div className="h-px w-8 md:w-12 bg-white/40" />
-              <span className="text-[9px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] uppercase font-light whitespace-nowrap">Est. 2024</span>
+              <span className="text-[9px] md:text-xs tracking-[0.2em] md:tracking-[0.3em] uppercase font-light" style={{ whiteSpace: 'nowrap' }}>{tagline}</span>
             </div>
 
             {/* Main Headline */}
             <h1 className="font-serif font-bold leading-[1.1] tracking-tight">
-              {/* Mobile: 3 lines */}
-              <span className="block lg:hidden text-[28px] sm:text-[36px] whitespace-nowrap">World's Finest</span>
-              <span className="block lg:hidden text-[28px] sm:text-[36px] whitespace-nowrap">Brands,</span>
-              <span className="block lg:hidden text-[28px] sm:text-[36px] italic opacity-90 whitespace-nowrap">One Destination</span>
-
-              {/* Desktop: 2 lines - Slightly reduced size */}
-              <span className="hidden lg:block text-[56px] lg:text-[68px] xl:text-[84px] whitespace-nowrap">World's Finest Brands,</span>
-              <span className="hidden lg:block text-[56px] lg:text-[68px] xl:text-[84px] italic opacity-90 whitespace-nowrap">One Destination</span>
+              {headlineLine2 ? (
+                <>
+                  {/* Mobile */}
+                  <span className="block lg:hidden text-[28px] sm:text-[36px]" style={{ whiteSpace: 'nowrap' }}>{headlineLine1}</span>
+                  <span className="block lg:hidden text-[28px] sm:text-[36px] italic opacity-90" style={{ whiteSpace: 'nowrap' }}>{headlineLine2}</span>
+                  {/* Desktop */}
+                  <span className="hidden lg:block text-[56px] lg:text-[68px] xl:text-[84px]" style={{ whiteSpace: 'nowrap' }}>{headlineLine1}</span>
+                  <span className="hidden lg:block text-[56px] lg:text-[68px] xl:text-[84px] italic opacity-90" style={{ whiteSpace: 'nowrap' }}>{headlineLine2}</span>
+                </>
+              ) : (
+                <>
+                  <span className="block lg:hidden text-[28px] sm:text-[36px]" style={{ whiteSpace: 'nowrap' }}>{headlineLine1}</span>
+                  <span className="hidden lg:block text-[56px] lg:text-[68px] xl:text-[84px]" style={{ whiteSpace: 'nowrap' }}>{headlineLine1}</span>
+                </>
+              )}
             </h1>
 
             {/* Subheadline */}
-            <div className="text-[11px] sm:text-[13px] md:text-base lg:text-lg xl:text-xl font-light leading-relaxed text-white/90">
-              {/* Mobile: Multiple lines */}
-              <p className="block lg:hidden whitespace-nowrap">Discover curated luxury</p>
-              <p className="block lg:hidden whitespace-nowrap">from Rolex, Gucci, Prada,</p>
-              <p className="block lg:hidden whitespace-nowrap">and the world's most</p>
-              <p className="block lg:hidden whitespace-nowrap">prestigious houses</p>
-
-              {/* Desktop: 2 lines */}
-              <p className="hidden lg:block whitespace-nowrap">Discover curated luxury from Rolex, Gucci, Prada,</p>
-              <p className="hidden lg:block whitespace-nowrap">and the world's most prestigious houses</p>
+            <div className="text-[11px] sm:text-[13px] md:text-base lg:text-lg xl:text-xl font-light leading-relaxed" style={{ color: 'rgba(255,255,255,0.9)' }}>
+              <p style={{ whiteSpace: 'nowrap' }}>{subheadline}</p>
             </div>
 
             {/* CTA Button */}
@@ -158,10 +194,11 @@ export default function HeroCarousel() {
               <Button
                 asChild
                 size="lg"
-                className="group bg-white text-burgundy hover:bg-white/95 font-semibold text-xs sm:text-sm md:text-base px-5 py-4 sm:px-6 sm:py-5 md:px-10 md:py-7 rounded-none border-2 border-white shadow-2xl transition-all duration-500 hover:shadow-white/20"
+                className="group bg-white hover:bg-white/95 font-semibold text-xs sm:text-sm md:text-base px-5 py-4 sm:px-6 sm:py-5 md:px-10 md:py-7 rounded-none border-2 border-white shadow-2xl transition-all duration-500 hover:shadow-white/20"
+                style={{ color: '#8e2157' }}
               >
-                <Link href="/products" className="flex items-center gap-2 md:gap-3 whitespace-nowrap">
-                  Explore Collection
+                <Link href={ctaLink} className="flex items-center gap-2 md:gap-3" style={{ whiteSpace: 'nowrap' }}>
+                  {ctaText}
                   <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform duration-300" />
                 </Link>
               </Button>
@@ -170,12 +207,12 @@ export default function HeroCarousel() {
             {/* Floating Stats */}
             <div className="flex gap-6 sm:gap-8 md:gap-12 pt-4 md:pt-8" style={{ animation: 'fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both' }}>
               <div>
-                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-bold">20+</div>
-                <div className="text-[10px] sm:text-xs md:text-sm opacity-75 tracking-wider">BRANDS</div>
+                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-bold" style={{ whiteSpace: 'nowrap' }}>{stat1Number}</div>
+                <div className="text-[10px] sm:text-xs md:text-sm opacity-75 tracking-wider" style={{ whiteSpace: 'nowrap' }}>{stat1Label}</div>
               </div>
               <div>
-                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-bold">100+</div>
-                <div className="text-[10px] sm:text-xs md:text-sm opacity-75 tracking-wider">PRODUCTS</div>
+                <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-serif font-bold" style={{ whiteSpace: 'nowrap' }}>{stat2Number}</div>
+                <div className="text-[10px] sm:text-xs md:text-sm opacity-75 tracking-wider" style={{ whiteSpace: 'nowrap' }}>{stat2Label}</div>
               </div>
             </div>
           </div>
@@ -190,9 +227,12 @@ export default function HeroCarousel() {
                   onClick={() => setCurrentSlide(index)}
                   className={`h-2 rounded-full transition-all duration-300 ${
                     index === currentSlide
-                      ? 'w-12 bg-charcoal'
-                      : 'w-2 bg-charcoal/40 hover:bg-charcoal/60'
+                      ? 'w-12'
+                      : 'w-2'
                   }`}
+                  style={{
+                    backgroundColor: index === currentSlide ? '#2C2C2C' : 'rgba(44,44,44,0.4)',
+                  }}
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
@@ -204,8 +244,8 @@ export default function HeroCarousel() {
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30" style={{ animation: 'fadeIn 1s ease 1.5s both' }}>
         <div className="flex flex-col items-center gap-2 animate-bounce">
-          <span className="text-xs tracking-widest text-charcoal/60">SCROLL</span>
-          <div className="w-px h-12 bg-gradient-to-b from-burgundy to-transparent" />
+          <span className="text-xs tracking-widest" style={{ whiteSpace: 'nowrap', color: 'rgba(44,44,44,0.6)' }}>SCROLL</span>
+          <div className="w-px h-12" style={{ background: 'linear-gradient(to bottom, #8e2157, transparent)' }} />
         </div>
       </div>
 

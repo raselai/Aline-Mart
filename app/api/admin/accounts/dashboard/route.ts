@@ -59,7 +59,7 @@ export async function GET(request: Request) {
       .from('Order')
       .select('paymentMethod, total')
       .gte('createdAt', periodStr)
-      .neq('status', 'CANCELLED')
+      .neq('status', 'CANCEL')
 
     const paymentMethodMap: Record<string, { amount: number; count: number }> = {}
     for (const order of orders || []) {

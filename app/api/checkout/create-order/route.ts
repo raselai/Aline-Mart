@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
         userId,
         total,
         status: 'PENDING',
+        shippingStatus: 'PROCESSING',
         paymentStatus: 'UNPAID',
         shippingAddressId: addressId,
         paymentMethod: data.paymentMethod,

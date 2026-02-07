@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import type { OrderStatus, ShippingStatus } from '@/types/order'
 
 /**
  * Generate a unique order number
@@ -22,17 +23,93 @@ export function formatPrice(amount: number): string {
 }
 
 /**
+ * All order status options
+ */
+export const ORDER_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
+  { value: 'NEW', label: 'New' },
+  { value: 'PENDING', label: 'Pending' },
+  { value: 'CONFIRM', label: 'Confirm' },
+  { value: 'CANCEL', label: 'Cancel' },
+  { value: 'RETURN', label: 'Return' },
+  { value: 'REFUND', label: 'Refund' },
+  { value: 'PARTIAL_CONFIRMED', label: 'Partial Confirmed' },
+  { value: 'DELIVERED', label: 'Delivered' },
+  { value: 'RETURN_TO_VENDOR', label: 'Return to Vendor' },
+]
+
+/**
+ * All shipping status options
+ */
+export const SHIPPING_STATUS_OPTIONS: { value: ShippingStatus; label: string }[] = [
+  { value: 'PROCESSING', label: 'Processing' },
+  { value: 'READY_TO_DISPATCH', label: 'Ready to Dispatch' },
+  { value: 'IN_DESTINATION', label: 'In Destination' },
+  { value: 'ON_THE_WAY', label: 'On the Way to Delivery' },
+  { value: 'DELIVERED', label: 'Delivered' },
+  { value: 'CANCEL', label: 'Cancel' },
+  { value: 'RETURN', label: 'Return' },
+]
+
+/**
  * Parse order status color for UI
  */
 export function getOrderStatusColor(status: string): string {
   const colors: Record<string, string> = {
+    NEW: 'bg-sky-100 text-sky-800',
     PENDING: 'bg-yellow-100 text-yellow-800',
+    CONFIRM: 'bg-green-100 text-green-800',
+    CANCEL: 'bg-red-100 text-red-800',
+    RETURN: 'bg-orange-100 text-orange-800',
+    REFUND: 'bg-purple-100 text-purple-800',
+    PARTIAL_CONFIRMED: 'bg-amber-100 text-amber-800',
+    DELIVERED: 'bg-emerald-100 text-emerald-800',
+    RETURN_TO_VENDOR: 'bg-rose-100 text-rose-800',
+    // Legacy fallbacks
     PROCESSING: 'bg-blue-100 text-blue-800',
     SHIPPED: 'bg-purple-100 text-purple-800',
-    DELIVERED: 'bg-green-100 text-green-800',
     CANCELLED: 'bg-red-100 text-red-800',
   }
   return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+/**
+ * Parse shipping status color for UI
+ */
+export function getShippingStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    PROCESSING: 'bg-blue-100 text-blue-800',
+    READY_TO_DISPATCH: 'bg-indigo-100 text-indigo-800',
+    IN_DESTINATION: 'bg-violet-100 text-violet-800',
+    ON_THE_WAY: 'bg-amber-100 text-amber-800',
+    DELIVERED: 'bg-green-100 text-green-800',
+    CANCEL: 'bg-red-100 text-red-800',
+    RETURN: 'bg-orange-100 text-orange-800',
+  }
+  return colors[status] || 'bg-gray-100 text-gray-800'
+}
+
+/**
+ * Get order status display name
+ */
+export function getStatusDisplayName(status: string): string {
+  const found = ORDER_STATUS_OPTIONS.find(o => o.value === status)
+  if (found) return found.label
+  // Legacy fallbacks
+  const legacy: Record<string, string> = {
+    PROCESSING: 'Processing',
+    SHIPPED: 'Shipped',
+    CANCELLED: 'Cancelled',
+  }
+  return legacy[status] || status
+}
+
+/**
+ * Get shipping status display name
+ */
+export function getShippingStatusDisplayName(status: string): string {
+  const found = SHIPPING_STATUS_OPTIONS.find(o => o.value === status)
+  if (found) return found.label
+  return status
 }
 
 /**
@@ -66,50 +143,6 @@ export function getPaymentStatusName(status: string): string {
     PAID: 'Paid',
     UNPAID: 'Unpaid',
     FAILED: 'Failed',
-  }
-  return names[status] || status
-}
-
-/**
- * Valid status transitions map
- * Key: current status, Value: array of valid next statuses
- */
-const STATUS_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ['PROCESSING', 'CANCELLED'],
-  PROCESSING: ['SHIPPED', 'CANCELLED'],
-  SHIPPED: ['DELIVERED', 'CANCELLED'],
-  DELIVERED: [], // Final state
-  CANCELLED: ['PENDING'], // Can reactivate
-}
-
-/**
- * Check if a status transition is valid
- */
-export function canTransitionStatus(
-  currentStatus: string,
-  newStatus: string
-): boolean {
-  const validTransitions = STATUS_TRANSITIONS[currentStatus] || []
-  return validTransitions.includes(newStatus)
-}
-
-/**
- * Get available status transitions for a given status
- */
-export function getAvailableStatusTransitions(status: string): string[] {
-  return STATUS_TRANSITIONS[status] || []
-}
-
-/**
- * Get status display name
- */
-export function getStatusDisplayName(status: string): string {
-  const names: Record<string, string> = {
-    PENDING: 'Pending',
-    PROCESSING: 'Processing',
-    SHIPPED: 'Shipped',
-    DELIVERED: 'Delivered',
-    CANCELLED: 'Cancelled',
   }
   return names[status] || status
 }

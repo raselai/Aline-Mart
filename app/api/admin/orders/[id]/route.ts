@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getAdminSession } from '@/lib/admin-auth'
-import { canTransitionStatus } from '@/lib/order-utils'
 import { restoreStockWithLog } from '@/lib/inventory'
-import { sendOrderShippedEmail } from '@/lib/email'
 import type { OrderWithDetails } from '@/types/order'
 
 interface RouteParams {
@@ -37,6 +35,7 @@ export async function GET(request: Request, props: RouteParams) {
         orderNumber,
         total,
         status,
+        shippingStatus,
         paymentMethod,
         paymentStatus,
         paymentChannel,
@@ -125,6 +124,7 @@ export async function GET(request: Request, props: RouteParams) {
       orderNumber: order.orderNumber,
       total: order.total,
       status: order.status,
+      shippingStatus: order.shippingStatus || 'PROCESSING',
       paymentMethod: order.paymentMethod || 'COD',
       paymentStatus: order.paymentStatus || 'UNPAID',
       paymentChannel: order.paymentChannel || null,
@@ -173,7 +173,7 @@ export async function GET(request: Request, props: RouteParams) {
 
 /**
  * PATCH /api/admin/orders/[id]
- * Update order status
+ * Update order status and/or shipping status
  * Requires admin authentication
  */
 export async function PATCH(request: Request, props: RouteParams) {
@@ -190,27 +190,24 @@ export async function PATCH(request: Request, props: RouteParams) {
     const params = await props.params
     const { id } = params
     const body = await request.json()
-    const { status: newStatus, trackingNumber, cancellationReason } = body
+    const { status: newStatus, shippingStatus: newShippingStatus, cancellationReason } = body
 
-    if (!newStatus) {
+    if (!newStatus && !newShippingStatus) {
       return NextResponse.json(
-        { error: 'Status is required' },
+        { error: 'Either status or shippingStatus is required' },
         { status: 400 }
       )
     }
 
-    // Get current order
+    // Get current order for side effects
     const { data: currentOrder, error: fetchError } = await supabase
       .from('Order')
       .select(`
         id,
         orderNumber,
         status,
+        shippingStatus,
         userId,
-        User:userId (
-          email,
-          name
-        ),
         OrderItem (
           variantId,
           quantity
@@ -229,25 +226,18 @@ export async function PATCH(request: Request, props: RouteParams) {
       throw fetchError
     }
 
-    // Validate status transition
-    if (!canTransitionStatus(currentOrder.status, newStatus)) {
-      return NextResponse.json(
-        {
-          error: `Invalid status transition from ${currentOrder.status} to ${newStatus}`,
-          currentStatus: currentOrder.status,
-          validTransitions: getValidTransitionsMessage(currentOrder.status)
-        },
-        { status: 400 }
-      )
-    }
-
-    // Update order status
+    // Build update data
     const updateData: Record<string, string> = {
-      status: newStatus,
       updatedAt: new Date().toISOString(),
     }
 
-    if (newStatus === 'CANCELLED' && cancellationReason) {
+    if (newStatus) {
+      updateData.status = newStatus
+    }
+    if (newShippingStatus) {
+      updateData.shippingStatus = newShippingStatus
+    }
+    if (cancellationReason) {
       updateData.cancellationReason = cancellationReason
     }
 
@@ -262,16 +252,17 @@ export async function PATCH(request: Request, props: RouteParams) {
       throw updateError
     }
 
-    let message = `Order status updated to ${newStatus}`
+    let message = newStatus
+      ? `Order status updated to ${newStatus}`
+      : `Shipping status updated to ${newShippingStatus}`
 
-    // Handle side effects based on new status
-    if (newStatus === 'CANCELLED' && currentOrder.status !== 'CANCELLED') {
-      // Restore stock for cancelled orders with audit log
+    // Restore stock when order status is set to CANCEL
+    if (newStatus === 'CANCEL' && currentOrder.status !== 'CANCEL') {
       try {
-        const orderItems = currentOrder.OrderItem?.map((item: any) => ({
-          variantId: item.variantId,
-          quantity: item.quantity
-        })).filter((item: any) => item.variantId) || []
+        const orderItems = currentOrder.OrderItem?.map((item: Record<string, unknown>) => ({
+          variantId: item.variantId as string,
+          quantity: item.quantity as number
+        })).filter((item: { variantId: string }) => item.variantId) || []
 
         if (orderItems.length > 0) {
           await restoreStockWithLog(orderItems, 'CANCELLED_ORDER', id)
@@ -280,44 +271,6 @@ export async function PATCH(request: Request, props: RouteParams) {
       } catch (stockError) {
         console.error('Error restoring stock:', stockError)
         message += '. Warning: Failed to restore stock.'
-      }
-    }
-
-    if (newStatus === 'SHIPPED') {
-      // Send shipped email
-      try {
-        const userEmail = (currentOrder.User as any)?.email
-        if (userEmail) {
-          // Fetch full order details for email
-          const { data: fullOrder } = await supabase
-            .from('Order')
-            .select(`
-              *,
-              User:userId (name, email),
-              Address:shippingAddressId (*),
-              OrderItem (*)
-            `)
-            .eq('id', id)
-            .single()
-
-          if (fullOrder) {
-            const orderForEmail: OrderWithDetails = {
-              ...fullOrder,
-              user: {
-                name: (fullOrder.User as any)?.name || 'Customer',
-                email: (fullOrder.User as any)?.email
-              },
-              shippingAddress: fullOrder.Address as any,
-              items: fullOrder.OrderItem || []
-            }
-
-            await sendOrderShippedEmail(orderForEmail, userEmail, trackingNumber)
-            message += '. Shipping notification email sent.'
-          }
-        }
-      } catch (emailError) {
-        console.error('Error sending shipped email:', emailError)
-        message += '. Warning: Failed to send shipping email.'
       }
     }
 
@@ -333,19 +286,4 @@ export async function PATCH(request: Request, props: RouteParams) {
       { status: 500 }
     )
   }
-}
-
-function getValidTransitionsMessage(currentStatus: string): string {
-  const transitions: Record<string, string[]> = {
-    PENDING: ['PROCESSING', 'CANCELLED'],
-    PROCESSING: ['SHIPPED', 'CANCELLED'],
-    SHIPPED: ['DELIVERED', 'CANCELLED'],
-    DELIVERED: [],
-    CANCELLED: ['PENDING']
-  }
-  const valid = transitions[currentStatus] || []
-  if (valid.length === 0) {
-    return 'No transitions available (final state)'
-  }
-  return `Valid transitions: ${valid.join(', ')}`
 }
