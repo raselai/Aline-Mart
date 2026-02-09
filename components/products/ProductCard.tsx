@@ -124,9 +124,9 @@ export default function ProductCard({
 
   // Variable height classes based on variant
   const heightClasses = {
-    small: 'h-[320px]',
-    medium: 'h-[420px]',
-    large: 'h-[520px]'
+    small: 'aspect-[4/5]',
+    medium: 'aspect-[4/5]',
+    large: 'aspect-[4/5]'
   }
 
   return (
