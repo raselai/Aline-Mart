@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase'
 import { addressFormSchema } from '@/types/checkout'
 
 export async function GET(request: NextRequest) {
@@ -10,14 +10,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const supabase = await createServerClient()
 
     // Look up user by email
-    const { data: user } = await supabase
+    const { data: user, error: userError } = await supabase
       .from('User')
       .select('id')
       .eq('email', email)
-      .single()
+      .maybeSingle()
+
+    if (userError) {
+      console.error('Error looking up user:', userError)
+      return NextResponse.json({ addresses: [] })
+    }
 
     if (!user) {
       return NextResponse.json({ addresses: [] })
@@ -28,9 +32,11 @@ export async function GET(request: NextRequest) {
       .select('*')
       .eq('userId', user.id)
       .order('isDefault', { ascending: false })
-      .order('createdAt', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      console.error('Error fetching addresses:', error)
+      return NextResponse.json({ addresses: [] })
+    }
 
     return NextResponse.json({ addresses: addresses || [] })
   } catch (error) {
@@ -61,17 +67,30 @@ export async function POST(request: NextRequest) {
     }
 
     const data = validation.data
-    const supabase = await createServerClient()
 
-    // Look up user
-    const { data: user } = await supabase
+    // Look up user, or create if they exist in auth but not in User table
+    let { data: user } = await supabase
       .from('User')
       .select('id')
       .eq('email', email)
-      .single()
+      .maybeSingle()
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      // Auto-create User row for authenticated users
+      const { data: newUser, error: createError } = await supabase
+        .from('User')
+        .insert({
+          id: crypto.randomUUID(),
+          email,
+        })
+        .select('id')
+        .single()
+
+      if (createError || !newUser) {
+        console.error('Error creating user:', createError)
+        return NextResponse.json({ error: 'Failed to create user profile' }, { status: 500 })
+      }
+      user = newUser
     }
 
     // Check existing address count
@@ -113,9 +132,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ address }, { status: 201 })
   } catch (error) {
-    console.error('Error creating address:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Error creating address:', message, error)
     return NextResponse.json(
-      { error: 'Failed to create address' },
+      { error: message || 'Failed to create address' },
       { status: 500 }
     )
   }

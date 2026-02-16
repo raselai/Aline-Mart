@@ -16,6 +16,7 @@ import {
   Store,
   Warehouse,
   DollarSign,
+  ImageIcon,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -48,6 +49,7 @@ const navItems: NavItem[] = [
   { name: 'Vendors', href: '/admin/vendors', icon: Store },
   { name: 'Brands', href: '/admin/brands', icon: Tag },
   { name: 'Categories', href: '/admin/categories', icon: Layers },
+  { name: 'Banners', href: '/admin/banners', icon: ImageIcon },
   { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3 },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]

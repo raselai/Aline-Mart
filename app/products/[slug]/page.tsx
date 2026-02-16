@@ -218,7 +218,7 @@ export default async function ProductPage(props: ProductPageProps) {
     offers: {
       '@type': 'Offer',
       price: product.salePrice || product.price,
-      priceCurrency: 'USD',
+      priceCurrency: 'BDT',
       availability: product.inStock
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',

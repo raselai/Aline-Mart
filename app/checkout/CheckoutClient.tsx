@@ -31,7 +31,7 @@ export default function CheckoutClient() {
     }
   }, [items.length, router])
 
-  // Fetch saved addresses for authenticated users
+  // Fetch saved addresses for authenticated users and auto-fill from default
   useEffect(() => {
     if (!isAuthenticated || !userEmail) return
     async function fetchAddresses() {
@@ -39,13 +39,35 @@ export default function CheckoutClient() {
         const res = await fetch(`/api/addresses?email=${encodeURIComponent(userEmail!)}`)
         if (res.ok) {
           const data = await res.json()
-          setSavedAddresses(data.addresses || [])
+          const addresses: SavedAddress[] = data.addresses || []
+          setSavedAddresses(addresses)
+
+          // Auto-fill from default address if no data entered yet
+          const defaultAddr = addresses.find((a) => a.isDefault)
+          if (defaultAddr && !contactData && !shippingData) {
+            setContactData({
+              email: userEmail!,
+              phone: defaultAddr.phone,
+            })
+            setShippingData({
+              fullName: defaultAddr.fullName,
+              addressLine1: defaultAddr.addressLine1,
+              addressLine2: defaultAddr.addressLine2 || '',
+              city: defaultAddr.city,
+              state: defaultAddr.state,
+              zipCode: defaultAddr.zipCode,
+              country: 'Bangladesh',
+            })
+            setSelectedAddressId(defaultAddr.id)
+            setCurrentStep(3)
+          }
         }
       } catch {
         // silently fail
       }
     }
     fetchAddresses()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, userEmail])
 
   if (items.length === 0) {

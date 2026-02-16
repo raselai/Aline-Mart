@@ -229,7 +229,7 @@ export default function CartSummary() {
                   color: '#15803d',
                 }}
               >
-                -$10.00
+                -৳10.00
               </span>
             </div>
           )}

@@ -1,19 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase'
 import { addressFormSchema } from '@/types/checkout'
 
-type SupabaseClient = Awaited<ReturnType<typeof createServerClient>>
-
-async function getUserIdByEmail(supabase: SupabaseClient, email: string): Promise<string | null> {
+async function getUserIdByEmail(email: string): Promise<string | null> {
   const { data: user } = await supabase
     .from('User')
     .select('id')
     .eq('email', email)
-    .single()
+    .maybeSingle()
   return user?.id ?? null
 }
 
-async function verifyOwnership(supabase: SupabaseClient, addressId: string, userId: string): Promise<boolean> {
+async function verifyOwnership(addressId: string, userId: string): Promise<boolean> {
   const { data: address } = await supabase
     .from('Address')
     .select('userId')
@@ -45,14 +43,12 @@ export async function PUT(
     }
 
     const data = validation.data
-    const supabase = await createServerClient()
-
-    const userId = await getUserIdByEmail(supabase, email)
+    const userId = await getUserIdByEmail(email)
     if (!userId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const isOwner = await verifyOwnership(supabase, id, userId)
+    const isOwner = await verifyOwnership(id, userId)
     if (!isOwner) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 })
     }
@@ -107,14 +103,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const supabase = await createServerClient()
-
-    const userId = await getUserIdByEmail(supabase, email)
+    const userId = await getUserIdByEmail(email)
     if (!userId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const isOwner = await verifyOwnership(supabase, id, userId)
+    const isOwner = await verifyOwnership(id, userId)
     if (!isOwner) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 })
     }
@@ -177,14 +171,12 @@ export async function PATCH(
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const supabase = await createServerClient()
-
-    const userId = await getUserIdByEmail(supabase, email)
+    const userId = await getUserIdByEmail(email)
     if (!userId) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const isOwner = await verifyOwnership(supabase, id, userId)
+    const isOwner = await verifyOwnership(id, userId)
     if (!isOwner) {
       return NextResponse.json({ error: 'Address not found' }, { status: 404 })
     }

@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 import { ProductGrid } from '@/components/products'
 
 interface Category {
@@ -42,6 +41,26 @@ interface Product {
     sku: string
     stock: number
   }>
+}
+
+interface CategoryBanner {
+  id: string
+  imageUrl: string
+  title: string | null
+  subtitle: string | null
+  linkUrl: string | null
+}
+
+async function getCategoryBanner(categoryId: string): Promise<CategoryBanner | null> {
+  const { data, error } = await supabase
+    .from('CategoryBanner')
+    .select('id, imageUrl, title, subtitle, linkUrl')
+    .eq('categoryId', categoryId)
+    .eq('isActive', true)
+    .single()
+
+  if (error || !data) return null
+  return data
 }
 
 async function getCategoryBySlug(slug: string): Promise<Category | null> {
@@ -173,9 +192,10 @@ export default async function CategoryPage(
     notFound()
   }
 
-  const [products, subcategories] = await Promise.all([
+  const [products, subcategories, banner] = await Promise.all([
     getProductsByCategory(category.id),
-    getSubcategories(category.id)
+    getSubcategories(category.id),
+    getCategoryBanner(category.id)
   ])
 
   return (
@@ -197,23 +217,40 @@ export default async function CategoryPage(
         </div>
       </div>
 
-      {/* Category Header */}
-      <div className="bg-white">
-        <div className="container mx-auto px-4 lg:px-12 py-12">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="font-serif text-4xl lg:text-5xl font-bold text-charcoal mb-6">
-              {category.name}
-            </h1>
-            <div className="text-lg text-gray-600 leading-relaxed">
-              <p className="mb-1">Explore our curated selection of luxury {category.name.toLowerCase()} products</p>
-              <p>from the world's most prestigious brands.</p>
-            </div>
-            <div className="mt-8 flex items-center justify-center gap-4 text-sm text-gray-600">
-              <span>{products.length} {products.length === 1 ? 'product' : 'products'}</span>
-            </div>
+      {/* Category Banner */}
+      {banner && (() => {
+        const bannerContent = (
+          <div className="relative w-full overflow-hidden" style={{ aspectRatio: '3/1' }}>
+            <img
+              src={banner.imageUrl}
+              alt={banner.title || `${category.name} banner`}
+              className="w-full h-full object-cover"
+            />
+            {(banner.title || banner.subtitle) && (
+              <div className="absolute inset-0 flex flex-col justify-end p-6 lg:p-12"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 60%)' }}
+              >
+                {banner.title && (
+                  <h2 className="font-serif text-2xl lg:text-4xl font-bold text-white mb-2">
+                    {banner.title}
+                  </h2>
+                )}
+                {banner.subtitle && (
+                  <p className="text-white/90 text-sm lg:text-lg max-w-2xl">
+                    {banner.subtitle}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-      </div>
+        )
+
+        return banner.linkUrl ? (
+          <Link href={banner.linkUrl} className="block hover:opacity-95 transition-opacity">
+            {bannerContent}
+          </Link>
+        ) : bannerContent
+      })()}
 
       {/* Subcategories (if any) */}
       {subcategories.length > 0 && (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -79,6 +80,7 @@ export default function ProductDetailClient({
   product,
   relatedProducts,
 }: ProductDetailClientProps) {
+  const router = useRouter()
   const { addItem, isInCart } = useCart()
   const { toggleWishlist, isInWishlist } = useWishlist()
   const initialVariant = product.variants.find((variant) => variant.stock > 0) || product.variants[0]
@@ -168,7 +170,7 @@ export default function ProductDetailClient({
     : 0
   const discountLabel = product.discountValue
     ? product.discountType === 'flat'
-      ? `$${product.discountValue.toFixed(2)} off`
+      ? `৳${product.discountValue.toFixed(2)} off`
       : `${product.discountValue}% off`
     : null
 
@@ -210,6 +212,11 @@ export default function ProductDetailClient({
     })
 
     console.log('Item added to cart successfully!')
+  }
+
+  const handleBuyNow = () => {
+    handleAddToCart()
+    router.push('/checkout')
   }
 
   const handleToggleWishlist = () => {
@@ -392,12 +399,12 @@ export default function ProductDetailClient({
             {/* Price */}
             <div className="flex items-baseline gap-3 mb-6">
               <span className="text-3xl font-bold text-charcoal">
-                ${displayPrice.toFixed(2)}
+                ৳{displayPrice.toFixed(2)}
               </span>
               {hasDiscount && (
                 <>
                   <span className="text-xl text-gray-600 line-through">
-                    ${product.price.toFixed(2)}
+                    ৳{product.price.toFixed(2)}
                   </span>
                   <span className="text-sm font-semibold text-white bg-burgundy px-2 py-1 rounded">
                     -{discountPercentage}%
@@ -540,14 +547,23 @@ export default function ProductDetailClient({
               </div>
             </div>
 
-            {/* Add to Cart Button */}
+            {/* Add to Cart & Buy Now Buttons */}
             <div className="flex gap-3 mb-8">
               <Button
                 onClick={handleAddToCart}
                 disabled={!isProductInStock || !isVariantSelectionComplete}
-                className="flex-1 gradient-primary text-white py-6 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                variant="outline"
+                className="flex-1 border-2 border-burgundy text-burgundy py-6 text-base font-semibold hover:bg-burgundy/5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isInCartState ? 'Added to Cart' : 'Add to Cart'}
+              </Button>
+
+              <Button
+                onClick={handleBuyNow}
+                disabled={!isProductInStock || !isVariantSelectionComplete}
+                className="flex-1 gradient-primary text-white py-6 text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Buy Now
               </Button>
 
               {/* Wishlist Button */}
@@ -649,7 +665,6 @@ export default function ProductDetailClient({
                 {expandedSections.details && (
                   <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
                     <p>• SKU: {selectedVariant?.sku || 'N/A'}</p>
-                    <p>• Category: {product.category.name}</p>
                     <p>• Brand: {product.brand.name}</p>
                     <p>• Weight: {product.weight || 'N/A'}</p>
                     <p>• Dimensions: {product.dimensions || 'N/A'}</p>
@@ -730,10 +745,10 @@ export default function ProductDetailClient({
                 {product.name}
               </p>
               <p className="text-sm font-bold text-charcoal">
-                ${displayPrice.toFixed(2)}
+                ৳{displayPrice.toFixed(2)}
                 {hasDiscount && (
                   <span className="text-xs text-gray-500 line-through ml-2">
-                    ${product.price.toFixed(2)}
+                    ৳{product.price.toFixed(2)}
                   </span>
                 )}
               </p>

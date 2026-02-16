@@ -64,8 +64,8 @@ export default function ProductCard({
   // Check if product has variants
   const hasVariants = product.variants && product.variants.length > 0
 
-  // Determine price to display
-  const displayPrice = product.isOnSale && product.salePrice
+  // Determine price to display — prefer salePrice when available
+  const displayPrice = product.salePrice
     ? product.salePrice
     : defaultVariant?.price || product.price
 
@@ -232,13 +232,6 @@ export default function ProductCard({
           <h3 className="font-serif text-base font-semibold text-charcoal line-clamp-2 leading-snug">
             {product.name}
           </h3>
-
-          {/* Category (Optional) */}
-          {product.category && (
-            <p className="text-xs text-text-secondary">
-              {product.category.name}
-            </p>
-          )}
 
           {/* Price */}
           <div className="flex items-center gap-2">
