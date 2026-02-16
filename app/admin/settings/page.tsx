@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Save, Check, AlertCircle, Globe, Mail, Search, Truck, ImageIcon, Upload, X } from 'lucide-react'
+import { Save, Check, AlertCircle, Globe, Mail, Search, Truck, ImageIcon, Upload, X, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react'
 
 type TabType = 'general' | 'seo' | 'email' | 'shipping' | 'hero'
 
@@ -52,7 +52,13 @@ export default function SettingsPage() {
   const [hasChanges, setHasChanges] = useState(false)
 
   const [uploading, setUploading] = useState(false)
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
+  const [imageDimensions, setImageDimensions] = useState<Record<string, { w: number; h: number }>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const replaceFileInputRef = useRef<HTMLInputElement>(null)
+
+  const MAX_WIDTH = 1920
+  const MAX_HEIGHT = 1080
 
   // Success/error messages
   const [successMessage, setSuccessMessage] = useState('')
@@ -131,28 +137,80 @@ export default function SettingsPage() {
     handleChange('hero_images', JSON.stringify(images))
   }
 
+  // Client-side image resize using Canvas API
+  const resizeImage = (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new window.Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        let { width, height } = img
+
+        // Only downscale, never upscale
+        if (width <= MAX_WIDTH && height <= MAX_HEIGHT) {
+          resolve(file)
+          return
+        }
+
+        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { resolve(file); return }
+
+        ctx.drawImage(img, 0, 0, width, height)
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { resolve(file); return }
+            const resized = new File([blob], file.name, { type: file.type })
+            resolve(resized)
+          },
+          file.type,
+          0.9
+        )
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Failed to load image for resizing'))
+      }
+      img.src = url
+    })
+  }
+
+  // Upload a file (shared by add + replace)
+  const uploadHeroFile = async (file: File): Promise<string> => {
+    const resized = await resizeImage(file)
+    const formData = new FormData()
+    formData.append('image', resized)
+
+    const response = await fetch('/api/admin/hero/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Upload failed')
+    }
+
+    return data.url as string
+  }
+
   const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     try {
       setUploading(true)
-      const formData = new FormData()
-      formData.append('image', file)
-
-      const response = await fetch('/api/admin/hero/upload', {
-        method: 'POST',
-        body: formData
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Upload failed')
-      }
-
+      const url = await uploadHeroFile(file)
       const current = getHeroImages()
-      setHeroImages([...current, data.url])
+      setHeroImages([...current, url])
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to upload image'
       setErrorMessage(message)
@@ -163,10 +221,58 @@ export default function SettingsPage() {
     }
   }
 
+  const handleReplaceImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || replaceIndex === null) return
+
+    try {
+      setUploading(true)
+      const url = await uploadHeroFile(file)
+      const current = getHeroImages()
+      const updated = [...current]
+      updated[replaceIndex] = url
+      setHeroImages(updated)
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Failed to replace image'
+      setErrorMessage(message)
+      setTimeout(() => setErrorMessage(''), 5000)
+    } finally {
+      setUploading(false)
+      setReplaceIndex(null)
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = ''
+    }
+  }
+
   const removeHeroImage = (index: number) => {
     const current = getHeroImages()
     setHeroImages(current.filter((_, i) => i !== index))
   }
+
+  const moveHeroImage = (index: number, direction: 'up' | 'down') => {
+    const current = getHeroImages()
+    const newIndex = direction === 'up' ? index - 1 : index + 1
+    if (newIndex < 0 || newIndex >= current.length) return
+    const updated = [...current]
+    ;[updated[index], updated[newIndex]] = [updated[newIndex], updated[index]]
+    setHeroImages(updated)
+  }
+
+  // Track image dimensions when hero images change
+  useEffect(() => {
+    const images = getHeroImages()
+    images.forEach((url) => {
+      if (imageDimensions[url]) return
+      const img = new window.Image()
+      img.onload = () => {
+        setImageDimensions((prev) => ({
+          ...prev,
+          [url]: { w: img.naturalWidth, h: img.naturalHeight }
+        }))
+      }
+      img.src = url
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.hero_images])
 
   const tabs = [
     { id: 'general' as TabType, label: 'General', icon: Globe },
@@ -1410,66 +1516,139 @@ export default function SettingsPage() {
                       {/* Current Images Grid */}
                       {getHeroImages().length > 0 && (
                         <div
-                          className="grid grid-cols-3 gap-3 mb-4"
+                          className="grid grid-cols-2 gap-4 mb-4"
                           style={{ minWidth: '280px' }}
                         >
-                          {getHeroImages().map((url, index) => (
-                            <div
-                              key={index}
-                              className="relative group overflow-hidden"
-                              style={{
-                                aspectRatio: '16/9',
-                                borderRadius: '6px',
-                                border: '1px solid #E5E7EB'
-                              }}
-                            >
-                              <img
-                                src={url}
-                                alt={`Hero ${index + 1}`}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                  display: 'block'
-                                }}
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none'
-                                  if (e.currentTarget.parentElement) {
-                                    e.currentTarget.parentElement.style.background = '#F3F4F6'
-                                  }
-                                }}
-                              />
-                              <button
-                                onClick={() => removeHeroImage(index)}
-                                className="absolute top-1 right-1 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                style={{
-                                  backgroundColor: '#DC2626',
-                                  color: '#FFFFFF',
-                                  cursor: 'pointer'
-                                }}
-                                title="Remove image"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
+                          {getHeroImages().map((url, index) => {
+                            const dims = imageDimensions[url]
+                            const heroImages = getHeroImages()
+                            return (
                               <div
-                                className="absolute bottom-0 left-0 right-0 px-2 py-1"
+                                key={`${index}-${url}`}
+                                className="relative group overflow-hidden"
                                 style={{
-                                  background: 'rgba(0,0,0,0.5)',
-                                  color: '#FFFFFF',
-                                  fontSize: '11px',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis'
+                                  borderRadius: '8px',
+                                  border: '1px solid #E5E7EB',
+                                  backgroundColor: '#F9FAFB'
                                 }}
                               >
-                                {index + 1}. {url.split('/').pop()}
+                                {/* Image Preview */}
+                                <div style={{ aspectRatio: '16/9', position: 'relative' }}>
+                                  <img
+                                    src={url}
+                                    alt={`Hero ${index + 1}`}
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'cover',
+                                      display: 'block',
+                                      borderRadius: '8px 8px 0 0'
+                                    }}
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none'
+                                      if (e.currentTarget.parentElement) {
+                                        e.currentTarget.parentElement.style.background = '#F3F4F6'
+                                      }
+                                    }}
+                                  />
+                                  {/* Image Number Badge */}
+                                  <div
+                                    className="absolute top-2 left-2 px-2 py-0.5 rounded text-xs font-bold"
+                                    style={{
+                                      backgroundColor: 'rgba(0,0,0,0.6)',
+                                      color: '#FFFFFF'
+                                    }}
+                                  >
+                                    #{index + 1}
+                                  </div>
+                                </div>
+
+                                {/* Image Info & Actions Bar */}
+                                <div className="p-2" style={{ borderTop: '1px solid #E5E7EB' }}>
+                                  {/* Dimensions */}
+                                  <p className="text-xs mb-2 truncate" style={{ color: '#6B7280' }}>
+                                    {dims ? `${dims.w} × ${dims.h}px` : 'Loading...'}
+                                    {dims && (dims.w > MAX_WIDTH || dims.h > MAX_HEIGHT) && (
+                                      <span style={{ color: '#F59E0B' }}> (oversized)</span>
+                                    )}
+                                  </p>
+
+                                  {/* Action Buttons */}
+                                  <div className="flex items-center gap-1">
+                                    {/* Move Up */}
+                                    <button
+                                      onClick={() => moveHeroImage(index, 'up')}
+                                      disabled={index === 0}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{
+                                        backgroundColor: index === 0 ? '#F3F4F6' : '#E5E7EB',
+                                        color: index === 0 ? '#D1D5DB' : '#374151',
+                                        cursor: index === 0 ? 'not-allowed' : 'pointer'
+                                      }}
+                                      title="Move up"
+                                    >
+                                      <ArrowUp className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Move Down */}
+                                    <button
+                                      onClick={() => moveHeroImage(index, 'down')}
+                                      disabled={index === heroImages.length - 1}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{
+                                        backgroundColor: index === heroImages.length - 1 ? '#F3F4F6' : '#E5E7EB',
+                                        color: index === heroImages.length - 1 ? '#D1D5DB' : '#374151',
+                                        cursor: index === heroImages.length - 1 ? 'not-allowed' : 'pointer'
+                                      }}
+                                      title="Move down"
+                                    >
+                                      <ArrowDown className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Replace */}
+                                    <button
+                                      onClick={() => {
+                                        setReplaceIndex(index)
+                                        replaceFileInputRef.current?.click()
+                                      }}
+                                      disabled={uploading}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{
+                                        backgroundColor: '#E0E7FF',
+                                        color: '#4338CA',
+                                        cursor: uploading ? 'not-allowed' : 'pointer',
+                                        opacity: uploading ? 0.5 : 1
+                                      }}
+                                      title="Replace image"
+                                    >
+                                      <RefreshCw className="w-3.5 h-3.5" />
+                                    </button>
+
+                                    {/* Spacer */}
+                                    <div style={{ flex: 1 }} />
+
+                                    {/* Delete */}
+                                    <button
+                                      onClick={() => removeHeroImage(index)}
+                                      className="p-1.5 rounded transition-colors"
+                                      style={{
+                                        backgroundColor: '#FEE2E2',
+                                        color: '#DC2626',
+                                        cursor: 'pointer'
+                                      }}
+                                      title="Delete image"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       )}
 
-                      {/* Upload Button */}
+                      {/* Hidden file inputs */}
                       <input
                         ref={fileInputRef}
                         type="file"
@@ -1477,6 +1656,15 @@ export default function SettingsPage() {
                         className="hidden"
                         onChange={handleHeroImageUpload}
                       />
+                      <input
+                        ref={replaceFileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleReplaceImage}
+                      />
+
+                      {/* Upload Button */}
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
@@ -1501,7 +1689,7 @@ export default function SettingsPage() {
                           wordBreak: 'normal'
                         }}
                       >
-                        JPEG, PNG, or WebP. Max 5MB per image.
+                        JPEG, PNG, or WebP. Max 5MB. Images larger than {MAX_WIDTH}×{MAX_HEIGHT}px are auto-resized.
                       </p>
                     </div>
                   </div>

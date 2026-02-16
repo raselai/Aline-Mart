@@ -39,12 +39,17 @@ export async function POST(request: Request) {
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `hero/${fileName}`
 
+    // Convert File to Buffer for server-side upload
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
     // Upload to Supabase Storage
     const { error } = await supabase.storage
       .from('hero-images')
-      .upload(filePath, file, {
+      .upload(filePath, buffer, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: file.type
       })
 
     if (error) {
