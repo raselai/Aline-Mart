@@ -207,6 +207,8 @@ export async function PATCH(request: Request, props: RouteParams) {
         orderNumber,
         status,
         shippingStatus,
+        paymentMethod,
+        paymentStatus,
         userId,
         OrderItem (
           variantId,
@@ -241,6 +243,15 @@ export async function PATCH(request: Request, props: RouteParams) {
       updateData.cancellationReason = cancellationReason
     }
 
+    // Auto-mark COD orders as PAID when delivered
+    if (currentOrder.paymentMethod === 'COD' && currentOrder.paymentStatus !== 'PAID') {
+      const effectiveStatus = newStatus || currentOrder.status
+      const effectiveShippingStatus = newShippingStatus || currentOrder.shippingStatus
+      if (effectiveStatus === 'DELIVERED' || effectiveShippingStatus === 'DELIVERED') {
+        updateData.paymentStatus = 'PAID'
+      }
+    }
+
     const { data: updatedOrder, error: updateError } = await supabase
       .from('Order')
       .update(updateData)
@@ -255,6 +266,10 @@ export async function PATCH(request: Request, props: RouteParams) {
     let message = newStatus
       ? `Order status updated to ${newStatus}`
       : `Shipping status updated to ${newShippingStatus}`
+
+    if (updateData.paymentStatus === 'PAID' && currentOrder.paymentStatus !== 'PAID') {
+      message += '. Payment status auto-updated to Paid (COD collected).'
+    }
 
     // Restore stock when order status is set to CANCEL
     if (newStatus === 'CANCEL' && currentOrder.status !== 'CANCEL') {

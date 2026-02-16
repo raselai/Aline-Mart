@@ -21,14 +21,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 
 const navigation = [
-  { name: 'Home', href: '/' },
   { name: 'Men', href: '/categories/men', categorySlug: 'men' },
   { name: 'Women', href: '/categories/women', categorySlug: 'women' },
   { name: 'Kids', href: '/categories/kids', categorySlug: 'kids' },
   { name: 'Homeware', href: '/categories/homeware', categorySlug: 'homeware' },
   { name: 'Beauty', href: '/categories/beauty', categorySlug: 'beauty' },
-  { name: 'Brands', href: '/brands' },
-  { name: 'Outlet', href: '/categories/outlet', categorySlug: 'outlet' },
   { name: 'Sports & Fitness', href: '/categories/sports', categorySlug: 'sports' },
 ]
 

@@ -270,6 +270,23 @@ html {
   animation-play-state: paused;
 }
 
+@keyframes scroll-brands-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-scroll-brands-reverse {
+  animation: scroll-brands-reverse 40s linear infinite;
+}
+
+.animate-scroll-brands-reverse:hover {
+  animation-play-state: paused;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

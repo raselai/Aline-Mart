@@ -11,6 +11,7 @@ const footerLinks = {
     { name: 'New Arrivals', href: '/products?filter=new' },
     { name: 'Brands', href: '/brands' },
     { name: 'Sale', href: '/products?filter=sale' },
+    { name: 'Outlet', href: '/categories/outlet' },
   ],
   help: [
     { name: 'FAQ', href: '/faq' },
