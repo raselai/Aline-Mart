@@ -17,6 +17,7 @@ import {
   Truck,
   RotateCcw,
   Shield,
+  ClipboardList,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -91,9 +92,10 @@ export default function ProductDetailClient({
   const [selectedSize, setSelectedSize] = useState<string | null>(initialVariant?.size || null)
   const [quantity, setQuantity] = useState(1)
   const [expandedSections, setExpandedSections] = useState({
-    shipping: true,
+    details: true,
     returns: false,
-    details: false,
+    specifications: false,
+    shipping: false,
   })
   const [showStickyBar, setShowStickyBar] = useState(false)
 
@@ -419,25 +421,6 @@ export default function ProductDetailClient({
               </div>
             )}
 
-            {/* Short Description */}
-            {product.shortDescription && (
-              <p className="text-charcoal/80 leading-relaxed mb-4">
-                {product.shortDescription}
-              </p>
-            )}
-
-            {/* Full Description */}
-            {product.description && (
-              <div className="mb-6">
-                {product.shortDescription && (
-                  <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Description</p>
-                )}
-                <p className="text-charcoal leading-relaxed">
-                  {product.description}
-                </p>
-              </div>
-            )}
-
             {/* Color Selector */}
             {availableColors.length > 0 && (
               <div className="mb-6">
@@ -588,35 +571,44 @@ export default function ProductDetailClient({
 
             {/* Expandable Sections */}
             <div className="border-t border-gray-200">
-              {/* Shipping */}
+              {/* 1. Product Details */}
               <div className="border-b border-gray-200">
                 <button
-                  onClick={() => toggleSection('shipping')}
+                  onClick={() => toggleSection('details')}
                   className="w-full flex items-center justify-between py-4 text-left hover:bg-light-gray transition-colors px-4"
                 >
                   <div className="flex items-center gap-3">
-                    <Truck className="w-5 h-5 text-burgundy" />
+                    <Shield className="w-5 h-5 text-burgundy" />
                     <span className="font-semibold text-charcoal">
-                      Shipping & Delivery
+                      Product Details
                     </span>
                   </div>
-                  {expandedSections.shipping ? (
+                  {expandedSections.details ? (
                     <ChevronUp className="w-5 h-5 text-secondary" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-secondary" />
                   )}
                 </button>
-                {expandedSections.shipping && (
-                  <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
-                    <p>• Free standard shipping on orders over $100</p>
-                    <p>• Express shipping available (2-3 business days)</p>
-                    <p>• International shipping available to select countries</p>
-                    <p>• Delivery time: 5-7 business days (standard)</p>
+                {expandedSections.details && (
+                  <div className="px-4 pb-4 text-sm text-charcoal space-y-3">
+                    {product.shortDescription && (
+                      <p className="text-charcoal/80 leading-relaxed">
+                        {product.shortDescription}
+                      </p>
+                    )}
+                    {product.description && (
+                      <p className="text-charcoal leading-relaxed">
+                        {product.description}
+                      </p>
+                    )}
+                    {!product.shortDescription && !product.description && (
+                      <p className="text-charcoal/60">No description available.</p>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Returns */}
+              {/* 2. Returns & Exchanges */}
               <div className="border-b border-gray-200">
                 <button
                   onClick={() => toggleSection('returns')}
@@ -644,25 +636,25 @@ export default function ProductDetailClient({
                 )}
               </div>
 
-              {/* Product Details */}
+              {/* 3. Specifications */}
               <div className="border-b border-gray-200">
                 <button
-                  onClick={() => toggleSection('details')}
+                  onClick={() => toggleSection('specifications')}
                   className="w-full flex items-center justify-between py-4 text-left hover:bg-light-gray transition-colors px-4"
                 >
                   <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-burgundy" />
+                    <ClipboardList className="w-5 h-5 text-burgundy" />
                     <span className="font-semibold text-charcoal">
-                      Product Details
+                      Specifications
                     </span>
                   </div>
-                  {expandedSections.details ? (
+                  {expandedSections.specifications ? (
                     <ChevronUp className="w-5 h-5 text-secondary" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-secondary" />
                   )}
                 </button>
-                {expandedSections.details && (
+                {expandedSections.specifications && (
                   <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
                     <p>• SKU: {selectedVariant?.sku || 'N/A'}</p>
                     <p>• Brand: {product.brand.name}</p>
@@ -671,8 +663,34 @@ export default function ProductDetailClient({
                     <p>• Shipping Fee: {product.shippingFee || 'N/A'}</p>
                     <p>• Warranty: {product.warranty || 'N/A'}</p>
                     <p>• Vendor: {product.vendor || 'N/A'}</p>
-                    <p>• Authentic luxury product with certificate</p>
-                    <p>• Premium quality materials and craftsmanship</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Shipping & Delivery */}
+              <div className="border-b border-gray-200">
+                <button
+                  onClick={() => toggleSection('shipping')}
+                  className="w-full flex items-center justify-between py-4 text-left hover:bg-light-gray transition-colors px-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-burgundy" />
+                    <span className="font-semibold text-charcoal">
+                      Shipping & Delivery
+                    </span>
+                  </div>
+                  {expandedSections.shipping ? (
+                    <ChevronUp className="w-5 h-5 text-secondary" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-secondary" />
+                  )}
+                </button>
+                {expandedSections.shipping && (
+                  <div className="px-4 pb-4 text-sm text-charcoal space-y-2">
+                    <p>• Free standard shipping on orders over $100</p>
+                    <p>• Express shipping available (2-3 business days)</p>
+                    <p>• International shipping available to select countries</p>
+                    <p>• Delivery time: 5-7 business days (standard)</p>
                   </div>
                 )}
               </div>
