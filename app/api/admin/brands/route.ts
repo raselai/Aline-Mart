@@ -76,9 +76,11 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error('Error in GET /api/admin/brands:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const isAuthError = message.includes('Unauthorized')
     return NextResponse.json(
-      { error: 'Failed to fetch brands' },
-      { status: 500 }
+      { error: isAuthError ? message : 'Failed to fetch brands', details: message },
+      { status: isAuthError ? 401 : 500 }
     )
   }
 }
@@ -91,7 +93,7 @@ export async function POST(request: Request) {
 
     // Parse request body
     const body = await request.json()
-    const { name, slug, description, logo, featured, displayOrder } = body
+    const { name, slug, description, logo } = body
 
     // Validation
     if (!name || !slug) {
@@ -122,16 +124,17 @@ export async function POST(request: Request) {
     }
 
     // Create brand
+    const insertData: Record<string, unknown> = {
+      id: crypto.randomUUID(),
+      name,
+      slug,
+    }
+    if (description) insertData.description = description
+    if (logo) insertData.logo = logo
+
     const { data: newBrand, error: createError } = await supabase
       .from('Brand')
-      .insert({
-        name,
-        slug,
-        description: description || null,
-        logo: logo || null,
-        featured: featured || false,
-        displayOrder: displayOrder || 0
-      })
+      .insert(insertData)
       .select()
       .single()
 
@@ -146,9 +149,11 @@ export async function POST(request: Request) {
     }, { status: 201 })
   } catch (error) {
     console.error('Error in POST /api/admin/brands:', error)
+    const message = error instanceof Error ? error.message : String(error)
+    const isAuthError = message.includes('Unauthorized')
     return NextResponse.json(
-      { error: 'Failed to create brand' },
-      { status: 500 }
+      { error: isAuthError ? message : 'Failed to create brand', details: message },
+      { status: isAuthError ? 401 : 500 }
     )
   }
 }

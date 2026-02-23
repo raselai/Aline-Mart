@@ -19,7 +19,7 @@ export async function GET(
     const { data: brand, error } = await supabase
       .from('Brand')
       .select('*')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (error) {
@@ -73,7 +73,7 @@ export async function PATCH(
 
     // Parse request body
     const body = await request.json()
-    const { name, slug, description, logo, featured, displayOrder } = body
+    const { name, slug, description, logo } = body
 
     // Validation
     if (!name || !slug) {
@@ -87,7 +87,7 @@ export async function PATCH(
     const { data: existingBrand, error: checkError } = await supabase
       .from('Brand')
       .select('id')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (checkError || !existingBrand) {
@@ -102,7 +102,7 @@ export async function PATCH(
       .from('Brand')
       .select('id')
       .eq('slug', slug)
-      .neq('id', parseInt(id))
+      .neq('id', id)
       .single()
 
     if (slugError && slugError.code !== 'PGRST116') {
@@ -125,10 +125,8 @@ export async function PATCH(
         slug,
         description: description || null,
         logo: logo || null,
-        featured: featured || false,
-        displayOrder: displayOrder || 0
       })
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .select()
       .single()
 
@@ -167,7 +165,7 @@ export async function DELETE(
     const { data: existingBrand, error: checkError } = await supabase
       .from('Brand')
       .select('id, name')
-      .eq('id', parseInt(id))
+      .eq('id', id)
       .single()
 
     if (checkError || !existingBrand) {
@@ -181,7 +179,7 @@ export async function DELETE(
     const { count: productCount, error: countError } = await supabase
       .from('Product')
       .select('id', { count: 'exact', head: true })
-      .eq('brandId', parseInt(id))
+      .eq('brandId', id)
 
     if (countError) {
       console.error('Error counting products:', countError)
@@ -201,7 +199,7 @@ export async function DELETE(
     const { error: deleteError } = await supabase
       .from('Brand')
       .delete()
-      .eq('id', parseInt(id))
+      .eq('id', id)
 
     if (deleteError) {
       console.error('Error deleting brand:', deleteError)
