@@ -18,7 +18,20 @@ function PayStationPaymentContent() {
   const merchantId = searchParams.get('merchant_id')
   const customCallbackUrl = searchParams.get('callback_url')
 
+  // Block this mock page in production — only allow in sandbox/dev mode
+  const [blocked, setBlocked] = useState(false)
+
   useEffect(() => {
+    // Check if we're on the live domain (not localhost)
+    const isProduction = typeof window !== 'undefined' &&
+      !window.location.hostname.includes('localhost') &&
+      !window.location.hostname.includes('127.0.0.1')
+
+    if (isProduction) {
+      setBlocked(true)
+      return
+    }
+
     if (!invoiceNumber || !amount) {
       setError('Invalid payment session. Missing required parameters.')
     }
@@ -76,6 +89,73 @@ function PayStationPaymentContent() {
       return
     }
     handlePayment('success')
+  }
+
+  if (blocked) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#F5F5F5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            padding: '32px',
+            maxWidth: '600px',
+            minWidth: '320px',
+            width: '100%',
+            textAlign: 'center',
+          }}
+        >
+          <AlertCircle size={64} color="#EF4444" style={{ margin: '0 auto 16px' }} />
+          <h1
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#2C2C2C',
+              marginBottom: '8px',
+            }}
+          >
+            Page Not Available
+          </h1>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: '#6B7280',
+              marginBottom: '24px',
+              whiteSpace: 'normal',
+              wordBreak: 'normal',
+              overflowWrap: 'normal',
+            }}
+          >
+            This page is only available in development mode.
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            style={{
+              background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+              color: '#FFFFFF',
+              padding: '10px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Go Home
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (!invoiceNumber || !amount) {
