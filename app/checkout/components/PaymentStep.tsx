@@ -4,7 +4,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { paymentStepSchema, type PaymentStepData } from '@/types/checkout'
 import { Button } from '@/components/ui/button'
-import { CheckCircle2, Edit2, CreditCard, Banknote, Loader2 } from 'lucide-react'
+import { CheckCircle2, Edit2, CreditCard, Banknote, Loader2, Wallet } from 'lucide-react'
+import type { VirtualCard } from '@/types/virtual-card'
 
 interface PaymentStepProps {
   isActive: boolean
@@ -14,6 +15,8 @@ interface PaymentStepProps {
   data?: PaymentStepData
   onComplete: (data: PaymentStepData) => void
   onEdit: () => void
+  virtualCard?: VirtualCard | null
+  orderSubtotal?: number
 }
 
 export default function PaymentStep({
@@ -24,6 +27,8 @@ export default function PaymentStep({
   data,
   onComplete,
   onEdit,
+  virtualCard,
+  orderSubtotal = 0,
 }: PaymentStepProps) {
   const {
     register,
@@ -58,6 +63,8 @@ export default function PaymentStep({
           <p className="font-medium">
             {data?.paymentMethod === 'PAYSTATION'
               ? 'PayStation (bKash / Nagad / Cards)'
+              : data?.paymentMethod === 'VIRTUAL_CARD'
+              ? 'Aline Mart Virtual Card'
               : 'Cash on Delivery (COD)'}
           </p>
         </div>
@@ -131,6 +138,47 @@ export default function PaymentStep({
             </div>
           </label>
 
+          {/* Virtual Card Option — only shown when user has a card */}
+          {virtualCard && (
+            <label
+              className={`flex items-start gap-4 p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-burgundy ${
+                selectedPaymentMethod === 'VIRTUAL_CARD'
+                  ? 'border-burgundy bg-burgundy bg-opacity-5'
+                  : 'border-gray-200'
+              }`}
+            >
+              <input
+                type="radio"
+                value="VIRTUAL_CARD"
+                {...register('paymentMethod')}
+                className="mt-1"
+                disabled={Number(virtualCard.balance) < orderSubtotal}
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Wallet className="h-5 w-5 text-burgundy" />
+                  <span className="font-semibold">Aline Mart Virtual Card</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  Balance: ৳{Number(virtualCard.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  {Number(virtualCard.discountPercent) > 0 && (
+                    <span className="ml-2 text-green-600 font-semibold">
+                      ({virtualCard.discountPercent}% discount)
+                    </span>
+                  )}
+                </p>
+                {Number(virtualCard.balance) < orderSubtotal && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Insufficient balance.{' '}
+                    <a href="/account/virtual-card" className="underline font-medium">
+                      Top up your card
+                    </a>
+                  </p>
+                )}
+              </div>
+            </label>
+          )}
+
           {errors.paymentMethod && (
             <p className="text-sm text-red-600">{errors.paymentMethod.message}</p>
           )}
@@ -140,6 +188,8 @@ export default function PaymentStep({
             <p className="text-blue-700">
               {selectedPaymentMethod === 'PAYSTATION'
                 ? 'You will be redirected to PayStation\'s secure payment gateway to complete your purchase.'
+                : selectedPaymentMethod === 'VIRTUAL_CARD'
+                ? 'Your virtual card balance will be deducted immediately and the order will be confirmed.'
                 : 'You will receive an order confirmation. Pay in cash when your order arrives.'}
             </p>
           </div>
@@ -157,6 +207,8 @@ export default function PaymentStep({
             ) : (
               selectedPaymentMethod === 'PAYSTATION'
                 ? 'Proceed to Payment'
+                : selectedPaymentMethod === 'VIRTUAL_CARD'
+                ? 'Pay with Virtual Card'
                 : 'Place Order'
             )}
           </Button>

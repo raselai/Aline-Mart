@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
+import { useVirtualCard } from '@/hooks/useVirtualCard'
 import ContactStep from './components/ContactStep'
 import ShippingStep from './components/ShippingStep'
 import PaymentStep from './components/PaymentStep'
@@ -12,8 +13,9 @@ import type { ContactStepData, ShippingStepData, PaymentStepData, SavedAddress }
 
 export default function CheckoutClient() {
   const router = useRouter()
-  const { items } = useCart()
+  const { items, subtotal } = useCart()
   const { isAuthenticated, userEmail } = useAuth()
+  const { card: virtualCard, fetchCard, discountPercent: vcDiscount } = useVirtualCard()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
 
@@ -30,6 +32,14 @@ export default function CheckoutClient() {
       router.push('/cart')
     }
   }, [items.length, router])
+
+  // Fetch virtual card for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && userEmail) {
+      fetchCard(userEmail)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, userEmail])
 
   // Fetch saved addresses for authenticated users and auto-fill from default
   useEffect(() => {
@@ -147,9 +157,8 @@ export default function CheckoutClient() {
         // Redirect to PayStation
         window.location.href = paymentUrl
       } else {
-        // Cash on Delivery - go to confirmation
-        // Don't clearCart() here — it triggers the empty-cart useEffect redirect to /cart
-        // Instead pass clearCart=true so the confirmation page clears it after loading
+        // COD and VIRTUAL_CARD both go straight to confirmation
+        // VIRTUAL_CARD payment is processed server-side in create-order
         window.location.href = `/orders/${order.orderNumber}/confirmation?clearCart=true`
       }
     } catch (error) {
@@ -198,12 +207,16 @@ export default function CheckoutClient() {
               onEdit={() => setCurrentStep(3)}
               disabled={!shippingData}
               isProcessing={isProcessing}
+              virtualCard={isAuthenticated ? virtualCard : null}
+              orderSubtotal={subtotal}
             />
           </div>
 
           {/* Right: Order Summary */}
           <div className="lg:col-span-1">
-            <OrderSummary />
+            <OrderSummary
+              virtualCardDiscount={paymentData?.paymentMethod === 'VIRTUAL_CARD' ? vcDiscount : 0}
+            />
           </div>
         </div>
         </div>

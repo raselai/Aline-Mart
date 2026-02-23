@@ -19,7 +19,7 @@ export const shippingStepSchema = z.object({
 })
 
 export const paymentStepSchema = z.object({
-  paymentMethod: z.enum(['PAYSTATION', 'COD']).refine((val) => val, {
+  paymentMethod: z.enum(['PAYSTATION', 'COD', 'VIRTUAL_CARD']).refine((val) => val, {
     message: 'Please select a payment method',
   }),
 })

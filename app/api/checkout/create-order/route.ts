@@ -7,6 +7,7 @@ import { validateStock, decrementStockWithLog } from '@/lib/inventory'
 import { createTransaction } from '@/lib/accounts'
 import { checkoutSchema } from '@/types/checkout'
 import type { CartItem } from '@/types/checkout'
+import { getVirtualCardTiers, calculateTier, deductBalance } from '@/lib/virtual-card'
 
 export async function POST(request: NextRequest) {
   try {
@@ -81,7 +82,48 @@ export async function POST(request: NextRequest) {
 
     const shippingConfig = await getShippingConfig()
     const shippingCost = calculateShippingCost(shippingConfig, totalWeightKg)
-    const total = subtotal + shippingCost
+
+    // Calculate virtual card discount if applicable (server-side — never trust client)
+    let virtualCardDiscount = 0
+    let virtualCardId: string | null = null
+    if (data.paymentMethod === 'VIRTUAL_CARD') {
+      const { data: existingUser } = await supabase
+        .from('User')
+        .select('id')
+        .eq('email', data.email)
+        .single()
+
+      if (!existingUser) {
+        return NextResponse.json({ error: 'User not found for virtual card payment' }, { status: 400 })
+      }
+
+      const { data: vCard } = await supabase
+        .from('VirtualCard')
+        .select('*')
+        .eq('userId', existingUser.id)
+        .single()
+
+      if (!vCard) {
+        return NextResponse.json({ error: 'Virtual card not found' }, { status: 400 })
+      }
+
+      // Server-side tier calculation
+      const tiers = await getVirtualCardTiers()
+      const { discountPercent } = calculateTier(Number(vCard.lifetimeLoaded), tiers)
+
+      virtualCardDiscount = subtotal * (discountPercent / 100)
+      virtualCardId = vCard.id
+
+      // Check sufficient balance (subtotal - discount + shipping)
+      const requiredAmount = subtotal - virtualCardDiscount + shippingCost
+      if (Number(vCard.balance) < requiredAmount) {
+        return NextResponse.json({
+          error: `Insufficient virtual card balance. Required: ৳${requiredAmount.toFixed(2)}, Available: ৳${Number(vCard.balance).toFixed(2)}`,
+        }, { status: 400 })
+      }
+    }
+
+    const total = subtotal - virtualCardDiscount + shippingCost
 
     // Create or get guest user
     let userId: string
@@ -221,10 +263,10 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create order items')
     }
 
-    // Decrement stock for COD orders immediately
+    // Decrement stock for COD and VIRTUAL_CARD orders immediately
     // PayStation orders decrement stock in the callback after payment confirmation
     // Skip products without real variants (variantId ending in '-default')
-    if (data.paymentMethod === 'COD') {
+    if (data.paymentMethod === 'COD' || data.paymentMethod === 'VIRTUAL_CARD') {
       const itemsWithVariants = (cartItems as CartItem[])
         .filter(item => !item.variantId.endsWith('-default'))
         .map(item => ({
@@ -245,17 +287,46 @@ export async function POST(request: NextRequest) {
         // Don't fail the order - log for manual review
       }
 
-      // Create COD collection record
-      try {
-        await supabase.from('CODCollection').insert({
-          id: crypto.randomUUID(),
-          orderId: order.id,
-          expectedAmount: total,
-          status: 'PENDING',
-        })
-        await supabase.from('Order').update({ codCollectionStatus: 'PENDING' }).eq('id', order.id)
-      } catch (codError) {
-        console.error('Failed to create COD collection record:', codError)
+      // Create COD collection record (COD only)
+      if (data.paymentMethod === 'COD') {
+        try {
+          await supabase.from('CODCollection').insert({
+            id: crypto.randomUUID(),
+            orderId: order.id,
+            expectedAmount: total,
+            status: 'PENDING',
+          })
+          await supabase.from('Order').update({ codCollectionStatus: 'PENDING' }).eq('id', order.id)
+        } catch (codError) {
+          console.error('Failed to create COD collection record:', codError)
+        }
+      }
+
+      // Virtual Card: deduct balance and mark order as PAID immediately
+      if (data.paymentMethod === 'VIRTUAL_CARD' && virtualCardId) {
+        try {
+          await deductBalance(
+            virtualCardId,
+            total,
+            order.id,
+            `Order ${orderNumber}`
+          )
+
+          await supabase.from('Order').update({
+            status: 'CONFIRM',
+            paymentStatus: 'PAID',
+            updatedAt: new Date().toISOString(),
+          }).eq('id', order.id)
+        } catch (vcError) {
+          console.error('Failed to deduct virtual card balance:', vcError)
+          // Rollback: delete order if payment fails
+          await supabase.from('OrderItem').delete().eq('orderId', order.id)
+          await supabase.from('Order').delete().eq('id', order.id)
+          return NextResponse.json(
+            { error: 'Failed to process virtual card payment. Your balance was not charged.' },
+            { status: 500 }
+          )
+        }
       }
     }
 

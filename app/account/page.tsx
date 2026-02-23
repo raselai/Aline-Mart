@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useWishlistStore } from '@/store/wishlistStore'
+import { useVirtualCard } from '@/hooks/useVirtualCard'
 
 interface OrderSummary {
   id: string
@@ -17,6 +18,7 @@ interface OrderSummary {
 export default function AccountPage() {
   const { userName, userEmail, signOut } = useAuth()
   const wishlistCount = useWishlistStore((s) => s.itemCount)
+  const { card, isLoading: cardLoading, fetchCard, formattedBalance, tierLevel } = useVirtualCard()
   const router = useRouter()
   const [orders, setOrders] = useState<OrderSummary[]>([])
   const [orderCount, setOrderCount] = useState(0)
@@ -57,6 +59,8 @@ export default function AccountPage() {
 
     fetchOrders()
     fetchAddressCount()
+    if (userEmail) fetchCard(userEmail)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userEmail])
 
   async function handleSignOut() {
@@ -458,6 +462,89 @@ export default function AccountPage() {
                 }}
               >
                 Manage Addresses &rarr;
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Virtual Card */}
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+          }}
+        >
+          <div style={{ padding: '24px' }}>
+            <h2
+              style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: '1.25rem',
+                fontWeight: 600,
+                color: '#2C2C2C',
+                margin: '0 0 16px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Virtual Card
+            </h2>
+            {cardLoading ? (
+              <div
+                style={{
+                  height: '20px',
+                  backgroundColor: '#F5F5F5',
+                  borderRadius: '4px',
+                }}
+              />
+            ) : card ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <p
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 700,
+                    color: '#8e2157',
+                    margin: 0,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {formattedBalance}
+                </p>
+                <p
+                  style={{
+                    fontSize: '0.75rem',
+                    color: '#6B7280',
+                    margin: 0,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}
+                >
+                  {tierLevel} Tier
+                </p>
+              </div>
+            ) : (
+              <p
+                style={{
+                  fontSize: '0.875rem',
+                  color: '#6B7280',
+                  margin: 0,
+                }}
+              >
+                Get your virtual card for exclusive discounts.
+              </p>
+            )}
+            <div style={{ marginTop: '20px' }}>
+              <Link
+                href="/account/virtual-card"
+                style={{
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  color: '#8e2157',
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {card ? 'Manage Card' : 'Get Your Card'} &rarr;
               </Link>
             </div>
           </div>

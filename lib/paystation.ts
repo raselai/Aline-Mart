@@ -59,7 +59,7 @@ export class PayStationClient {
         cust_name: params.customerName,
         cust_phone: params.customerPhone,
         cust_email: params.customerEmail,
-        callback_url: this.config.callbackUrl,
+        callback_url: params.callbackUrl || this.config.callbackUrl,
       }
 
       if (params.customerAddress) {

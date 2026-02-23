@@ -5,7 +5,11 @@ import { useCart } from '@/hooks/useCart'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/order-utils'
 
-export default function OrderSummary() {
+interface OrderSummaryProps {
+  virtualCardDiscount?: number
+}
+
+export default function OrderSummary({ virtualCardDiscount = 0 }: OrderSummaryProps) {
   const { items, subtotal } = useCart()
   const [shippingCost, setShippingCost] = useState<number | null>(null)
 
@@ -42,7 +46,8 @@ export default function OrderSummary() {
     return () => controller.abort()
   }, [items])
 
-  const total = subtotal + (shippingCost ?? 0)
+  const discountAmount = virtualCardDiscount > 0 ? subtotal * (virtualCardDiscount / 100) : 0
+  const total = subtotal - discountAmount + (shippingCost ?? 0)
 
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-white sticky top-4">
@@ -89,6 +94,14 @@ export default function OrderSummary() {
           <span className="text-gray-600">Subtotal</span>
           <span className="font-medium">{formatPrice(subtotal)}</span>
         </div>
+
+        {/* Virtual Card Discount */}
+        {virtualCardDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600">Virtual Card Discount ({virtualCardDiscount}%)</span>
+            <span className="font-medium text-green-600">-{formatPrice(discountAmount)}</span>
+          </div>
+        )}
 
         {/* Shipping */}
         <div className="flex justify-between text-sm">

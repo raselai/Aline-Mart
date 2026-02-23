@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { CreditCard, Smartphone, Wallet, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
 function PayStationPaymentContent() {
@@ -17,6 +16,7 @@ function PayStationPaymentContent() {
   const invoiceNumber = searchParams.get('invoice_number')
   const amount = searchParams.get('amount')
   const merchantId = searchParams.get('merchant_id')
+  const customCallbackUrl = searchParams.get('callback_url')
 
   useEffect(() => {
     if (!invoiceNumber || !amount) {
@@ -32,10 +32,10 @@ function PayStationPaymentContent() {
     await new Promise(resolve => setTimeout(resolve, 2000))
 
     // Build callback URL based on action
+    const baseCallbackPath = customCallbackUrl || '/api/checkout/paystation/callback'
     let callbackUrl = ''
 
     if (action === 'success') {
-      // Simulate successful payment callback with payment method
       const methodMap: Record<string, string> = {
         bkash: 'bKash',
         nagad: 'Nagad',
@@ -47,24 +47,21 @@ function PayStationPaymentContent() {
         trx_id: `TXN${Date.now()}`,
         payment_method: selectedMethod ? methodMap[selectedMethod] : '',
       })
-      callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
+      callbackUrl = `${baseCallbackPath}?${params.toString()}`
     } else if (action === 'fail') {
-      // Route through callback so the order gets marked as FAILED
       const params = new URLSearchParams({
         invoice_number: invoiceNumber || '',
         status: 'Failed',
       })
-      callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
+      callbackUrl = `${baseCallbackPath}?${params.toString()}`
     } else {
-      // Cancel also routes through callback to mark as FAILED
       const params = new URLSearchParams({
         invoice_number: invoiceNumber || '',
         status: 'Cancelled',
       })
-      callbackUrl = `/api/checkout/paystation/callback?${params.toString()}`
+      callbackUrl = `${baseCallbackPath}?${params.toString()}`
     }
 
-    // Redirect to callback URL
     window.location.href = callbackUrl
   }
 
@@ -83,14 +80,64 @@ function PayStationPaymentContent() {
 
   if (!invoiceNumber || !amount) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Payment Session</h1>
-          <p className="text-gray-600 mb-6">Missing required payment parameters.</p>
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#F5F5F5',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            padding: '32px',
+            maxWidth: '600px',
+            minWidth: '320px',
+            width: '100%',
+            textAlign: 'center',
+          }}
+        >
+          <AlertCircle size={64} color="#EF4444" style={{ margin: '0 auto 16px' }} />
+          <h1
+            style={{
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#2C2C2C',
+              marginBottom: '8px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Invalid Payment Session
+          </h1>
+          <p
+            style={{
+              fontSize: '0.875rem',
+              color: '#6B7280',
+              marginBottom: '24px',
+              whiteSpace: 'normal',
+              wordBreak: 'normal',
+              overflowWrap: 'normal',
+            }}
+          >
+            Missing required payment parameters.
+          </p>
           <button
             onClick={() => router.push('/checkout')}
-            className="bg-burgundy text-white px-6 py-2 rounded-lg hover:bg-burgundy/90 transition"
+            style={{
+              background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+              color: '#FFFFFF',
+              padding: '10px 24px',
+              borderRadius: '8px',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
           >
             Return to Checkout
           </button>
@@ -99,166 +146,383 @@ function PayStationPaymentContent() {
     )
   }
 
+  const methodOptions: { key: 'bkash' | 'nagad' | 'card'; label: string; desc: string; color: string; Icon: typeof Smartphone }[] = [
+    { key: 'bkash', label: 'bKash', desc: 'Pay with bKash mobile wallet', color: '#EC4899', Icon: Smartphone },
+    { key: 'nagad', label: 'Nagad', desc: 'Pay with Nagad mobile wallet', color: '#F97316', Icon: Wallet },
+    { key: 'card', label: 'Debit/Credit Card', desc: 'Visa, Mastercard, Amex', color: '#3B82F6', Icon: CreditCard },
+  ]
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-2xl mx-auto">
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#F5F5F5',
+        padding: 'clamp(120px, 15vw, 200px) 16px 32px',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: '600px',
+          minWidth: '320px',
+          margin: '0 auto',
+          width: '100%',
+        }}
+      >
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">PayStation Payment</h1>
-            <div className="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded-full">
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            padding: '24px',
+            marginBottom: '20px',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '16px',
+            }}
+          >
+            <h1
+              style={{
+                fontSize: '1.5rem',
+                fontWeight: 700,
+                color: '#2C2C2C',
+                margin: 0,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              PayStation Payment
+            </h1>
+            <span
+              style={{
+                backgroundColor: '#FEF9C3',
+                color: '#854D0E',
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '20px',
+                whiteSpace: 'nowrap',
+              }}
+            >
               DEV MODE
-            </div>
+            </span>
           </div>
-          <div className="border-t pt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Order Number:</span>
-              <span className="font-semibold text-gray-900">{invoiceNumber}</span>
+
+          <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.875rem',
+                marginBottom: '8px',
+              }}
+            >
+              <span style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Order Number:</span>
+              <span
+                style={{
+                  fontWeight: 600,
+                  color: '#2C2C2C',
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'anywhere',
+                  textAlign: 'right',
+                  maxWidth: '60%',
+                  fontSize: '0.8rem',
+                }}
+              >
+                {invoiceNumber}
+              </span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Merchant ID:</span>
-              <span className="font-mono text-xs text-gray-900">{merchantId || 'SANDBOX'}</span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.875rem',
+                marginBottom: '12px',
+              }}
+            >
+              <span style={{ color: '#6B7280', whiteSpace: 'nowrap' }}>Merchant ID:</span>
+              <span
+                style={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                  fontSize: '0.75rem',
+                  color: '#2C2C2C',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {merchantId || 'SANDBOX'}
+              </span>
             </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2 mt-2">
-              <span className="text-gray-900">Amount to Pay:</span>
-              <span className="text-burgundy">৳{parseFloat(amount).toFixed(2)}</span>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderTop: '1px solid #E5E7EB',
+                paddingTop: '12px',
+              }}
+            >
+              <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#2C2C2C', whiteSpace: 'nowrap' }}>
+                Amount to Pay:
+              </span>
+              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#8e2157', whiteSpace: 'nowrap' }}>
+                ৳{parseFloat(amount).toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Payment Methods */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Payment Method</h2>
+        <div
+          style={{
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            padding: '24px',
+            marginBottom: '20px',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              color: '#2C2C2C',
+              margin: '0 0 16px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Select Payment Method
+          </h2>
 
-          <div className="space-y-3">
-            {/* bKash */}
-            <button
-              onClick={() => handleMethodSelect('bkash')}
-              className={`w-full p-4 border-2 rounded-lg flex items-center gap-4 transition ${
-                selectedMethod === 'bkash'
-                  ? 'border-pink-500 bg-pink-50'
-                  : 'border-gray-200 hover:border-pink-300'
-              }`}
-            >
-              <div className="w-12 h-12 bg-pink-500 rounded flex items-center justify-center flex-shrink-0">
-                <Smartphone className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-semibold text-gray-900">bKash</div>
-                <div className="text-sm text-gray-500">Pay with bKash mobile wallet</div>
-              </div>
-              {selectedMethod === 'bkash' && (
-                <CheckCircle className="h-6 w-6 text-pink-500" />
-              )}
-            </button>
-
-            {/* Nagad */}
-            <button
-              onClick={() => handleMethodSelect('nagad')}
-              className={`w-full p-4 border-2 rounded-lg flex items-center gap-4 transition ${
-                selectedMethod === 'nagad'
-                  ? 'border-orange-500 bg-orange-50'
-                  : 'border-gray-200 hover:border-orange-300'
-              }`}
-            >
-              <div className="w-12 h-12 bg-orange-500 rounded flex items-center justify-center flex-shrink-0">
-                <Wallet className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-semibold text-gray-900">Nagad</div>
-                <div className="text-sm text-gray-500">Pay with Nagad mobile wallet</div>
-              </div>
-              {selectedMethod === 'nagad' && (
-                <CheckCircle className="h-6 w-6 text-orange-500" />
-              )}
-            </button>
-
-            {/* Card */}
-            <button
-              onClick={() => handleMethodSelect('card')}
-              className={`w-full p-4 border-2 rounded-lg flex items-center gap-4 transition ${
-                selectedMethod === 'card'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-blue-300'
-              }`}
-            >
-              <div className="w-12 h-12 bg-blue-500 rounded flex items-center justify-center flex-shrink-0">
-                <CreditCard className="h-6 w-6 text-white" />
-              </div>
-              <div className="flex-1 text-left">
-                <div className="font-semibold text-gray-900">Debit/Credit Card</div>
-                <div className="text-sm text-gray-500">Visa, Mastercard, Amex</div>
-              </div>
-              {selectedMethod === 'card' && (
-                <CheckCircle className="h-6 w-6 text-blue-500" />
-              )}
-            </button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {methodOptions.map(({ key, label, desc, color, Icon }) => {
+              const isSelected = selectedMethod === key
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleMethodSelect(key)}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    border: `2px solid ${isSelected ? color : '#E5E7EB'}`,
+                    borderRadius: '10px',
+                    backgroundColor: isSelected ? `${color}10` : '#FFFFFF',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    transition: 'border-color 200ms ease',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      backgroundColor: color,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon size={24} color="#FFFFFF" />
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: '#2C2C2C',
+                        fontSize: '0.95rem',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: '#6B7280',
+                        whiteSpace: 'normal',
+                        wordBreak: 'normal',
+                        overflowWrap: 'normal',
+                      }}
+                    >
+                      {desc}
+                    </div>
+                  </div>
+                  {isSelected && <CheckCircle size={24} color={color} style={{ flexShrink: 0 }} />}
+                </button>
+              )
+            })}
           </div>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-700">{error}</p>
+            <div
+              style={{
+                marginTop: '16px',
+                padding: '12px',
+                backgroundColor: '#FEF2F2',
+                border: '1px solid #FECACA',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '8px',
+              }}
+            >
+              <AlertCircle size={18} color="#EF4444" style={{ flexShrink: 0, marginTop: '1px' }} />
+              <p
+                style={{
+                  fontSize: '0.8rem',
+                  color: '#B91C1C',
+                  margin: 0,
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'normal',
+                }}
+              >
+                {error}
+              </p>
             </div>
           )}
         </div>
 
         {/* Dev Mode Actions */}
-        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6 mb-6">
-          <div className="flex items-start gap-2 mb-4">
-            <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+        <div
+          style={{
+            backgroundColor: '#FEFCE8',
+            border: '2px solid #FDE68A',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '20px',
+            minWidth: '280px',
+            width: '100%',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '16px' }}>
+            <AlertCircle size={18} color="#CA8A04" style={{ flexShrink: 0, marginTop: '2px' }} />
             <div>
-              <h3 className="font-semibold text-yellow-900">Development Mode</h3>
-              <p className="text-sm text-yellow-700">
+              <h3
+                style={{
+                  fontWeight: 600,
+                  color: '#713F12',
+                  fontSize: '0.95rem',
+                  margin: '0 0 4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Development Mode
+              </h3>
+              <p
+                style={{
+                  fontSize: '0.8rem',
+                  color: '#A16207',
+                  margin: 0,
+                  whiteSpace: 'normal',
+                  wordBreak: 'normal',
+                  overflowWrap: 'normal',
+                  display: 'block',
+                  minWidth: '100%',
+                }}
+              >
                 This is a mock PayStation interface for testing. Choose an action to simulate payment outcome.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '10px',
+            }}
+          >
+            {/* Success Button */}
             <button
               onClick={handleProceed}
               disabled={processing || !selectedMethod}
-              className={`px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                processing || !selectedMethod
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
+              style={{
+                padding: '12px 8px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: processing || !selectedMethod ? 'not-allowed' : 'pointer',
+                backgroundColor: processing || !selectedMethod ? '#D1D5DB' : '#22C55E',
+                color: processing || !selectedMethod ? '#6B7280' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'opacity 200ms ease',
+                whiteSpace: 'nowrap',
+              }}
             >
               {processing ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Processing...
+                  <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                  Wait...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle size={16} />
                   Success
                 </>
               )}
             </button>
 
+            {/* Fail Button */}
             <button
               onClick={() => handlePayment('fail')}
               disabled={processing}
-              className={`px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                processing
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
+              style={{
+                padding: '12px 8px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: processing ? 'not-allowed' : 'pointer',
+                backgroundColor: processing ? '#D1D5DB' : '#EF4444',
+                color: processing ? '#6B7280' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'opacity 200ms ease',
+                whiteSpace: 'nowrap',
+              }}
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle size={16} />
               Fail
             </button>
 
+            {/* Cancel Button */}
             <button
               onClick={() => handlePayment('cancel')}
               disabled={processing}
-              className={`px-4 py-3 rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
-                processing
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-gray-500 text-white hover:bg-gray-600'
-              }`}
+              style={{
+                padding: '12px 8px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: 600,
+                fontSize: '0.85rem',
+                cursor: processing ? 'not-allowed' : 'pointer',
+                backgroundColor: processing ? '#D1D5DB' : '#6B7280',
+                color: processing ? '#6B7280' : '#FFFFFF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                transition: 'opacity 200ms ease',
+                whiteSpace: 'nowrap',
+              }}
             >
               Cancel
             </button>
@@ -266,9 +530,19 @@ function PayStationPaymentContent() {
         </div>
 
         {/* Security Badge */}
-        <div className="text-center text-sm text-gray-500">
-          <p className="flex items-center justify-center gap-2">
-            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+        <div style={{ textAlign: 'center' }}>
+          <p
+            style={{
+              fontSize: '0.8rem',
+              color: '#6B7280',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <svg style={{ width: '16px', height: '16px' }} fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
             </svg>
             Secured by PayStation (Mock)
@@ -281,14 +555,37 @@ function PayStationPaymentContent() {
 
 export default function PayStationPaymentPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-burgundy mx-auto mb-4" />
-          <p className="text-gray-600">Loading payment page...</p>
+    <Suspense
+      fallback={
+        <div
+          style={{
+            minHeight: '100vh',
+            backgroundColor: '#F5F5F5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div style={{ textAlign: 'center' }}>
+            <Loader2
+              size={32}
+              style={{ animation: 'spin 1s linear infinite', color: '#8e2157', margin: '0 auto 16px' }}
+            />
+            <p
+              style={{
+                fontSize: '0.875rem',
+                color: '#6B7280',
+                whiteSpace: 'normal',
+                wordBreak: 'normal',
+                overflowWrap: 'normal',
+              }}
+            >
+              Loading payment page...
+            </p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PayStationPaymentContent />
     </Suspense>
   )

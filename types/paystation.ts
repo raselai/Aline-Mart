@@ -21,6 +21,7 @@ export interface InitiatePaymentParams {
   customerAddress?: string
   reference?: string
   checkoutItems?: CheckoutItem[]
+  callbackUrl?: string
 }
 
 export interface PayStationInitiateResponse {
