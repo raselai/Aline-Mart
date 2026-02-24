@@ -1,4 +1,4 @@
-import { getAdminSession } from '@/lib/admin-auth'
+import { getAdminSessionWithPermissions } from '@/lib/admin-auth'
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Sidebar from '@/components/admin/Sidebar'
@@ -28,8 +28,8 @@ export default async function AdminLayout({
     return <>{children}</>
   }
 
-  // Get admin session (server-side check) for protected admin pages
-  const session = await getAdminSession()
+  // Get admin session with permissions (server-side check) for protected admin pages
+  const session = await getAdminSessionWithPermissions()
 
   // This should never happen due to proxy.ts, but double-check
   if (!session) {
@@ -39,7 +39,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar permissions={session.permissions} role={session.user.role} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col" style={{ minWidth: '320px' }}>

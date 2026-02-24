@@ -1,10 +1,12 @@
 /**
  * Admin Authentication & Authorization Utilities
- * Handles admin role checks, session management, and audit logging
+ * Handles admin role checks, session management, permissions, and audit logging
  */
 
 import { supabase } from './supabase'
 import { cookies } from 'next/headers'
+import bcrypt from 'bcryptjs'
+import type { AdminModuleKey } from './admin-modules'
 
 // Admin role types
 export type UserRole = 'CUSTOMER' | 'ADMIN' | 'SUPER_ADMIN'
@@ -21,6 +23,22 @@ export interface AdminSession {
   expiresAt: Date
 }
 
+export interface AdminSessionWithPermissions extends AdminSession {
+  permissions: AdminModuleKey[]
+}
+
+/**
+ * Custom error for admin auth/authorization failures
+ */
+export class AdminAuthError extends Error {
+  statusCode: number
+  constructor(message: string, statusCode: 401 | 403 = 401) {
+    super(message)
+    this.name = 'AdminAuthError'
+    this.statusCode = statusCode
+  }
+}
+
 /**
  * Check if a user has admin role
  */
@@ -33,6 +51,13 @@ export function isAdmin(role: UserRole): boolean {
  */
 export function isSuperAdmin(role: UserRole): boolean {
   return role === 'SUPER_ADMIN'
+}
+
+/**
+ * Hash a password using bcrypt
+ */
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12)
 }
 
 /**
@@ -84,6 +109,71 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 }
 
 /**
+ * Get admin permissions (module keys) for a user
+ * Returns empty array if no permissions row exists
+ */
+export async function getAdminPermissions(userId: string): Promise<AdminModuleKey[]> {
+  try {
+    const { data, error } = await supabase
+      .from('admin_permissions')
+      .select('modules, is_active')
+      .eq('user_id', userId)
+      .single()
+
+    if (error || !data) {
+      return []
+    }
+
+    // Deactivated admins get no permissions
+    if (!data.is_active) {
+      return []
+    }
+
+    return (data.modules as AdminModuleKey[]) || []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Get admin session with permissions attached
+ * Used by admin layout to pass permissions to Sidebar
+ */
+export async function getAdminSessionWithPermissions(): Promise<AdminSessionWithPermissions | null> {
+  const session = await getAdminSession()
+  if (!session) return null
+
+  // SUPER_ADMIN bypasses permission checks — no need to query
+  if (isSuperAdmin(session.user.role)) {
+    // Check if admin is deactivated (SUPER_ADMIN can't be deactivated via permissions table,
+    // but we still check for consistency)
+    return {
+      ...session,
+      permissions: [], // SUPER_ADMIN doesn't need a permissions list — they bypass all checks
+    }
+  }
+
+  // Check is_active separately for ADMIN role
+  const { data: permRow } = await supabase
+    .from('admin_permissions')
+    .select('modules, is_active')
+    .eq('user_id', session.user.id)
+    .single()
+
+  // If deactivated, reject the session entirely
+  if (permRow && !permRow.is_active) {
+    return null
+  }
+
+  const permissions = permRow ? (permRow.modules as AdminModuleKey[]) || [] : []
+
+  return {
+    ...session,
+    permissions,
+  }
+}
+
+/**
  * Create admin session and set cookie
  * Returns session token
  */
@@ -118,14 +208,14 @@ export async function clearAdminSession(): Promise<void> {
 
 /**
  * Verify admin credentials and return user if valid
+ * Progressive bcrypt migration: tries bcrypt.compare first, falls back to plaintext,
+ * then re-hashes the password on successful plaintext match.
  */
 export async function verifyAdminCredentials(
   email: string,
   password: string
 ): Promise<AdminUser | null> {
   try {
-    // For now, we'll do a simple password check
-    // In production, you should use bcrypt to hash passwords
     const { data: user, error } = await supabase
       .from('User')
       .select('id, email, name, role, password')
@@ -141,10 +231,40 @@ export async function verifyAdminCredentials(
       return null
     }
 
-    // Simple password check (replace with bcrypt in production!)
-    // For now, we'll just check if password matches
-    if (user.password !== password) {
-      // In production: await bcrypt.compare(password, user.password)
+    // Check if admin is deactivated (for ADMIN role only)
+    if (user.role === 'ADMIN') {
+      const { data: permRow } = await supabase
+        .from('admin_permissions')
+        .select('is_active')
+        .eq('user_id', user.id)
+        .single()
+
+      if (permRow && !permRow.is_active) {
+        return null
+      }
+    }
+
+    let passwordValid = false
+    const storedPassword = user.password as string
+
+    // Try bcrypt compare first (hashed passwords start with $2)
+    if (storedPassword && storedPassword.startsWith('$2')) {
+      passwordValid = await bcrypt.compare(password, storedPassword)
+    } else {
+      // Plaintext fallback
+      passwordValid = storedPassword === password
+
+      // Progressive migration: re-hash on successful plaintext login
+      if (passwordValid) {
+        const hashed = await hashPassword(password)
+        await supabase
+          .from('User')
+          .update({ password: hashed })
+          .eq('id', user.id)
+      }
+    }
+
+    if (!passwordValid) {
       return null
     }
 
@@ -168,7 +288,7 @@ export async function logAdminAction(
   action: string,
   entityType: string,
   entityId?: string,
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ): Promise<void> {
   try {
     await supabase.from('admin_activity_log').insert({
@@ -219,13 +339,13 @@ export async function getAdminActivityLog(
 
 /**
  * Require admin access (use in API routes)
- * Throws error if not admin
+ * Throws AdminAuthError if not admin
  */
 export async function requireAdmin(): Promise<AdminUser> {
   const session = await getAdminSession()
 
   if (!session) {
-    throw new Error('Unauthorized: Admin access required')
+    throw new AdminAuthError('Unauthorized: Admin access required', 401)
   }
 
   return session.user
@@ -233,13 +353,44 @@ export async function requireAdmin(): Promise<AdminUser> {
 
 /**
  * Require super admin access (use in API routes)
- * Throws error if not super admin
+ * Throws AdminAuthError if not super admin
  */
 export async function requireSuperAdmin(): Promise<AdminUser> {
   const session = await getAdminSession()
 
-  if (!session || !isSuperAdmin(session.user.role)) {
-    throw new Error('Unauthorized: Super admin access required')
+  if (!session) {
+    throw new AdminAuthError('Unauthorized: Admin access required', 401)
+  }
+
+  if (!isSuperAdmin(session.user.role)) {
+    throw new AdminAuthError('Forbidden: Super admin access required', 403)
+  }
+
+  return session.user
+}
+
+/**
+ * Require module-level access for an API route
+ * SUPER_ADMIN bypasses all checks. ADMIN must have the module in their permissions.
+ * Throws AdminAuthError with 401 (not logged in) or 403 (no permission).
+ */
+export async function requireModuleAccess(moduleKey: AdminModuleKey): Promise<AdminUser> {
+  const session = await getAdminSession()
+
+  if (!session) {
+    throw new AdminAuthError('Unauthorized: Admin access required', 401)
+  }
+
+  // SUPER_ADMIN bypasses all module checks
+  if (isSuperAdmin(session.user.role)) {
+    return session.user
+  }
+
+  // Check admin permissions from DB
+  const permissions = await getAdminPermissions(session.user.id)
+
+  if (!permissions.includes(moduleKey)) {
+    throw new AdminAuthError(`Forbidden: No access to ${moduleKey} module`, 403)
   }
 
   return session.user

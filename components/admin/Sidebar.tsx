@@ -17,25 +17,31 @@ import {
   Warehouse,
   DollarSign,
   ImageIcon,
+  Users,
 } from 'lucide-react'
 import { useState } from 'react'
+import type { AdminModuleKey } from '@/lib/admin-modules'
+import { SIDEBAR_MODULE_MAP } from '@/lib/admin-modules'
 
 interface NavItem {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
   children?: { name: string; href: string }[]
+  moduleKey?: AdminModuleKey
+  superAdminOnly?: boolean
 }
 
 const navItems: NavItem[] = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Inventory', href: '/admin/inventory', icon: Warehouse },
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, moduleKey: 'dashboard' },
+  { name: 'Orders', href: '/admin/orders', icon: ShoppingBag, moduleKey: 'orders' },
+  { name: 'Products', href: '/admin/products', icon: Package, moduleKey: 'products' },
+  { name: 'Inventory', href: '/admin/inventory', icon: Warehouse, moduleKey: 'inventory' },
   {
     name: 'Accounts',
     href: '/admin/accounts',
     icon: DollarSign,
+    moduleKey: 'accounts',
     children: [
       { name: 'Dashboard', href: '/admin/accounts' },
       { name: 'Transactions', href: '/admin/accounts/transactions' },
@@ -46,26 +52,33 @@ const navItems: NavItem[] = [
       { name: 'Settings', href: '/admin/accounts/settings' },
     ],
   },
-  { name: 'Vendors', href: '/admin/vendors', icon: Store },
-  { name: 'Brands', href: '/admin/brands', icon: Tag },
-  { name: 'Categories', href: '/admin/categories', icon: Layers },
-  { name: 'Banners', href: '/admin/banners', icon: ImageIcon },
-  { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3 },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Vendors', href: '/admin/vendors', icon: Store, moduleKey: 'vendors' },
+  { name: 'Brands', href: '/admin/brands', icon: Tag, moduleKey: 'brands' },
+  { name: 'Categories', href: '/admin/categories', icon: Layers, moduleKey: 'categories' },
+  { name: 'Banners', href: '/admin/banners', icon: ImageIcon, moduleKey: 'banners' },
+  { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3, moduleKey: 'reports' },
+  { name: 'Settings', href: '/admin/settings', icon: Settings, moduleKey: 'settings' },
+  { name: 'Admin Management', href: '/admin/admins', icon: Users, superAdminOnly: true },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  permissions: AdminModuleKey[]
+  role: string
+}
+
+export default function Sidebar({ permissions, role }: SidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(() => {
-    // Auto-expand if current path matches
-    const initial: Record<string, boolean> = {}
-    for (const item of navItems) {
-      if (item.children && typeof window !== 'undefined') {
-        // Will be set in effect
-      }
-    }
-    return initial
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({})
+
+  const isSuperAdmin = role === 'SUPER_ADMIN'
+
+  // Filter nav items based on permissions
+  const visibleItems = navItems.filter((item) => {
+    if (item.superAdminOnly) return isSuperAdmin
+    if (isSuperAdmin) return true
+    if (item.moduleKey) return permissions.includes(item.moduleKey)
+    return true
   })
 
   // Auto-expand parent menu if child is active
@@ -131,8 +144,13 @@ export default function Sidebar() {
 
       {/* Navigation Items */}
       <nav className="p-4">
+        {visibleItems.length === 0 && !collapsed && (
+          <div className="px-4 py-8 text-sm text-center" style={{ color: '#9CA3AF' }}>
+            No modules assigned. Contact your administrator.
+          </div>
+        )}
         <ul className="space-y-2">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon
             const hasChildren = !!item.children
             const childActive = hasChildren && isChildActive(item)
@@ -258,7 +276,7 @@ export default function Sidebar() {
               whiteSpace: 'nowrap'
             }}
           >
-            Admin Panel
+            {isSuperAdmin ? 'Super Admin' : 'Admin Panel'}
           </div>
         </div>
       )}
