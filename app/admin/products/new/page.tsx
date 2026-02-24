@@ -90,8 +90,7 @@ export default function NewProductPage() {
   const [discountType, setDiscountType] = useState<'percent' | 'flat'>('percent')
   const [discountValue, setDiscountValue] = useState('')
   const [brandId, setBrandId] = useState('')
-  const [mainCategoryId, setMainCategoryId] = useState('')
-  const [subCategoryId, setSubCategoryId] = useState('')
+  const [categoryPath, setCategoryPath] = useState<string[]>([])
   const [inStock, setInStock] = useState(true)
   const [featured, setFeatured] = useState(false)
   const [isNew, setIsNew] = useState(false)
@@ -109,10 +108,7 @@ export default function NewProductPage() {
   const [matrixSizes, setMatrixSizes] = useState('')
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({})
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({})
-  const subcategoryOptions = mainCategoryId
-    ? sortByName(childrenByParent.get(mainCategoryId) || [])
-    : []
-  const selectedCategoryId = subCategoryId || mainCategoryId
+  const selectedCategoryId = categoryPath.length > 0 ? categoryPath[categoryPath.length - 1] : ''
 
   // Fetch brands and categories
   useEffect(() => {
@@ -314,16 +310,18 @@ export default function NewProductPage() {
 
     try {
       // Validate required fields
-      if (!name || !slug || !price || !brandId || !mainCategoryId) {
+      // Check if the deepest selected category still has children that need selecting
+      const deepestId = categoryPath[categoryPath.length - 1]
+      const deepestHasChildren = deepestId ? (childrenByParent.get(deepestId)?.length ?? 0) > 0 : false
+
+      if (!name || !slug || !price || !brandId || categoryPath.length === 0 || deepestHasChildren) {
         const missing = []
         if (!name) missing.push('Product Name')
         if (!slug) missing.push('Slug')
         if (!price) missing.push('Price')
         if (!brandId) missing.push('Brand')
-        if (!mainCategoryId) missing.push('Main Category')
-        if (mainCategoryId && subcategoryOptions.length > 0 && !subCategoryId) {
-          missing.push('Subcategory')
-        }
+        if (categoryPath.length === 0) missing.push('Category')
+        if (deepestHasChildren) missing.push('Subcategory (drill down to the most specific level)')
 
         alert(`Please fill in all required fields:\n- ${missing.join('\n- ')}`)
         setLoading(false)
@@ -826,58 +824,75 @@ export default function NewProductPage() {
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="mainCategory"
-                className="block text-sm font-medium mb-2"
-                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
-              >
-                Main Category *
-              </label>
-              <select
-                id="mainCategory"
-                value={mainCategoryId}
-                onChange={(e) => {
-                  setMainCategoryId(e.target.value)
-                  setSubCategoryId('')
-                }}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                style={{ borderColor: '#d1d5db' }}
-              >
-                <option value="">Select a main category...</option>
-                {rootCategories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="subcategory"
-                className="block text-sm font-medium mb-2"
-                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
-              >
-                Subcategory {subcategoryOptions.length > 0 ? '*' : '(optional)'}
-              </label>
-              <select
-                id="subcategory"
-                value={subCategoryId}
-                onChange={(e) => setSubCategoryId(e.target.value)}
-                disabled={!mainCategoryId || subcategoryOptions.length === 0}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                style={{ borderColor: '#d1d5db' }}
-              >
-                <option value="">
-                  {mainCategoryId
-                    ? (subcategoryOptions.length > 0 ? 'Select a subcategory...' : 'No subcategories available')
-                    : 'Select a main category first'}
-                </option>
-                {subcategoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </select>
-            </div>
+            {/* Cascading category dropdowns */}
+            {(() => {
+              const levels: React.ReactNode[] = []
+              // Level 0: root categories
+              const level0Options = rootCategories
+              levels.push(
+                <div key="cat-level-0">
+                  <label
+                    htmlFor="category-level-0"
+                    className="block text-sm font-medium mb-2"
+                    style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                  >
+                    Category *
+                  </label>
+                  <select
+                    id="category-level-0"
+                    value={categoryPath[0] || ''}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setCategoryPath(val ? [val] : [])
+                    }}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                    style={{ borderColor: '#d1d5db' }}
+                  >
+                    <option value="">Select a category...</option>
+                    {level0Options.map((category) => (
+                      <option key={category.id} value={category.id}>{category.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )
+              // Subsequent levels
+              for (let depth = 1; depth < categoryPath.length + 1; depth++) {
+                const parentId = categoryPath[depth - 1]
+                if (!parentId) break
+                const children = sortByName(childrenByParent.get(parentId) || [])
+                if (children.length === 0) break
+                levels.push(
+                  <div key={`cat-level-${depth}`}>
+                    <label
+                      htmlFor={`category-level-${depth}`}
+                      className="block text-sm font-medium mb-2"
+                      style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+                    >
+                      Subcategory *
+                    </label>
+                    <select
+                      id={`category-level-${depth}`}
+                      value={categoryPath[depth] || ''}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        const newPath = categoryPath.slice(0, depth)
+                        if (val) newPath.push(val)
+                        setCategoryPath(newPath)
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                      style={{ borderColor: '#d1d5db' }}
+                    >
+                      <option value="">Select a subcategory...</option>
+                      {children.map((category) => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )
+              }
+              return levels
+            })()}
           </div>
         </div>
 
