@@ -34,7 +34,8 @@ interface Product {
   salePrice?: number
   weight?: string | null
   dimensions?: string | null
-  shippingFee?: string | null
+  shippingFeeInsideDhaka?: number | null
+  shippingFeeOutsideDhaka?: number | null
   warranty?: string | null
   vendor?: string | null
   status?: 'DRAFT' | 'ACTIVE' | null
@@ -421,6 +422,13 @@ export default function ProductDetailClient({
               </div>
             )}
 
+            {/* Short Description */}
+            {product.shortDescription && (
+              <p className="mb-6 text-sm text-charcoal/80 leading-relaxed">
+                {product.shortDescription}
+              </p>
+            )}
+
             {/* Color Selector */}
             {availableColors.length > 0 && (
               <div className="mb-6">
@@ -591,15 +599,11 @@ export default function ProductDetailClient({
                 </button>
                 {expandedSections.details && (
                   <div className="px-4 pb-4 text-sm text-charcoal space-y-3">
-                    {product.shortDescription && (
-                      <p className="text-charcoal/80 leading-relaxed">
-                        {product.shortDescription}
-                      </p>
-                    )}
                     {product.description && (
-                      <p className="text-charcoal leading-relaxed">
-                        {product.description}
-                      </p>
+                      <div
+                        className="prose-product text-charcoal leading-relaxed"
+                        dangerouslySetInnerHTML={{ __html: product.description }}
+                      />
                     )}
                     {!product.shortDescription && !product.description && (
                       <p className="text-charcoal/60">No description available.</p>
@@ -660,7 +664,8 @@ export default function ProductDetailClient({
                     <p>• Brand: {product.brand.name}</p>
                     <p>• Weight: {product.weight || 'N/A'}</p>
                     <p>• Dimensions: {product.dimensions || 'N/A'}</p>
-                    <p>• Shipping Fee: {product.shippingFee || 'N/A'}</p>
+                    <p>• Shipping (Inside Dhaka): {product.shippingFeeInsideDhaka != null ? `৳${product.shippingFeeInsideDhaka}` : 'N/A'}</p>
+                    <p>• Shipping (Outside Dhaka): {product.shippingFeeOutsideDhaka != null ? `৳${product.shippingFeeOutsideDhaka}` : 'N/A'}</p>
                     <p>• Warranty: {product.warranty || 'N/A'}</p>
                     <p>• Vendor: {product.vendor || 'N/A'}</p>
                   </div>

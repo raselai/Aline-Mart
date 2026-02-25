@@ -170,7 +170,7 @@ async function getNewArrivals(): Promise<Product[]> {
 
 async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
   try {
-    // Get the parent category and all its children
+    // Get the parent category
     const { data: parentCategory } = await supabase
       .from('Category')
       .select('id')
@@ -179,12 +179,30 @@ async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
 
     if (!parentCategory) return []
 
-    const { data: childCategories } = await supabase
+    // Fetch all categories once and collect all descendants in-memory
+    const { data: allCategories } = await supabase
       .from('Category')
-      .select('id')
-      .eq('parentId', parentCategory.id)
+      .select('id, parentId')
 
-    const categoryIds = [parentCategory.id, ...(childCategories || []).map(c => c.id)]
+    const childrenByParent = new Map<string, string[]>()
+    for (const cat of allCategories || []) {
+      if (cat.parentId) {
+        const siblings = childrenByParent.get(cat.parentId) || []
+        siblings.push(cat.id)
+        childrenByParent.set(cat.parentId, siblings)
+      }
+    }
+
+    const categoryIds: string[] = [parentCategory.id]
+    const queue = [parentCategory.id]
+    while (queue.length > 0) {
+      const current = queue.pop()!
+      const children = childrenByParent.get(current) || []
+      for (const childId of children) {
+        categoryIds.push(childId)
+        queue.push(childId)
+      }
+    }
 
     const { data, error } = await supabase
       .from('Product')
@@ -280,7 +298,7 @@ export default async function Home() {
                     alt={brand.name}
                     width={180}
                     height={120}
-                    className="w-full h-full object-contain p-4 grayscale group-hover:grayscale-0 transition-all duration-300"
+                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-all duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-burgundy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-burgundy text-white px-3 py-1 rounded text-xs font-medium whitespace-nowrap">
@@ -303,7 +321,7 @@ export default async function Home() {
                     alt={brand.name}
                     width={180}
                     height={120}
-                    className="w-full h-full object-contain p-4 grayscale group-hover:grayscale-0 transition-all duration-300"
+                    className="w-full h-full object-contain p-4 group-hover:scale-105 transition-all duration-300"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-burgundy/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-burgundy text-white px-3 py-1 rounded text-xs font-medium whitespace-nowrap">

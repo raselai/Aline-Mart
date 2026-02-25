@@ -14,6 +14,7 @@ export interface Category {
   name: string
   slug: string
   parentId?: string
+  featured?: boolean
   parent?: Category
   children?: Category[]
 }
@@ -28,7 +29,8 @@ export interface Product {
   salePrice?: number
   weight?: string | null
   dimensions?: string | null
-  shippingFee?: string | null
+  shippingFeeInsideDhaka?: number | null
+  shippingFeeOutsideDhaka?: number | null
   warranty?: string | null
   vendor?: string | null
   status?: 'DRAFT' | 'ACTIVE' | null

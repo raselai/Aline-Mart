@@ -12,6 +12,7 @@ import {
   validateVariants,
   type EditableVariant,
 } from '@/lib/variant-utils'
+import RichTextEditor from '@/components/admin/RichTextEditor'
 
 interface Brand {
   id: string
@@ -96,7 +97,8 @@ export default function NewProductPage() {
   const [isNew, setIsNew] = useState(false)
   const [weight, setWeight] = useState('')
   const [dimensions, setDimensions] = useState('')
-  const [shippingFee, setShippingFee] = useState('')
+  const [shippingFeeInsideDhaka, setShippingFeeInsideDhaka] = useState('')
+  const [shippingFeeOutsideDhaka, setShippingFeeOutsideDhaka] = useState('')
   const [warranty, setWarranty] = useState('')
   const [vendor, setVendor] = useState('')
   const [stock, setStock] = useState('0')
@@ -355,7 +357,8 @@ export default function NewProductPage() {
         isNew,
         weight: weight.trim() || null,
         dimensions: dimensions.trim() || null,
-        shippingFee: shippingFee.trim() || null,
+        shippingFeeInsideDhaka: shippingFeeInsideDhaka ? parseFloat(shippingFeeInsideDhaka) : null,
+        shippingFeeOutsideDhaka: shippingFeeOutsideDhaka ? parseFloat(shippingFeeOutsideDhaka) : null,
         warranty: warranty.trim() || null,
         vendor: vendor.trim() || null,
         status: productStatus,
@@ -529,13 +532,9 @@ export default function NewProductPage() {
               >
                 Description
               </label>
-              <textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
-                style={{ borderColor: '#d1d5db' }}
+              <RichTextEditor
+                content={description}
+                onChange={setDescription}
                 placeholder="Enter product description..."
               />
             </div>
@@ -711,20 +710,43 @@ export default function NewProductPage() {
 
             <div>
               <label
-                htmlFor="shippingFee"
+                htmlFor="shippingFeeInsideDhaka"
                 className="block text-sm font-medium mb-2"
                 style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
               >
-                Shipping Fee
+                Shipping Fee (Inside Dhaka)
               </label>
               <input
-                type="text"
-                id="shippingFee"
-                value={shippingFee}
-                onChange={(e) => setShippingFee(e.target.value)}
+                type="number"
+                id="shippingFeeInsideDhaka"
+                value={shippingFeeInsideDhaka}
+                onChange={(e) => setShippingFeeInsideDhaka(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
                 style={{ borderColor: '#d1d5db' }}
-                placeholder="Free / Regular / Bulk / Weight-based / $10"
+                placeholder="e.g., 80"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="shippingFeeOutsideDhaka"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                Shipping Fee (Outside Dhaka)
+              </label>
+              <input
+                type="number"
+                id="shippingFeeOutsideDhaka"
+                value={shippingFeeOutsideDhaka}
+                onChange={(e) => setShippingFeeOutsideDhaka(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="e.g., 150"
+                min="0"
+                step="0.01"
               />
             </div>
 

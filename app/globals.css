@@ -321,6 +321,58 @@ html {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Tiptap Editor Styles */
+.tiptap {
+  min-height: 120px;
+  padding: 0.75rem 1rem;
+  outline: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Prose styles for rendered product descriptions on storefront */
+.prose-product h2 {
+  font-family: var(--font-serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-product h3 {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-product p {
+  margin-bottom: 0.75rem;
+}
+
+.prose-product ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-product ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose-product li {
+  margin-bottom: 0.25rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

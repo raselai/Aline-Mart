@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import {
   buildVariantSku,
   normalizeVariantText,
@@ -47,13 +47,7 @@ export async function GET(
 ) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('products')
 
     const params = await props.params
     const { id } = params
@@ -110,6 +104,9 @@ export async function GET(
 
     return NextResponse.json({ product: productWithSortedImages })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching product:', error)
     return NextResponse.json(
       { error: 'Failed to fetch product' },
@@ -129,13 +126,7 @@ export async function PATCH(
 ) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('products')
 
     const params = await props.params
     const { id } = params
@@ -159,7 +150,8 @@ export async function PATCH(
       isNew,
       weight,
       dimensions,
-      shippingFee,
+      shippingFeeInsideDhaka,
+      shippingFeeOutsideDhaka,
       warranty,
       vendor,
       status,
@@ -202,7 +194,8 @@ export async function PATCH(
     if (isNew !== undefined) updateData.isNew = isNew
     if (weight !== undefined) updateData.weight = weight ? String(weight) : null
     if (dimensions !== undefined) updateData.dimensions = dimensions ? String(dimensions) : null
-    if (shippingFee !== undefined) updateData.shippingFee = shippingFee ? String(shippingFee) : null
+    if (shippingFeeInsideDhaka !== undefined) updateData.shippingFeeInsideDhaka = shippingFeeInsideDhaka !== null && shippingFeeInsideDhaka !== '' ? parseFloat(shippingFeeInsideDhaka) : null
+    if (shippingFeeOutsideDhaka !== undefined) updateData.shippingFeeOutsideDhaka = shippingFeeOutsideDhaka !== null && shippingFeeOutsideDhaka !== '' ? parseFloat(shippingFeeOutsideDhaka) : null
     if (warranty !== undefined) updateData.warranty = warranty ? String(warranty) : null
     if (vendor !== undefined) updateData.vendor = vendor ? String(vendor) : null
     if (status !== undefined) updateData.status = status === 'DRAFT' ? 'DRAFT' : 'ACTIVE'
@@ -296,6 +289,9 @@ export async function PATCH(
       message: 'Product updated successfully'
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error updating product:', error)
     return NextResponse.json(
       { error: 'Failed to update product' },
@@ -315,13 +311,7 @@ export async function DELETE(
 ) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('products')
 
     const params = await props.params
     const { id } = params
@@ -354,6 +344,9 @@ export async function DELETE(
       message: 'Product deleted successfully'
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error deleting product:', error)
     return NextResponse.json(
       { error: 'Failed to delete product' },

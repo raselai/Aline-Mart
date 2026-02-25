@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 // GET /api/admin/categories/[id] - Get single category with details
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -76,6 +76,9 @@ export async function GET(
       }
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in GET /api/admin/categories/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to fetch category' },
@@ -91,7 +94,7 @@ export async function PATCH(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -189,42 +192,19 @@ export async function PATCH(
       }
     }
 
-    const baseUpdate = {
+    const updateData = {
       name,
       slug,
       parentId: parentId || null,
-    }
-
-    const extendedUpdate = {
-      ...baseUpdate,
-      description: description || null,
       featured: Boolean(featured),
-      displayOrder: displayOrder || 0,
     }
 
-    // Update category (retry without optional columns if schema doesn't include them)
-    let updatedCategory = null
-    let updateError = null
-
-    ;({ data: updatedCategory, error: updateError } = await supabase
+    const { data: updatedCategory, error: updateError } = await supabase
       .from('Category')
-      .update(extendedUpdate)
+      .update(updateData)
       .eq('id', id)
       .select()
-      .single())
-
-    if (
-      updateError &&
-      (updateError.code === 'PGRST204' ||
-        (updateError.message?.includes('column') && updateError.message?.includes('does not exist')))
-    ) {
-      ;({ data: updatedCategory, error: updateError } = await supabase
-        .from('Category')
-        .update(baseUpdate)
-        .eq('id', id)
-        .select()
-        .single())
-    }
+      .single()
 
     if (updateError) {
       console.error('Error updating category:', updateError)
@@ -236,6 +216,9 @@ export async function PATCH(
       category: updatedCategory
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in PATCH /api/admin/categories/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to update category' },
@@ -251,7 +234,7 @@ export async function DELETE(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -326,6 +309,9 @@ export async function DELETE(
       message: `Category "${existingCategory.name}" deleted successfully`
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in DELETE /api/admin/categories/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to delete category' },

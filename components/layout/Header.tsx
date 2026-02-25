@@ -20,15 +20,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-const navigation = [
-  { name: 'Men', href: '/categories/men', categorySlug: 'men' },
-  { name: 'Women', href: '/categories/women', categorySlug: 'women' },
-  { name: 'Kids', href: '/categories/kids', categorySlug: 'kids' },
-  { name: 'Homeware', href: '/categories/homeware', categorySlug: 'homeware' },
-  { name: 'Beauty', href: '/categories/beauty', categorySlug: 'beauty' },
-  { name: 'Sports & Fitness', href: '/categories/sports', categorySlug: 'sports' },
-]
-
 type CategoryNode = Category & { children: CategoryNode[] }
 
 export default function Header() {
@@ -114,16 +105,13 @@ export default function Header() {
   const rootNodes = [...categoryNodesById.values()].filter((node) => !node.parentId)
   sortTree(rootNodes)
 
-  const navItems = navigation.map((item) => {
-    if (!item.categorySlug) {
-      return { ...item, children: [] as CategoryNode[] }
-    }
-
-    const category = categoriesBySlug.get(item.categorySlug)
-    const children = category ? category.children : ([] as CategoryNode[])
-
-    return { ...item, children }
-  })
+  const navItems = rootNodes
+    .filter((node) => node.featured)
+    .map((node) => ({
+      name: node.name,
+      href: `/categories/${node.slug}`,
+      children: node.children,
+    }))
 
   const toggleMobileMenu = (name: string) => {
     setOpenMobileMenus((prev) => ({

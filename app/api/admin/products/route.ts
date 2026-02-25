@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import {
   buildVariantSku,
   normalizeVariantText,
@@ -44,13 +44,7 @@ function sanitizeVariants(variants: unknown[] | undefined, slug: string): Editab
 export async function GET(request: Request) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('products')
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -185,6 +179,9 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit)
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching products:', error)
     return NextResponse.json(
       { error: 'Failed to fetch products' },
@@ -201,13 +198,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('products')
 
     // Parse request body
     const body = await request.json()
@@ -228,7 +219,8 @@ export async function POST(request: Request) {
       isNew,
       weight,
       dimensions,
-      shippingFee,
+      shippingFeeInsideDhaka,
+      shippingFeeOutsideDhaka,
       warranty,
       vendor,
       status,
@@ -291,7 +283,8 @@ export async function POST(request: Request) {
       isNew: isNew === true,
       weight: weight ? String(weight) : null,
       dimensions: dimensions ? String(dimensions) : null,
-      shippingFee: shippingFee ? String(shippingFee) : null,
+      shippingFeeInsideDhaka: shippingFeeInsideDhaka !== undefined && shippingFeeInsideDhaka !== null && shippingFeeInsideDhaka !== '' ? parseFloat(shippingFeeInsideDhaka) : null,
+      shippingFeeOutsideDhaka: shippingFeeOutsideDhaka !== undefined && shippingFeeOutsideDhaka !== null && shippingFeeOutsideDhaka !== '' ? parseFloat(shippingFeeOutsideDhaka) : null,
       warranty: warranty ? String(warranty) : null,
       vendor: vendor ? String(vendor) : null,
       status: status === 'DRAFT' ? 'DRAFT' : 'ACTIVE',
@@ -370,6 +363,9 @@ export async function POST(request: Request) {
       message: 'Product created successfully'
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error creating product:', error)
     return NextResponse.json(
       { error: 'Failed to create product' },

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 // GET /api/admin/categories - List all categories with hierarchy
 export async function GET(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -101,6 +101,9 @@ export async function GET(request: Request) {
       total: count || 0
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in GET /api/admin/categories:', error)
     return NextResponse.json(
       { error: 'Failed to fetch categories' },
@@ -113,7 +116,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     // Parse request body
     const body = await request.json()
@@ -163,41 +166,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const baseCategory = {
+    const categoryData = {
       id: `cat_${slug}`,
       name,
       slug,
       parentId: parentId || null,
-    }
-
-    const extendedCategory = {
-      ...baseCategory,
-      description: description || null,
       featured: Boolean(featured),
-      displayOrder: displayOrder || 0,
     }
 
-    // Create category (retry without optional columns if schema doesn't include them)
-    let newCategory = null
-    let createError = null
-
-    ;({ data: newCategory, error: createError } = await supabase
+    const { data: newCategory, error: createError } = await supabase
       .from('Category')
-      .insert(extendedCategory)
+      .insert(categoryData)
       .select()
-      .single())
-
-    if (
-      createError &&
-      (createError.code === 'PGRST204' ||
-        (createError.message?.includes('column') && createError.message?.includes('does not exist')))
-    ) {
-      ;({ data: newCategory, error: createError } = await supabase
-        .from('Category')
-        .insert(baseCategory)
-        .select()
-        .single())
-    }
+      .single()
 
     if (createError) {
       console.error('Error creating category:', createError)
@@ -209,6 +190,9 @@ export async function POST(request: Request) {
       category: newCategory
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in POST /api/admin/categories:', error)
     return NextResponse.json(
       { error: 'Failed to create category' },
