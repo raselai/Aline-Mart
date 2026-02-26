@@ -261,8 +261,9 @@ export async function POST(request: Request) {
       )
     }
 
-    // Generate product ID from slug (format: prod_slug)
-    const productId = `prod_${slug}`
+    // Generate product ID from slug + random suffix to avoid collisions
+    const suffix = Math.random().toString(36).substring(2, 8)
+    const productId = `prod_${slug}_${suffix}`
 
     // Create product
     const productData = {
