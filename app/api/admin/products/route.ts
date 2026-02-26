@@ -204,6 +204,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const {
       name,
+      sku,
       slug,
       description,
       shortDescription,
@@ -269,6 +270,7 @@ export async function POST(request: Request) {
     const productData = {
       id: productId,
       name,
+      sku: sku ? String(sku).trim() : null,
       slug,
       description: description || '',
       shortDescription: shortDescription || null,

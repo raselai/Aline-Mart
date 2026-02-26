@@ -82,6 +82,7 @@ export default function NewProductPage() {
 
   // Form state
   const [name, setName] = useState('')
+  const [sku, setSku] = useState('')
   const [slug, setSlug] = useState('')
   const [shortDescription, setShortDescription] = useState('')
   const [description, setDescription] = useState('')
@@ -160,12 +161,29 @@ export default function NewProductPage() {
     }
   }
 
+  // Build slug from name + optional SKU
+  const buildSlug = (nameVal: string, skuVal: string) => {
+    const base = nameVal.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+    if (!skuVal.trim()) return base
+    const skuSuffix = skuVal.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '')
+    return base ? `${base}-${skuSuffix}` : skuSuffix
+  }
+
   // Auto-generate slug from name
   const handleNameChange = (value: string) => {
     setName(value)
-    // Only auto-generate slug if it hasn't been manually edited
-    if (!slug || slug === name.toLowerCase().replace(/[^a-z0-9]+/g, '-')) {
-      setSlug(value.toLowerCase().replace(/[^a-z0-9]+/g, '-'))
+    const currentAutoSlug = buildSlug(name, sku)
+    if (!slug || slug === currentAutoSlug) {
+      setSlug(buildSlug(value, sku))
+    }
+  }
+
+  // Update slug when SKU changes
+  const handleSkuChange = (value: string) => {
+    const currentAutoSlug = buildSlug(name, sku)
+    setSku(value)
+    if (!slug || slug === currentAutoSlug) {
+      setSlug(buildSlug(name, value))
     }
   }
 
@@ -341,6 +359,7 @@ export default function NewProductPage() {
 
       const productData = {
         name,
+        sku: sku.trim() || null,
         slug,
         shortDescription: shortDescription.trim() || null,
         description: description.trim(),
@@ -465,6 +484,29 @@ export default function NewProductPage() {
                 style={{ borderColor: '#d1d5db' }}
                 placeholder="Enter product name..."
               />
+            </div>
+
+            {/* SKU */}
+            <div>
+              <label
+                htmlFor="sku"
+                className="block text-sm font-medium mb-2"
+                style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
+              >
+                SKU
+              </label>
+              <input
+                type="text"
+                id="sku"
+                value={sku}
+                onChange={(e) => handleSkuChange(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2"
+                style={{ borderColor: '#d1d5db' }}
+                placeholder="e.g., VV-001"
+              />
+              <p className="mt-1 text-sm" style={{ color: '#6B7280' }}>
+                Stock Keeping Unit. If provided, it will be appended to the URL slug.
+              </p>
             </div>
 
             {/* Slug */}
