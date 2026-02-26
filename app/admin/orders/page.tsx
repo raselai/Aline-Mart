@@ -76,6 +76,10 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
   const [cancelReasonFocused, setCancelReasonFocused] = useState(false)
   // Pending status value waiting for cancellation reason confirmation
   const [pendingStatusChange, setPendingStatusChange] = useState<{ field: 'order' | 'shipping'; value: string } | null>(null)
+  // Pathao state
+  const [pathaoBooking, setPathaoBooking] = useState(false)
+  const [pathaoChecking, setPathaoChecking] = useState(false)
+  const [pathaoStatus, setPathaoStatus] = useState<{ pathaoStatus: string; mappedShippingStatus: string; updatedAt: string } | null>(null)
 
   if (!isOpen || !order) return null
 
@@ -674,6 +678,115 @@ function OrderDetailsModal({ order, isOpen, onClose, onStatusUpdate, onItemCance
                   {order.shippingAddress.country}
                 </p>
               </div>
+            </div>
+          </div>
+
+          {/* Pathao Courier Section */}
+          <div style={{ marginBottom: '28px' }}>
+            <p style={sectionHeadingStyle}>Pathao Courier</p>
+            <div
+              style={{
+                backgroundColor: '#FAFAF8',
+                border: '1px solid #E8E6E3',
+                padding: '18px 20px',
+              }}
+            >
+              {order.pathaoConsignmentId ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', backgroundColor: '#ECFDF5', color: '#065F46', border: '1px solid #A7F3D0' }}>
+                      BOOKED
+                    </span>
+                    <span style={{ fontSize: '13px', fontFamily: 'monospace', color: '#2C2C2C', fontWeight: 500 }}>
+                      {order.pathaoConsignmentId}
+                    </span>
+                  </div>
+                  {order.pathaoDeliveryFee != null && (
+                    <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 12px' }}>
+                      Pathao Delivery Fee: <span style={{ fontWeight: 600, color: '#2C2C2C' }}>{formatPrice(order.pathaoDeliveryFee)}</span>
+                    </p>
+                  )}
+                  {pathaoStatus && (
+                    <div style={{ padding: '10px 14px', backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '13px', color: '#1E40AF', margin: 0 }}>
+                        Pathao Status: <strong>{pathaoStatus.pathaoStatus}</strong>
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#6B7280', margin: '4px 0 0' }}>
+                        Last updated: {new Date(pathaoStatus.updatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    onClick={async () => {
+                      setPathaoChecking(true)
+                      try {
+                        const res = await fetch(`/api/admin/orders/${order.id}/pathao`)
+                        const data = await res.json()
+                        if (!res.ok) throw new Error(data.error || 'Failed to check status')
+                        setPathaoStatus(data)
+                      } catch (err) {
+                        alert(err instanceof Error ? err.message : 'Failed to check Pathao status')
+                      } finally {
+                        setPathaoChecking(false)
+                      }
+                    }}
+                    disabled={pathaoChecking}
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      backgroundColor: '#1E40AF',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      cursor: pathaoChecking ? 'not-allowed' : 'pointer',
+                      opacity: pathaoChecking ? 0.6 : 1,
+                      transition: 'all 200ms',
+                    }}
+                  >
+                    {pathaoChecking ? 'Checking...' : 'Check Pathao Status'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p style={{ fontSize: '13px', color: '#6B7280', margin: '0 0 12px', ...textStyle }}>
+                    No Pathao shipment booked yet.
+                  </p>
+                  {(order.status === 'CONFIRM' || order.status === 'PENDING') && (
+                    <button
+                      onClick={async () => {
+                        if (!window.confirm('Book this order with Pathao Courier? This will update the shipping cost to Pathao\'s actual delivery fee.')) return
+                        setPathaoBooking(true)
+                        try {
+                          const res = await fetch(`/api/admin/orders/${order.id}/pathao`, { method: 'POST' })
+                          const data = await res.json()
+                          if (!res.ok) throw new Error(data.error || 'Failed to book shipment')
+                          alert(data.message)
+                          // Trigger refresh by calling onStatusUpdate with current values
+                          onClose()
+                        } catch (err) {
+                          alert(err instanceof Error ? err.message : 'Failed to book Pathao shipment')
+                        } finally {
+                          setPathaoBooking(false)
+                        }
+                      }}
+                      disabled={pathaoBooking}
+                      style={{
+                        padding: '10px 20px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        cursor: pathaoBooking ? 'not-allowed' : 'pointer',
+                        opacity: pathaoBooking ? 0.6 : 1,
+                        transition: 'all 200ms',
+                      }}
+                    >
+                      {pathaoBooking ? 'Booking...' : 'Ship with Pathao'}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </div>
 

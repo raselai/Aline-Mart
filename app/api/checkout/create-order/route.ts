@@ -191,6 +191,9 @@ export async function POST(request: NextRequest) {
           zipCode: data.zipCode,
           country: data.country,
           isDefault: saveAddress ? true : undefined,
+          pathaoCityId: data.pathaoCityId ?? null,
+          pathaoZoneId: data.pathaoZoneId ?? null,
+          pathaoAreaId: data.pathaoAreaId ?? null,
         })
         .select('id')
         .single()

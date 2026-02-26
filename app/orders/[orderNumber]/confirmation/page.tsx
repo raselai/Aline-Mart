@@ -65,7 +65,7 @@ export default async function OrderConfirmationPage({
   const isCancelled = order.status === 'CANCEL'
 
   return (
-    <div style={{ maxWidth: '900px', minWidth: '320px', margin: '0 auto', paddingTop: '120px', paddingBottom: '48px', paddingLeft: '16px', paddingRight: '16px' }}>
+    <div style={{ maxWidth: '900px', minWidth: '320px', margin: '0 auto', paddingTop: 'clamp(140px, 18vw, 220px)', paddingBottom: '48px', paddingLeft: '16px', paddingRight: '16px' }}>
       {/* Success Header */}
       <div style={{ textAlign: 'center', marginBottom: '48px' }}>
         <div
@@ -150,6 +150,31 @@ export default async function OrderConfirmationPage({
         >
           Order Progress
         </h2>
+        {/* Courier Tracking ID */}
+        {order.pathaoConsignmentId && (
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '12px 16px',
+              background: '#eff6ff',
+              borderRadius: '8px',
+              border: '1px solid #bfdbfe',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Truck style={{ width: '18px', height: '18px', color: '#1e40af', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.875rem', color: '#1e40af', fontWeight: 500 }}>
+              Courier Tracking ID:
+            </span>
+            <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 700, color: '#1e3a5f' }}>
+              {order.pathaoConsignmentId}
+            </span>
+          </div>
+        )}
+
         {isCancelled ? (
           <div
             style={{

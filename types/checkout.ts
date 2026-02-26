@@ -16,6 +16,9 @@ export const shippingStepSchema = z.object({
   state: z.string().min(2, 'Division/State is required'),
   zipCode: z.string().regex(bangladeshZipRegex, 'Zip code must be 4 digits'),
   country: z.literal('Bangladesh'),
+  pathaoCityId: z.number().int().positive().optional(),
+  pathaoZoneId: z.number().int().positive().optional(),
+  pathaoAreaId: z.number().int().positive().optional(),
 })
 
 export const paymentStepSchema = z.object({
@@ -43,6 +46,9 @@ export const addressFormSchema = z.object({
   zipCode: z.string().regex(bangladeshZipRegex, 'Zip code must be 4 digits'),
   country: z.literal('Bangladesh'),
   isDefault: z.boolean().optional(),
+  pathaoCityId: z.number().int().positive().optional(),
+  pathaoZoneId: z.number().int().positive().optional(),
+  pathaoAreaId: z.number().int().positive().optional(),
 })
 export type AddressFormData = z.infer<typeof addressFormSchema>
 
@@ -58,6 +64,9 @@ export interface SavedAddress {
   zipCode: string
   country: string
   isDefault: boolean
+  pathaoCityId?: number | null
+  pathaoZoneId?: number | null
+  pathaoAreaId?: number | null
   createdAt: string
   updatedAt: string
 }

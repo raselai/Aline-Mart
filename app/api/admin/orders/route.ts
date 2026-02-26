@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { OrderStatus, ShippingStatus, PaymentMethod, PaymentStatus } from '@/types/order'
 
 /**
@@ -11,13 +11,7 @@ import type { OrderStatus, ShippingStatus, PaymentMethod, PaymentStatus } from '
 export async function GET(request: Request) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('orders')
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -44,6 +38,7 @@ export async function GET(request: Request) {
         shippingStatus,
         paymentMethod,
         paymentStatus,
+        pathaoConsignmentId,
         createdAt,
         userId,
         shippingAddressId,
@@ -128,6 +123,7 @@ export async function GET(request: Request) {
       shippingStatus: order.shippingStatus || 'PROCESSING',
       paymentMethod: order.paymentMethod || 'COD',
       paymentStatus: order.paymentStatus || 'UNPAID',
+      pathaoConsignmentId: order.pathaoConsignmentId || null,
       createdAt: order.createdAt,
       user: {
         name: (order.User as any)?.name || null,
@@ -148,6 +144,9 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit)
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching orders:', error)
     return NextResponse.json(
       { error: 'Failed to fetch orders' },

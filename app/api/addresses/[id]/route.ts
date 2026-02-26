@@ -73,6 +73,9 @@ export async function PUT(
         zipCode: data.zipCode,
         country: data.country,
         isDefault: data.isDefault ?? false,
+        pathaoCityId: data.pathaoCityId ?? null,
+        pathaoZoneId: data.pathaoZoneId ?? null,
+        pathaoAreaId: data.pathaoAreaId ?? null,
       })
       .eq('id', id)
       .select('*')

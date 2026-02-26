@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, useEffect, useCallback } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { shippingStepSchema, type ShippingStepData, type SavedAddress } from '@/types/checkout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { CheckCircle2, Edit2 } from 'lucide-react'
+import type { PathaoCity, PathaoZone, PathaoArea } from '@/types/pathao'
 
 interface ShippingStepProps {
   isActive: boolean
@@ -33,21 +34,34 @@ export default function ShippingStep({
   isAuthenticated,
 }: ShippingStepProps) {
   const [selectedId, setSelectedId] = useState<string | 'new'>(() => {
-    // Pre-select the default address if available
     const defaultAddr = savedAddresses?.find((a) => a.isDefault)
     return defaultAddr ? defaultAddr.id : 'new'
   })
   const [wantSave, setWantSave] = useState(false)
 
+  // Pathao location state
+  const [cities, setCities] = useState<PathaoCity[]>([])
+  const [zones, setZones] = useState<PathaoZone[]>([])
+  const [areas, setAreas] = useState<PathaoArea[]>([])
+  const [citiesLoading, setCitiesLoading] = useState(false)
+  const [zonesLoading, setZonesLoading] = useState(false)
+  const [areasLoading, setAreasLoading] = useState(false)
+
   const {
     register,
     handleSubmit,
     reset,
+    control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<ShippingStepData>({
     resolver: zodResolver(shippingStepSchema),
     defaultValues: data || getDefaultsFromAddress(savedAddresses?.find((a) => a.isDefault)) || { country: 'Bangladesh' },
   })
+
+  const selectedCityId = watch('pathaoCityId')
+  const selectedZoneId = watch('pathaoZoneId')
 
   function getDefaultsFromAddress(addr?: SavedAddress): ShippingStepData | undefined {
     if (!addr) return undefined
@@ -59,14 +73,95 @@ export default function ShippingStep({
       state: addr.state,
       zipCode: addr.zipCode,
       country: 'Bangladesh',
+      pathaoCityId: addr.pathaoCityId ?? undefined,
+      pathaoZoneId: addr.pathaoZoneId ?? undefined,
+      pathaoAreaId: addr.pathaoAreaId ?? undefined,
     }
   }
+
+  // Fetch cities on mount
+  useEffect(() => {
+    if (!isActive) return
+    setCitiesLoading(true)
+    fetch('/api/pathao/cities')
+      .then((r) => r.json())
+      .then((d) => setCities(d.cities || []))
+      .catch(() => setCities([]))
+      .finally(() => setCitiesLoading(false))
+  }, [isActive])
+
+  // Fetch zones when city changes
+  const fetchZones = useCallback(async (cityId: number) => {
+    setZonesLoading(true)
+    setZones([])
+    setAreas([])
+    try {
+      const res = await fetch(`/api/pathao/cities/${cityId}/zones`)
+      const d = await res.json()
+      setZones(d.zones || [])
+    } catch {
+      setZones([])
+    } finally {
+      setZonesLoading(false)
+    }
+  }, [])
+
+  // Fetch areas when zone changes
+  const fetchAreas = useCallback(async (zoneId: number) => {
+    setAreasLoading(true)
+    setAreas([])
+    try {
+      const res = await fetch(`/api/pathao/zones/${zoneId}/areas`)
+      const d = await res.json()
+      setAreas(d.areas || [])
+    } catch {
+      setAreas([])
+    } finally {
+      setAreasLoading(false)
+    }
+  }, [])
+
+  // Load zones when city changes
+  useEffect(() => {
+    if (selectedCityId && selectedCityId > 0) {
+      fetchZones(selectedCityId)
+    } else {
+      setZones([])
+      setAreas([])
+    }
+  }, [selectedCityId, fetchZones])
+
+  // Load areas when zone changes
+  useEffect(() => {
+    if (selectedZoneId && selectedZoneId > 0) {
+      fetchAreas(selectedZoneId)
+    } else {
+      setAreas([])
+    }
+  }, [selectedZoneId, fetchAreas])
+
+  // When editing an existing address with Pathao IDs, load the dependent data
+  useEffect(() => {
+    if (!isActive) return
+    const defaults = data || getDefaultsFromAddress(savedAddresses?.find((a) => a.isDefault))
+    if (defaults?.pathaoCityId && defaults.pathaoCityId > 0) {
+      fetchZones(defaults.pathaoCityId).then(() => {
+        if (defaults.pathaoZoneId && defaults.pathaoZoneId > 0) {
+          fetchAreas(defaults.pathaoZoneId)
+        }
+      })
+    }
+  // Only run once on mount when active
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive])
 
   const handleAddressSelect = (id: string) => {
     setSelectedId(id)
     if (id === 'new') {
       reset({ country: 'Bangladesh', fullName: '', addressLine1: '', addressLine2: '', city: '', state: '', zipCode: '' })
       setWantSave(false)
+      setZones([])
+      setAreas([])
     } else {
       const addr = savedAddresses?.find((a) => a.id === id)
       if (addr) {
@@ -78,7 +173,18 @@ export default function ShippingStep({
           state: addr.state,
           zipCode: addr.zipCode,
           country: 'Bangladesh',
+          pathaoCityId: addr.pathaoCityId ?? undefined,
+          pathaoZoneId: addr.pathaoZoneId ?? undefined,
+          pathaoAreaId: addr.pathaoAreaId ?? undefined,
         })
+        // Load dependent dropdowns for this address
+        if (addr.pathaoCityId) {
+          fetchZones(addr.pathaoCityId).then(() => {
+            if (addr.pathaoZoneId) {
+              fetchAreas(addr.pathaoZoneId)
+            }
+          })
+        }
       }
     }
   }
@@ -115,6 +221,8 @@ export default function ShippingStep({
   }
 
   const hasAddresses = savedAddresses && savedAddresses.length > 0
+
+  const selectStyle = (hasError?: boolean) => `w-full px-3 py-2 border rounded-md text-sm outline-none transition-colors ${hasError ? 'border-red-500' : 'border-gray-300'} focus:border-[#8e2157] bg-white`
 
   return (
     <div className={`border rounded-lg p-6 ${isActive ? 'border-burgundy bg-white' : disabled ? 'border-gray-200 bg-gray-50 opacity-60' : 'border-gray-200 bg-gray-50'}`}>
@@ -225,39 +333,116 @@ export default function ShippingStep({
               />
             </div>
 
+            {/* City (Pathao) + Zone (Pathao) */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   City *
                 </label>
-                <Input
-                  id="city"
-                  {...register('city')}
-                  placeholder="Dhaka"
-                  className={errors.city ? 'border-red-500' : ''}
+                <Controller
+                  name="pathaoCityId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      className={selectStyle(!!errors.city)}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const cityId = e.target.value ? parseInt(e.target.value, 10) : undefined
+                        field.onChange(cityId)
+                        // Set city text value from selected city name
+                        const city = cities.find((c) => c.city_id === cityId)
+                        setValue('city', city?.city_name || '')
+                        setValue('state', city?.city_name || '') // Pathao cities cover divisions
+                        // Reset dependent dropdowns
+                        setValue('pathaoZoneId', undefined)
+                        setValue('pathaoAreaId', undefined)
+                      }}
+                      disabled={citiesLoading}
+                    >
+                      <option value="">
+                        {citiesLoading ? 'Loading cities...' : 'Select City'}
+                      </option>
+                      {cities.map((c) => (
+                        <option key={c.city_id} value={c.city_id}>
+                          {c.city_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 />
+                {/* Hidden inputs for text values */}
+                <input type="hidden" {...register('city')} />
+                <input type="hidden" {...register('state')} />
                 {errors.city && (
                   <p className="text-sm text-red-600 mt-1">{errors.city.message}</p>
                 )}
               </div>
 
               <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
-                  Division/State *
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Zone *
                 </label>
-                <Input
-                  id="state"
-                  {...register('state')}
-                  placeholder="Dhaka"
-                  className={errors.state ? 'border-red-500' : ''}
+                <Controller
+                  name="pathaoZoneId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      className={selectStyle()}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const zoneId = e.target.value ? parseInt(e.target.value, 10) : undefined
+                        field.onChange(zoneId)
+                        // Reset area
+                        setValue('pathaoAreaId', undefined)
+                      }}
+                      disabled={zonesLoading || !selectedCityId}
+                    >
+                      <option value="">
+                        {zonesLoading ? 'Loading zones...' : !selectedCityId ? 'Select a city first' : 'Select Zone'}
+                      </option>
+                      {zones.map((z) => (
+                        <option key={z.zone_id} value={z.zone_id}>
+                          {z.zone_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 />
-                {errors.state && (
-                  <p className="text-sm text-red-600 mt-1">{errors.state.message}</p>
-                )}
               </div>
             </div>
 
+            {/* Area (Pathao) + Zip Code */}
             <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Area (Optional)
+                </label>
+                <Controller
+                  name="pathaoAreaId"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      className={selectStyle()}
+                      value={field.value || ''}
+                      onChange={(e) => {
+                        const areaId = e.target.value ? parseInt(e.target.value, 10) : undefined
+                        field.onChange(areaId)
+                      }}
+                      disabled={areasLoading || !selectedZoneId}
+                    >
+                      <option value="">
+                        {areasLoading ? 'Loading areas...' : !selectedZoneId ? 'Select a zone first' : 'Select Area'}
+                      </option>
+                      {areas.map((a) => (
+                        <option key={a.area_id} value={a.area_id}>
+                          {a.area_name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                />
+              </div>
+
               <div>
                 <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
                   Zip Code *
@@ -274,19 +459,19 @@ export default function ShippingStep({
                 )}
                 <p className="text-xs text-gray-500 mt-1">4-digit postal code</p>
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                  Country *
-                </label>
-                <Input
-                  id="country"
-                  {...register('country')}
-                  value="Bangladesh"
-                  disabled
-                  className="bg-gray-100"
-                />
-              </div>
+            <div>
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+                Country *
+              </label>
+              <Input
+                id="country"
+                {...register('country')}
+                value="Bangladesh"
+                disabled
+                className="bg-gray-100"
+              />
             </div>
 
             {/* Save address checkbox (only for new addresses from authenticated users) */}

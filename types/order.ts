@@ -17,6 +17,8 @@ export interface Order {
   paymentChannel?: string | null
   paystationTransactionId?: string | null
   cancellationReason?: string | null
+  pathaoConsignmentId?: string | null
+  pathaoDeliveryFee?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -62,6 +64,9 @@ export interface Address {
   state: string
   zipCode: string
   country: string
+  pathaoCityId?: number | null
+  pathaoZoneId?: number | null
+  pathaoAreaId?: number | null
   createdAt: string
   updatedAt: string
 }
@@ -77,6 +82,7 @@ export interface AdminOrderListItem {
   shippingStatus: ShippingStatus
   paymentMethod: PaymentMethod
   paymentStatus?: PaymentStatus
+  pathaoConsignmentId?: string | null
   createdAt: string
   user: {
     name: string | null
