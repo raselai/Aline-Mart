@@ -54,6 +54,21 @@ export async function POST(request: NextRequest) {
     const isSandbox = process.env.PAYSTATION_SANDBOX_MODE === 'true'
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+    // Guard: Block real PayStation payments if callback URL points to localhost
+    if (!isSandbox) {
+      const callbackUrl = process.env.PAYSTATION_CALLBACK_URL || ''
+      if (callbackUrl.includes('localhost') || callbackUrl.includes('127.0.0.1')) {
+        console.error(
+          '[PayStation] CRITICAL: PAYSTATION_CALLBACK_URL contains localhost in production mode. ' +
+          'Users will see a blank page after payment. Set it to your production domain.'
+        )
+        return NextResponse.json(
+          { error: 'Payment system is misconfigured. Please contact support.' },
+          { status: 503 }
+        )
+      }
+    }
+
     if (isSandbox) {
       // In sandbox mode, redirect to our mock PayStation page
       const mockPaymentUrl = new URL('/paystation/payment', baseUrl)

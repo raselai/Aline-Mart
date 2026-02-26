@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
 import { useVirtualCard } from '@/hooks/useVirtualCard'
@@ -13,11 +13,13 @@ import type { ContactStepData, ShippingStepData, PaymentStepData, SavedAddress }
 
 export default function CheckoutClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { items, subtotal } = useCart()
   const { isAuthenticated, userEmail } = useAuth()
   const { card: virtualCard, fetchCard, discountPercent: vcDiscount } = useVirtualCard()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   const [contactData, setContactData] = useState<ContactStepData>()
   const [shippingData, setShippingData] = useState<ShippingStepData>()
@@ -25,6 +27,19 @@ export default function CheckoutClient() {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([])
   const [saveAddress, setSaveAddress] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
+
+  // Show payment failure/error message from PayStation callback redirect
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    if (paymentStatus === 'failed') {
+      setPaymentError('Your payment was not completed. Please try again or choose a different payment method.')
+      // Clean the URL param without a full navigation
+      router.replace('/checkout', { scroll: false })
+    } else if (paymentStatus === 'error') {
+      setPaymentError('Something went wrong during payment processing. Please try again.')
+      router.replace('/checkout', { scroll: false })
+    }
+  }, [searchParams, router])
 
   // Redirect if cart is empty
   useEffect(() => {
@@ -173,6 +188,26 @@ export default function CheckoutClient() {
       <div className="container mx-auto px-6 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-serif font-bold mb-12">Checkout</h1>
+
+          {paymentError && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-800">{paymentError}</p>
+              </div>
+              <button
+                onClick={() => setPaymentError(null)}
+                className="text-red-400 hover:text-red-600 transition-colors"
+                aria-label="Dismiss"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Left: Checkout Form */}

@@ -6,6 +6,15 @@ import { sendPaymentReceivedEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
   try {
+    // Warn if APP_URL is localhost — all redirects in this handler will break
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''
+    if (appUrl.includes('localhost') || appUrl.includes('127.0.0.1')) {
+      console.warn(
+        '[PayStation Callback] WARNING: NEXT_PUBLIC_APP_URL is set to localhost (' + appUrl + '). ' +
+        'Post-payment redirects will fail for real users. Set it to your production domain.'
+      )
+    }
+
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status')
     const invoiceNumber = searchParams.get('invoice_number')
