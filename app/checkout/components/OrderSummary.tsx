@@ -7,14 +7,31 @@ import { formatPrice } from '@/lib/order-utils'
 
 interface OrderSummaryProps {
   virtualCardDiscount?: number
+  shippingData?: {
+    pathaoCityId?: number
+    pathaoZoneId?: number
+  }
 }
 
-export default function OrderSummary({ virtualCardDiscount = 0 }: OrderSummaryProps) {
+export default function OrderSummary({ virtualCardDiscount = 0, shippingData }: OrderSummaryProps) {
   const { items, subtotal } = useCart()
   const [shippingCost, setShippingCost] = useState<number | null>(null)
+  const [shippingMessage, setShippingMessage] = useState<string | null>(null)
+
+  const pathaoCityId = shippingData?.pathaoCityId
+  const pathaoZoneId = shippingData?.pathaoZoneId
 
   useEffect(() => {
     if (items.length === 0) return
+
+    // If no Pathao location selected yet, show message instead of fetching
+    if (!pathaoCityId || !pathaoZoneId) {
+      setShippingCost(null)
+      setShippingMessage('Select delivery area')
+      return
+    }
+
+    setShippingMessage(null)
 
     const controller = new AbortController()
 
@@ -28,12 +45,17 @@ export default function OrderSummary({ virtualCardDiscount = 0 }: OrderSummaryPr
               productId: item.productId,
               quantity: item.quantity,
             })),
+            pathaoCityId,
+            pathaoZoneId,
           }),
           signal: controller.signal,
         })
         if (res.ok) {
           const data = await res.json()
           setShippingCost(data.shippingCost)
+          if (data.shippingCost === null && data.message) {
+            setShippingMessage(data.message)
+          }
         }
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
@@ -44,7 +66,7 @@ export default function OrderSummary({ virtualCardDiscount = 0 }: OrderSummaryPr
 
     fetchShipping()
     return () => controller.abort()
-  }, [items])
+  }, [items, pathaoCityId, pathaoZoneId])
 
   const discountAmount = virtualCardDiscount > 0 ? subtotal * (virtualCardDiscount / 100) : 0
   const total = subtotal - discountAmount + (shippingCost ?? 0)
@@ -106,10 +128,10 @@ export default function OrderSummary({ virtualCardDiscount = 0 }: OrderSummaryPr
         {/* Shipping */}
         <div className="flex justify-between text-sm">
           <span className="text-gray-600">Shipping</span>
-          {shippingCost === null ? (
-            <span className="text-gray-400 text-xs">Calculating...</span>
-          ) : (
+          {shippingCost !== null ? (
             <span className="font-medium">{formatPrice(shippingCost)}</span>
+          ) : (
+            <span className="text-gray-400 text-xs">{shippingMessage || 'Calculating...'}</span>
           )}
         </div>
 

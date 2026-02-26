@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { useCart } from '@/hooks/useCart'
 import { Lock, Tag, ChevronRight, Shield, Truck } from 'lucide-react'
@@ -15,50 +15,10 @@ export default function CartSummary() {
     formatPrice,
   } = useCart()
 
-  const [shippingCost, setShippingCost] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (items.length === 0) {
-      setShippingCost(null)
-      return
-    }
-
-    const controller = new AbortController()
-
-    async function fetchShipping() {
-      try {
-        const res = await fetch('/api/shipping/calculate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: items.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
-          }),
-          signal: controller.signal,
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setShippingCost(data.shippingCost)
-        }
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Failed to fetch shipping cost:', err)
-        }
-      }
-    }
-
-    fetchShipping()
-    return () => controller.abort()
-  }, [items])
-
   const [promoCode, setPromoCode] = useState('')
   const [promoApplied, setPromoApplied] = useState(false)
   const [promoError, setPromoError] = useState('')
   const [promoFocused, setPromoFocused] = useState(false)
-
-  const formattedShipping = shippingCost !== null ? formatPrice(shippingCost) : null
 
   const handleApplyPromo = () => {
     if (promoCode.toLowerCase() === 'save10') {
@@ -160,13 +120,12 @@ export default function CartSummary() {
             <span
               style={{
                 fontSize: '13px',
-                fontWeight: 600,
-                color: '#15803d',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase',
+                fontWeight: 500,
+                color: '#6B7280',
+                letterSpacing: '0.3px',
               }}
             >
-              {shippingCost === null ? 'Calculating...' : formattedShipping}
+              Calculated at checkout
             </span>
           </div>
 
@@ -531,7 +490,7 @@ export default function CartSummary() {
               overflowWrap: 'normal',
             }}
           >
-            Shipping calculated by weight at checkout
+            Shipping calculated at checkout via Pathao Courier
           </p>
         </div>
       </div>

@@ -251,6 +251,10 @@ export default function CheckoutClient() {
           <div className="lg:col-span-1">
             <OrderSummary
               virtualCardDiscount={paymentData?.paymentMethod === 'VIRTUAL_CARD' ? vcDiscount : 0}
+              shippingData={shippingData ? {
+                pathaoCityId: shippingData.pathaoCityId,
+                pathaoZoneId: shippingData.pathaoZoneId,
+              } : undefined}
             />
           </div>
         </div>

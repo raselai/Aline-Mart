@@ -2,7 +2,8 @@ import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { generateOrderNumber } from '@/lib/order-utils'
-import { getShippingConfig, calculateShippingCost, parseProductWeight } from '@/lib/shipping'
+import { parseProductWeight } from '@/lib/shipping'
+import { getPathaoPriceEstimate } from '@/lib/pathao'
 import { validateStock, decrementStockWithLog } from '@/lib/inventory'
 import { createTransaction } from '@/lib/accounts'
 import { checkoutSchema } from '@/types/checkout'
@@ -74,14 +75,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate weight-based shipping
+    // Calculate shipping via Pathao price estimate
     let totalWeightKg = 0
     for (const item of cartItems as CartItem[]) {
       totalWeightKg += (productDataMap[item.productId]?.weight ?? 0) * item.quantity
     }
 
-    const shippingConfig = await getShippingConfig()
-    const shippingCost = calculateShippingCost(shippingConfig, totalWeightKg)
+    const itemWeight = Math.max(totalWeightKg, 0.5)
+
+    const storeId = parseInt(process.env.PATHAO_STORE_ID || '0', 10)
+    if (!storeId) {
+      return NextResponse.json({ error: 'Shipping provider is not configured' }, { status: 500 })
+    }
+
+    if (!data.pathaoCityId || !data.pathaoZoneId) {
+      return NextResponse.json({ error: 'Shipping address with Pathao location is required' }, { status: 400 })
+    }
+
+    const pathaoEstimate = await getPathaoPriceEstimate({
+      store_id: storeId,
+      item_type: 2,
+      delivery_type: 48,
+      item_weight: itemWeight,
+      recipient_city: data.pathaoCityId,
+      recipient_zone: data.pathaoZoneId,
+    })
+
+    const shippingCost = pathaoEstimate.price
 
     // Calculate virtual card discount if applicable (server-side — never trust client)
     let virtualCardDiscount = 0

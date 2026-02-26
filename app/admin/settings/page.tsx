@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Save, Check, AlertCircle, Globe, Mail, Search, Truck, ImageIcon, Upload, X, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react'
+import { Save, Check, AlertCircle, Globe, Mail, Search, ImageIcon, Upload, X, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react'
 
-type TabType = 'general' | 'seo' | 'email' | 'shipping' | 'hero'
+type TabType = 'general' | 'seo' | 'email' | 'hero'
 
 interface Settings {
   // General
@@ -26,10 +26,6 @@ interface Settings {
   email_smtp_port?: string
   email_smtp_username?: string
   email_smtp_password?: string
-
-  // Shipping
-  shipping_base_fee?: string
-  shipping_rate_per_kg?: string
 
   // Hero
   hero_tagline?: string
@@ -278,8 +274,7 @@ export default function SettingsPage() {
     { id: 'general' as TabType, label: 'General', icon: Globe },
     { id: 'seo' as TabType, label: 'SEO & Meta', icon: Search },
     { id: 'email' as TabType, label: 'Email', icon: Mail },
-    { id: 'shipping' as TabType, label: 'Shipping', icon: Truck },
-    { id: 'hero' as TabType, label: 'Hero', icon: ImageIcon }
+{ id: 'hero' as TabType, label: 'Hero', icon: ImageIcon }
   ]
 
   return (
@@ -1046,134 +1041,6 @@ export default function SettingsPage() {
                       >
                         Your SMTP password or app-specific password
                       </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Shipping Settings Tab */}
-                {activeTab === 'shipping' && (
-                  <div className="space-y-6" style={{ maxWidth: '700px' }}>
-                    <div>
-                      <h3
-                        className="text-lg font-serif font-bold mb-4"
-                        style={{
-                          color: '#2C2C2C',
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Shipping Configuration
-                      </h3>
-                      <p
-                        className="text-sm mb-6"
-                        style={{
-                          color: '#6B7280',
-                          whiteSpace: 'normal',
-                          wordBreak: 'normal'
-                        }}
-                      >
-                        Configure weight-based shipping rates. Formula: <strong>Shipping = Base Fee + (Total Weight &times; Rate per Kg)</strong>
-                      </p>
-                    </div>
-
-                    {/* Base Shipping Fee */}
-                    <div>
-                      <label
-                        htmlFor="shipping_base_fee"
-                        className="block text-sm font-medium mb-2"
-                        style={{
-                          color: '#2C2C2C',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Base Shipping Fee (BDT)
-                      </label>
-                      <input
-                        type="number"
-                        id="shipping_base_fee"
-                        value={settings.shipping_base_fee || ''}
-                        onChange={(e) => handleChange('shipping_base_fee', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                        style={{
-                          fontSize: '14px',
-                          color: '#2C2C2C'
-                        }}
-                        placeholder="60"
-                        min="0"
-                        step="1"
-                      />
-                      <p
-                        className="mt-1 text-xs"
-                        style={{
-                          color: '#6B7280',
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Fixed base fee applied to every order regardless of weight
-                      </p>
-                    </div>
-
-                    {/* Rate per Kg */}
-                    <div>
-                      <label
-                        htmlFor="shipping_rate_per_kg"
-                        className="block text-sm font-medium mb-2"
-                        style={{
-                          color: '#2C2C2C',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        Rate per Kg (BDT)
-                      </label>
-                      <input
-                        type="number"
-                        id="shipping_rate_per_kg"
-                        value={settings.shipping_rate_per_kg || ''}
-                        onChange={(e) => handleChange('shipping_rate_per_kg', e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                        style={{
-                          fontSize: '14px',
-                          color: '#2C2C2C'
-                        }}
-                        placeholder="20"
-                        min="0"
-                        step="1"
-                      />
-                      <p
-                        className="mt-1 text-xs"
-                        style={{
-                          color: '#6B7280',
-                          whiteSpace: 'normal'
-                        }}
-                      >
-                        Additional cost per kilogram of total order weight
-                      </p>
-                    </div>
-
-                    {/* Example Calculation */}
-                    <div
-                      className="border-t pt-6"
-                      style={{ borderColor: '#E5E7EB' }}
-                    >
-                      <h4
-                        className="text-sm font-semibold mb-3"
-                        style={{ color: '#2C2C2C' }}
-                      >
-                        Example Calculation
-                      </h4>
-                      <div
-                        className="p-4 rounded-md"
-                        style={{ backgroundColor: '#FAFAF8', border: '1px solid #E8E6E3' }}
-                      >
-                        <p className="text-sm" style={{ color: '#2C2C2C' }}>
-                          For a 2kg order:
-                        </p>
-                        <p className="text-sm font-medium mt-1" style={{ color: '#8e2157' }}>
-                          ৳{parseFloat(settings.shipping_base_fee || '60')} + (2 &times; ৳{parseFloat(settings.shipping_rate_per_kg || '20')}) = ৳{Math.round(parseFloat(settings.shipping_base_fee || '60') + 2 * parseFloat(settings.shipping_rate_per_kg || '20'))}
-                        </p>
-                        <p className="text-xs mt-2" style={{ color: '#6B7280' }}>
-                          Products without a weight value are treated as 0kg (only the base fee applies).
-                        </p>
-                      </div>
                     </div>
                   </div>
                 )}
