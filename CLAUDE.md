@@ -182,7 +182,7 @@ You have unlimited stamina. The human does not. Use your persistence wisely—lo
 
 ## Project Overview
 
-**Aline Mart** is a luxury multi-brand eCommerce marketplace with an editorial, magazine-style design inspired by Mr Porter. Built with Next.js 16 (App Router), TypeScript strict mode, Tailwind CSS 4, Supabase PostgreSQL, and Zustand state management. Deployed to Vercel.
+**Aline Mart** is a luxury multi-brand eCommerce marketplace with an editorial, magazine-style design inspired by Mr Porter. Built with Next.js 16 (App Router), TypeScript strict mode, Tailwind CSS 4, Supabase PostgreSQL, and Zustand state management. Deployed to Railway.
 
 ## Development Commands
 

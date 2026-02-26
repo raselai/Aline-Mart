@@ -1,6 +1,6 @@
 /**
  * Get the base URL for API requests
- * Works in both development and production (Vercel, Railway)
+ * Works in both development and production (Railway)
  */
 export function getBaseUrl() {
   // Browser should use relative path
@@ -14,9 +14,6 @@ export function getBaseUrl() {
   if (process.env.RAILWAY_STATIC_URL) {
     return process.env.RAILWAY_STATIC_URL
   }
-
-  // Reference for vercel.com
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
 
   // Use NEXT_PUBLIC_APP_URL if set
   if (process.env.NEXT_PUBLIC_APP_URL) {
