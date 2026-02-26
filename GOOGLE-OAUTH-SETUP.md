@@ -225,14 +225,14 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Production Setup (When Ready to Deploy)
 
-When you're ready to deploy to production (e.g., Vercel):
+When you're ready to deploy to production (Railway):
 
 1. **Add Production URLs to Google Console**
    - Authorized JavaScript origins: `https://your-domain.com`
    - Authorized redirect URIs: `https://your-domain.com/api/auth/callback/google`
 
-2. **Update Environment Variables in Vercel**
-   - Go to Vercel dashboard → Your project → Settings → Environment Variables
+2. **Update Environment Variables in Railway**
+   - Go to Railway dashboard → Your project → Variables tab
    - Add all the same variables
    - Change `NEXTAUTH_URL` to your production URL
 

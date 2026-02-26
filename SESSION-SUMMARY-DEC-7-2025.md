@@ -75,10 +75,10 @@
 **Status:** ✅ COMPLETE
 
 #### What We Did:
-- **Added Supabase credentials to Vercel:**
+- **Added Supabase credentials to Railway:**
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- **Verified environment variables** are correctly set in Vercel dashboard
+- **Verified environment variables** are correctly set in Railway dashboard
 
 ---
 
@@ -87,14 +87,14 @@
 
 #### All Changes Pushed to GitHub:
 - 10+ commits successfully pushed
-- All builds completed successfully on Vercel
+- All builds completed successfully on Railway
 - No TypeScript or build errors
 
 #### Commit History (Latest):
 1. `28acf10` - Force dynamic rendering for product pages
 2. `9223830` - Add API URL helper for consistent server-side fetching
-3. `b98a02c` - Fix API URL construction for Vercel deployment
-4. `114b3b1` - Fix API URLs to work in Vercel production environment
+3. `b98a02c` - Fix API URL construction for Railway deployment
+4. `114b3b1` - Fix API URLs to work in Railway production environment
 5. `b9608d9` - Fix session type error in Header.tsx
 6. `d0c3505` - Fix TypeScript error in Header.tsx status type
 7. `5b53339` - Replace auth proxy with temporary pass-through proxy
@@ -132,18 +132,18 @@
 
 #### Possible Root Causes:
 1. **Timing issue:** API calls happening before VERCEL_URL is available
-2. **Caching issue:** Vercel caching old build results
+2. **Caching issue:** Railway caching old build results
 3. **Fetch configuration:** Server-side fetch during page render might need different config
 4. **Route resolution:** Dynamic route might not be matching correctly
 
 #### Next Steps to Try Tomorrow:
-1. **Check Vercel runtime logs** (not build logs) to see actual fetch attempts
+1. **Check Railway runtime logs** (not build logs) to see actual fetch attempts
 2. **Try using Supabase directly** instead of API routes in page.tsx
 3. **Add error boundaries** to catch and display actual error messages
 4. **Test with `revalidate: 0`** to ensure no caching
 5. **Consider using `getServerSideProps` pattern** instead of Server Components
 6. **Verify VERCEL_URL value** at runtime with temporary debug page
-7. **Try hardcoding the Vercel URL** temporarily to test if that works
+7. **Try hardcoding the Railway URL** temporarily to test if that works
 
 ---
 
@@ -200,11 +200,11 @@
 ✅ GET /api/categories
 ```
 
-### Environment Variables in Vercel:
+### Environment Variables in Railway:
 ```
 ✅ NEXT_PUBLIC_SUPABASE_URL
 ✅ NEXT_PUBLIC_SUPABASE_ANON_KEY
-✅ VERCEL_URL (automatically provided by Vercel)
+✅ VERCEL_URL (automatically provided by Railway)
 ```
 
 ### Browser Console Errors (Expected):
@@ -227,8 +227,8 @@ These are NORMAL and can be ignored:
 ### Priority 1: Fix Product Detail Pages
 Focus on resolving the "Product Not Found" issue:
 
-1. **Check runtime logs in Vercel:**
-   - Go to Vercel dashboard → Deployments → Click latest deployment
+1. **Check runtime logs in Railway:**
+   - Go to Railway dashboard → Deployments → Click latest deployment
    - Go to "Runtime Logs" (not Build Logs)
    - Visit a product page and check what errors appear
 
@@ -248,7 +248,7 @@ Focus on resolving the "Product Not Found" issue:
 - Add more detailed error logging
 - Create a test page that shows all environment variables
 - Try removing the `dynamic = 'force-dynamic'` and use ISR instead
-- Check if hardcoding the Vercel URL works (temporary test)
+- Check if hardcoding the Railway URL works (temporary test)
 
 ---
 

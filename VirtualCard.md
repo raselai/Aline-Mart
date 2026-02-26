@@ -147,7 +147,7 @@ User selects "Aline Mart Virtual Card" at checkout
 ## Deployment Checklist
 
 1. **Run migration SQL** — Execute `scripts/migrations/create-virtual-card-tables.sql` against Supabase (SQL Editor)
-2. **Set environment variables** on Vercel:
+2. **Set environment variables** on Railway:
    ```
    PAYSTATION_SANDBOX_MODE=false
    PAYSTATION_CALLBACK_URL=https://yourdomain.com/api/checkout/paystation/callback

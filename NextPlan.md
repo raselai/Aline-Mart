@@ -20,7 +20,7 @@
   - Settings & Configuration (General, SEO, Email)
   - Admin Authentication & Authorization
 - ✅ Phase 9 (Partial) completed - TypeScript errors fixed, testing infrastructure created
-- ✅ Phase 10 deployed to Vercel production
+- ✅ Phase 10 deployed to Railway production
 - ✅ All TypeScript compilation errors resolved (0 errors)
 - ✅ Security vulnerability fixed (Next.js 16.0.7)
 - ✅ Production errors resolved (NextAuth disabled, placeholder images fixed)
@@ -867,10 +867,10 @@ Build the fundamental eCommerce browsing and shopping features.
   - NEXT_PUBLIC_SUPABASE_ANON_KEY ✅
 - [ ] Switch Stripe to live keys (Phase 4 not implemented yet)
 
-### 10.2 Vercel Deployment ✅
-- [x] GitHub repository already connected to Vercel ✅
-- [x] Environment variables configured in Vercel ✅
-- [x] Deploy to Vercel ✅
+### 10.2 Railway Deployment ✅
+- [x] GitHub repository already connected to Railway ✅
+- [x] Environment variables configured in Railway ✅
+- [x] Deploy to Railway ✅
 - [x] Production URL: https://aline-mart-git-master-raselais-projects.vercel.app ✅
 - [x] Security fixes applied:
   - Updated Next.js to 16.0.7 (CVE-2025-66478 fixed) ✅
@@ -893,7 +893,7 @@ Build the fundamental eCommerce browsing and shopping features.
 ### 10.5 Final Checks ✅
 - [x] Site accessible in production ✅
 - [x] Environment variables configured ✅
-- [x] SSL certificate active (Vercel default) ✅
+- [x] SSL certificate active (Railway default) ✅
 - [x] No critical console errors ✅
 - [x] All core features working:
   - Homepage with hero and products ✅
@@ -907,7 +907,7 @@ Build the fundamental eCommerce browsing and shopping features.
 **Completion Criteria:**
 ✅ Site deployed to production
 ✅ All core features working in production
-✅ SSL active (Vercel default)
+✅ SSL active (Railway default)
 ⏭️ Custom domain (optional - can add later)
 ⏭️ Analytics tracking (deferred to post-launch)
 
@@ -1136,12 +1136,12 @@ These are small tasks that provide immediate value:
 ### Technology Choices Made:
 - Database: PostgreSQL (needs to be provisioned)
 - Email: Resend (not yet installed)
-- Images: TBD (Cloudinary vs local vs Vercel Blob)
-- Deployment: Vercel (assumed)
+- Images: TBD (Cloudinary vs local vs Railway Blob)
+- Deployment: Railway (assumed)
 
 ### Decisions Needed:
-- [ ] Database hosting: Local dev? Supabase? Vercel Postgres? Railway?
-- [ ] Image storage: Cloudinary (need account)? Local public folder? Vercel Blob?
+- [ ] Database hosting: Local dev? Supabase? Railway Postgres? Railway?
+- [ ] Image storage: Cloudinary (need account)? Local public folder? Railway Blob?
 - [ ] Email service: Resend (need account)? SendGrid?
 - [ ] Do we need product reviews? (not in current scope)
 - [ ] Do we need live chat support? (not in current scope)
@@ -1558,7 +1558,7 @@ These are small tasks that provide immediate value:
   - Bug tracking system created
   - Manual testing deferred to post-launch
 - ✅ **PHASE 10 COMPLETED - Deployment**
-  - Deployed to Vercel production
+  - Deployed to Railway production
   - Production URL live and accessible
   - Security fixes applied (Next.js 16.0.7)
   - All core features working in production
@@ -1704,7 +1704,7 @@ These are small tasks that provide immediate value:
 - ✅ **Phase 5:** Search & Discovery (Search, Brands, Categories)
 - ✅ **Phase 7:** Mobile Optimization (Swipe gestures, touch targets)
 - ✅ **Phase 9:** Testing (Partial - TypeScript errors fixed, infrastructure created)
-- ✅ **Phase 10:** Deployment (Site live on Vercel)
+- ✅ **Phase 10:** Deployment (Site live on Railway)
 - ✅ **Phase 11:** Admin Dashboard MVP (Full CRUD for Products, Brands, Categories, Settings)
 
 **🔴 INCOMPLETE PHASES (Critical for Functional E-commerce):**
