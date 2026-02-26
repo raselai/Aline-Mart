@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { calculateVendorEarnings } from '@/lib/accounts'
 
 export async function POST(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const body = await request.json()
     const { vendorId, periodStart, periodEnd } = body
@@ -26,6 +23,9 @@ export async function POST(request: Request) {
       earnings,
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error calculating vendor earnings:', error)
     return NextResponse.json(
       { error: 'Failed to calculate vendor earnings' },

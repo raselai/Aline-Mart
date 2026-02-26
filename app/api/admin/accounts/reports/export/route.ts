@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 function escapeCsvField(field: string | number | null | undefined): string {
   if (field === null || field === undefined) return ''
@@ -21,10 +21,7 @@ function arrayToCsv(headers: string[], rows: Array<Record<string, string | numbe
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'sales'
@@ -178,6 +175,9 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error exporting report:', error)
     return NextResponse.json({ error: 'Failed to export report' }, { status: 500 })
   }

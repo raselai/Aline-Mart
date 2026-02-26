@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { OrderStatus, ShippingStatus, PaymentMethod } from '@/types/order'
 
 function escapeCsvField(field: string | number | null | undefined): string {
@@ -20,13 +20,7 @@ function arrayToCsv(headers: string[], rows: Array<Record<string, string | numbe
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('orders')
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as OrderStatus | null
@@ -216,6 +210,9 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error exporting orders:', error)
     return NextResponse.json(
       { error: 'Failed to export orders' },

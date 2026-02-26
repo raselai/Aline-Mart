@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { processRefund } from '@/lib/accounts'
 
 interface RouteParams {
@@ -9,10 +9,7 @@ interface RouteParams {
 
 export async function GET(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const params = await props.params
     const { id } = params
@@ -46,6 +43,9 @@ export async function GET(request: Request, props: RouteParams) {
 
     return NextResponse.json({ refund: data })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching refund:', error)
     return NextResponse.json({ error: 'Failed to fetch refund' }, { status: 500 })
   }
@@ -53,10 +53,7 @@ export async function GET(request: Request, props: RouteParams) {
 
 export async function PATCH(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireModuleAccess('accounts')
 
     const params = await props.params
     const { id } = params
@@ -70,13 +67,16 @@ export async function PATCH(request: Request, props: RouteParams) {
       )
     }
 
-    await processRefund(id, session.user.id, action)
+    await processRefund(id, admin.id, action)
 
     return NextResponse.json({
       success: true,
       message: `Refund ${action.toLowerCase()} successfully`,
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error processing refund:', error)
     return NextResponse.json({ error: 'Failed to process refund' }, { status: 500 })
   }

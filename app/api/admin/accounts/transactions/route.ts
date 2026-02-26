@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { createTransaction } from '@/lib/accounts'
 import type { TransactionType } from '@/types/accounts'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') as TransactionType | null
@@ -62,6 +59,9 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit),
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching transactions:', error)
     return NextResponse.json(
       { error: 'Failed to fetch transactions' },
@@ -72,10 +72,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireModuleAccess('accounts')
 
     const body = await request.json()
     const { type, amount, description, reference } = body
@@ -100,7 +97,7 @@ export async function POST(request: Request) {
       amount: Number(amount),
       description,
       reference,
-      createdBy: session.user.id,
+      createdBy: admin.id,
     })
 
     return NextResponse.json({
@@ -109,6 +106,9 @@ export async function POST(request: Request) {
       message: 'Transaction created successfully',
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error creating transaction:', error)
     return NextResponse.json(
       { error: 'Failed to create transaction' },

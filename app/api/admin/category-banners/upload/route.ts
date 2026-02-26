@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     const formData = await request.formData()
     const file = formData.get('image') as File
@@ -63,6 +63,9 @@ export async function POST(request: Request) {
       path: filePath
     })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     const message = error instanceof Error ? error.message : 'Failed to upload image'
     console.error('Error in POST /api/admin/category-banners/upload:', error)
     return NextResponse.json(

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { bulkUpdateStock } from '@/lib/inventory'
 import type { ChangeType, BulkUpdateRequest, BulkUpdateResponse } from '@/types/inventory'
 
@@ -9,14 +9,7 @@ import type { ChangeType, BulkUpdateRequest, BulkUpdateResponse } from '@/types/
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('inventory')
 
     const body = await request.json() as BulkUpdateRequest
     const { updates, reason, changeType } = body
@@ -73,7 +66,7 @@ export async function POST(request: NextRequest) {
       updates,
       effectiveChangeType,
       reason,
-      session.user.id
+      admin.id
     )
 
     const response: BulkUpdateResponse = {
@@ -85,6 +78,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in bulk update:', error)
     return NextResponse.json(
       { error: 'Failed to perform bulk update' },

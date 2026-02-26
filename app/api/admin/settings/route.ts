@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 // GET /api/admin/settings - Get all settings
 export async function GET(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('settings')
 
     // Fetch all settings from database
     const { data: settings, error } = await supabase
@@ -29,6 +29,9 @@ export async function GET(request: Request) {
       settings: settingsObject
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in GET /api/admin/settings:', error)
     return NextResponse.json(
       { error: 'Failed to fetch settings' },
@@ -41,7 +44,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('settings')
 
     // Parse request body
     const body = await request.json()
@@ -92,6 +95,9 @@ export async function PUT(request: Request) {
       updated: Object.keys(settings).length
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in PUT /api/admin/settings:', error)
     return NextResponse.json(
       { error: 'Failed to update settings' },

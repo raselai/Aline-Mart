@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { ChangeType, InventoryHistoryResponse } from '@/types/inventory'
 
 /**
@@ -10,14 +10,7 @@ import type { ChangeType, InventoryHistoryResponse } from '@/types/inventory'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('inventory')
 
     const searchParams = request.nextUrl.searchParams
     const changeType = searchParams.get('changeType') as ChangeType | null
@@ -113,6 +106,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching inventory history:', error)
     return NextResponse.json(
       { error: 'Failed to fetch inventory history' },

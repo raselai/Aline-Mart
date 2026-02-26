@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { markCODCollected } from '@/lib/accounts'
 
 interface RouteParams {
@@ -9,10 +9,7 @@ interface RouteParams {
 
 export async function GET(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const params = await props.params
     const { orderId } = params
@@ -39,6 +36,9 @@ export async function GET(request: Request, props: RouteParams) {
 
     return NextResponse.json({ collection: data })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching COD collection:', error)
     return NextResponse.json(
       { error: 'Failed to fetch COD collection' },
@@ -49,10 +49,7 @@ export async function GET(request: Request, props: RouteParams) {
 
 export async function POST(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const admin = await requireModuleAccess('accounts')
 
     const params = await props.params
     const { orderId } = params
@@ -70,7 +67,7 @@ export async function POST(request: Request, props: RouteParams) {
       orderId,
       collectedAmount: Number(collectedAmount),
       notes,
-      collectedBy: session.user.id,
+      collectedBy: admin.id,
     })
 
     return NextResponse.json({
@@ -78,6 +75,9 @@ export async function POST(request: Request, props: RouteParams) {
       message: 'COD collection recorded successfully',
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error marking COD collected:', error)
     return NextResponse.json(
       { error: 'Failed to record COD collection' },
@@ -88,10 +88,7 @@ export async function POST(request: Request, props: RouteParams) {
 
 export async function PATCH(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const params = await props.params
     const { orderId } = params
@@ -112,6 +109,9 @@ export async function PATCH(request: Request, props: RouteParams) {
       message: 'COD collection updated',
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error updating COD collection:', error)
     return NextResponse.json(
       { error: 'Failed to update COD collection' },

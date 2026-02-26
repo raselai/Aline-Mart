@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || '30' // days
@@ -129,6 +126,9 @@ export async function GET(request: Request) {
       recentTransactions: recentTransactions || [],
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching dashboard stats:', error)
     return NextResponse.json(
       { error: 'Failed to fetch dashboard stats' },

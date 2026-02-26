@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     // Get default commission rate (from first vendor or default)
     const { data: vendors } = await supabase
@@ -23,6 +20,9 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching settings:', error)
     return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
   }
@@ -30,10 +30,7 @@ export async function GET(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const body = await request.json()
     const { defaultCommissionRate } = body
@@ -67,6 +64,9 @@ export async function PATCH(request: Request) {
       message: 'Settings updated successfully',
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error updating settings:', error)
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
   }

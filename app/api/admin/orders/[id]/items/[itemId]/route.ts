@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { restoreStockWithLog } from '@/lib/inventory'
 
 interface RouteParams {
@@ -14,13 +14,7 @@ interface RouteParams {
  */
 export async function PATCH(request: Request, props: RouteParams) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('orders')
 
     const params = await props.params
     const { id: orderId, itemId } = params
@@ -142,6 +136,9 @@ export async function PATCH(request: Request, props: RouteParams) {
       message,
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error updating order item:', error)
     return NextResponse.json(
       { error: 'Failed to update order item' },

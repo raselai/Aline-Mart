@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { InventoryHistoryResponse } from '@/types/inventory'
 
 interface RouteParams {
@@ -13,14 +13,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, props: RouteParams) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('inventory')
 
     const params = await props.params
     const { variantId } = params
@@ -110,6 +103,9 @@ export async function GET(request: NextRequest, props: RouteParams) {
 
     return NextResponse.json(response)
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching variant history:', error)
     return NextResponse.json(
       { error: 'Failed to fetch variant history' },

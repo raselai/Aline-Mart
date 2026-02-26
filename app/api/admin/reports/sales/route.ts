@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export interface SalesReportItem {
   id: string
@@ -52,13 +52,7 @@ export interface SalesReportResponse {
 export async function GET(request: Request) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('reports')
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -278,6 +272,9 @@ export async function GET(request: Request) {
     })
 
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error generating sales report:', error)
     return NextResponse.json(
       { error: 'Failed to generate sales report' },

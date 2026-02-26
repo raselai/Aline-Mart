@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const dateFrom = searchParams.get('dateFrom')
@@ -123,6 +120,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ rows, totals })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error generating revenue report:', error)
     return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 })
   }

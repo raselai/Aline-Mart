@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 // GET /api/admin/brands/[id] - Get single brand with details
 export async function GET(
@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -50,6 +50,9 @@ export async function GET(
       }
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in GET /api/admin/brands/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to fetch brand' },
@@ -65,7 +68,7 @@ export async function PATCH(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -140,6 +143,9 @@ export async function PATCH(
       brand: updatedBrand
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in PATCH /api/admin/brands/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to update brand' },
@@ -155,7 +161,7 @@ export async function DELETE(
 ) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Get params (Next.js 16 - params are async)
     const params = await props.params
@@ -210,6 +216,9 @@ export async function DELETE(
       message: `Brand "${existingBrand.name}" deleted successfully`
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in DELETE /api/admin/brands/[id]:', error)
     return NextResponse.json(
       { error: 'Failed to delete brand' },

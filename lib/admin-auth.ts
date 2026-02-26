@@ -370,6 +370,31 @@ export async function requireSuperAdmin(): Promise<AdminUser> {
 }
 
 /**
+ * Require access to ANY of the given modules.
+ * SUPER_ADMIN bypasses all checks. ADMIN must have at least one of the modules in their permissions.
+ * Throws AdminAuthError with 401 (not logged in) or 403 (no permission).
+ */
+export async function requireAnyModuleAccess(moduleKeys: AdminModuleKey[]): Promise<AdminUser> {
+  const session = await getAdminSession()
+
+  if (!session) {
+    throw new AdminAuthError('Unauthorized: Admin access required', 401)
+  }
+
+  if (isSuperAdmin(session.user.role)) {
+    return session.user
+  }
+
+  const permissions = await getAdminPermissions(session.user.id)
+
+  if (!moduleKeys.some((key) => permissions.includes(key))) {
+    throw new AdminAuthError(`Forbidden: No access to ${moduleKeys.join(' or ')} module`, 403)
+  }
+
+  return session.user
+}
+
+/**
  * Require module-level access for an API route
  * SUPER_ADMIN bypasses all checks. ADMIN must have the module in their permissions.
  * Throws AdminAuthError with 401 (not logged in) or 403 (no permission).

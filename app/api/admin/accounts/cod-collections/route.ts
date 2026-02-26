@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { CODCollectionStatus } from '@/types/accounts'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as CODCollectionStatus | null
@@ -78,6 +75,9 @@ export async function GET(request: Request) {
       pendingTotal,
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching COD collections:', error)
     return NextResponse.json(
       { error: 'Failed to fetch COD collections' },

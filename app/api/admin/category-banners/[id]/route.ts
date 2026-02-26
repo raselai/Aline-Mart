@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function PUT(
   request: Request,
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin()
+    await requireModuleAccess('categories')
     const { id } = await props.params
 
     const body = await request.json()
@@ -34,6 +34,9 @@ export async function PUT(
 
     return NextResponse.json({ banner: data })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     const message = error instanceof Error ? error.message : 'Failed to update banner'
     console.error('Error in PUT /api/admin/category-banners/[id]:', error)
     return NextResponse.json({ error: message }, { status: 500 })
@@ -45,7 +48,7 @@ export async function DELETE(
   props: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin()
+    await requireModuleAccess('categories')
     const { id } = await props.params
 
     // Get banner to find image path for cleanup
@@ -80,6 +83,9 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     const message = error instanceof Error ? error.message : 'Failed to delete banner'
     console.error('Error in DELETE /api/admin/category-banners/[id]:', error)
     return NextResponse.json({ error: message }, { status: 500 })

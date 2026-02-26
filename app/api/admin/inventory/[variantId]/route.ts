@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { adjustStock, updateLowStockThreshold } from '@/lib/inventory'
 import type { ChangeType, AdjustStockResponse } from '@/types/inventory'
 
@@ -14,14 +14,7 @@ interface RouteParams {
  */
 export async function GET(request: NextRequest, props: RouteParams) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('inventory')
 
     const params = await props.params
     const { variantId } = params
@@ -98,6 +91,9 @@ export async function GET(request: NextRequest, props: RouteParams) {
 
     return NextResponse.json({ variant: transformedVariant })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching variant:', error)
     return NextResponse.json(
       { error: 'Failed to fetch variant' },
@@ -112,14 +108,7 @@ export async function GET(request: NextRequest, props: RouteParams) {
  */
 export async function PATCH(request: NextRequest, props: RouteParams) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('inventory')
 
     const params = await props.params
     const { variantId } = params
@@ -172,7 +161,7 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
           adjustment,
           changeType,
           reason,
-          session.user.id
+          admin.id
         )
 
         // Get updated variant info
@@ -225,6 +214,9 @@ export async function PATCH(request: NextRequest, props: RouteParams) {
       { status: 400 }
     )
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error adjusting stock:', error)
     return NextResponse.json(
       { error: 'Failed to adjust stock' },

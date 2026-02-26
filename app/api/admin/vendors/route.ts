@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, requireAnyModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import type { Vendor, VendorStatus, BusinessType } from '@/types/vendor'
 
 /**
@@ -10,14 +10,8 @@ import type { Vendor, VendorStatus, BusinessType } from '@/types/vendor'
  */
 export async function GET(request: Request) {
   try {
-    // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    // Verify admin session — allow admins with 'products' access to read vendors (for dropdown)
+    const admin = await requireAnyModuleAccess(['vendors', 'products'])
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -71,6 +65,9 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit)
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching vendors:', error)
     return NextResponse.json(
       { error: 'Failed to fetch vendors' },
@@ -87,13 +84,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('vendors')
 
     const body = await request.json()
 
@@ -170,6 +161,9 @@ export async function POST(request: Request) {
     }, { status: 201 })
 
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error creating vendor:', error)
     return NextResponse.json(
       { error: 'Failed to create vendor' },

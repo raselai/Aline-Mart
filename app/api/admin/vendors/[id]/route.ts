@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -14,13 +14,7 @@ interface RouteParams {
 export async function GET(request: Request, props: RouteParams) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('vendors')
 
     const params = await props.params
     const { id } = params
@@ -43,6 +37,9 @@ export async function GET(request: Request, props: RouteParams) {
 
     return NextResponse.json({ vendor })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching vendor:', error)
     return NextResponse.json(
       { error: 'Failed to fetch vendor' },
@@ -59,13 +56,7 @@ export async function GET(request: Request, props: RouteParams) {
 export async function PUT(request: Request, props: RouteParams) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('vendors')
 
     const params = await props.params
     const { id } = params
@@ -156,6 +147,9 @@ export async function PUT(request: Request, props: RouteParams) {
     })
 
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error updating vendor:', error)
     return NextResponse.json(
       { error: 'Failed to update vendor' },
@@ -172,13 +166,7 @@ export async function PUT(request: Request, props: RouteParams) {
 export async function DELETE(request: Request, props: RouteParams) {
   try {
     // Verify admin session
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin access required' },
-        { status: 401 }
-      )
-    }
+    const admin = await requireModuleAccess('vendors')
 
     const params = await props.params
     const { id } = params
@@ -214,6 +202,9 @@ export async function DELETE(request: Request, props: RouteParams) {
     })
 
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error deleting vendor:', error)
     return NextResponse.json(
       { error: 'Failed to delete vendor' },

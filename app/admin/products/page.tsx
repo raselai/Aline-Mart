@@ -518,13 +518,13 @@ export default function AdminProductsPage() {
                               className="font-medium"
                               style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
                             >
-                              ${product.salePrice.toFixed(2)}
+                              ৳{product.salePrice.toFixed(2)}
                             </p>
                             <p
                               className="text-sm line-through"
                               style={{ color: '#9CA3AF', whiteSpace: 'nowrap' }}
                             >
-                              ${product.price.toFixed(2)}
+                              ৳{product.price.toFixed(2)}
                             </p>
                           </>
                         ) : (
@@ -532,7 +532,7 @@ export default function AdminProductsPage() {
                             className="font-medium"
                             style={{ color: '#2C2C2C', whiteSpace: 'nowrap' }}
                           >
-                            ${product.price.toFixed(2)}
+                            ৳{product.price.toFixed(2)}
                           </p>
                         )}
                       </div>

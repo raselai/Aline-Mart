@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 // GET /api/admin/brands - List all brands with product counts
 export async function GET(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Extract query parameters
     const { searchParams } = new URL(request.url)
@@ -75,12 +75,14 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit)
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in GET /api/admin/brands:', error)
     const message = error instanceof Error ? error.message : String(error)
-    const isAuthError = message.includes('Unauthorized')
     return NextResponse.json(
-      { error: isAuthError ? message : 'Failed to fetch brands', details: message },
-      { status: isAuthError ? 401 : 500 }
+      { error: 'Failed to fetch brands', details: message },
+      { status: 500 }
     )
   }
 }
@@ -89,7 +91,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Parse request body
     const body = await request.json()
@@ -148,12 +150,14 @@ export async function POST(request: Request) {
       brand: newBrand
     }, { status: 201 })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error in POST /api/admin/brands:', error)
     const message = error instanceof Error ? error.message : String(error)
-    const isAuthError = message.includes('Unauthorized')
     return NextResponse.json(
-      { error: isAuthError ? message : 'Failed to create brand', details: message },
-      { status: isAuthError ? 401 : 500 }
+      { error: 'Failed to create brand', details: message },
+      { status: 500 }
     )
   }
 }

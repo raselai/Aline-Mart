@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function POST(request: Request) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    await requireModuleAccess('brands')
 
     // Get the file from the request
     const formData = await request.formData()
@@ -71,10 +71,14 @@ export async function POST(request: Request) {
       url: publicUrl,
       path: filePath
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
+    const message = error instanceof Error ? error.message : 'Failed to upload logo'
     console.error('Error in POST /api/admin/brands/upload-logo:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to upload logo' },
+      { error: message },
       { status: 500 }
     )
   }

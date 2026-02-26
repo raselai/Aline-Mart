@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getAdminSession } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 import { createRefund } from '@/lib/accounts'
 import type { RefundStatus } from '@/types/accounts'
 
 export async function GET(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status') as RefundStatus | null
@@ -56,6 +53,9 @@ export async function GET(request: Request) {
       totalPages: Math.ceil((count || 0) / limit),
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error fetching refunds:', error)
     return NextResponse.json({ error: 'Failed to fetch refunds' }, { status: 500 })
   }
@@ -63,10 +63,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await getAdminSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    await requireModuleAccess('accounts')
 
     const body = await request.json()
     const { orderId, orderItemId, amount, reason, type, restoreStock, notes } = body
@@ -112,6 +109,9 @@ export async function POST(request: Request) {
       message: 'Refund created successfully',
     })
   } catch (error) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     console.error('Error creating refund:', error)
     return NextResponse.json({ error: 'Failed to create refund' }, { status: 500 })
   }

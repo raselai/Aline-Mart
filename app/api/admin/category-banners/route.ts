@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { requireAdmin } from '@/lib/admin-auth'
+import { requireModuleAccess, AdminAuthError } from '@/lib/admin-auth'
 
 export async function GET() {
   try {
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     const { data, error } = await supabase
       .from('CategoryBanner')
@@ -22,6 +22,9 @@ export async function GET() {
 
     return NextResponse.json({ banners: data || [] })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     const message = error instanceof Error ? error.message : 'Failed to fetch banners'
     console.error('Error in GET /api/admin/category-banners:', error)
     return NextResponse.json({ error: message }, { status: 500 })
@@ -30,7 +33,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdmin()
+    await requireModuleAccess('categories')
 
     const body = await request.json()
     const { categoryId, imageUrl, title, subtitle, linkUrl, isActive } = body
@@ -97,6 +100,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ banner: data })
   } catch (error: unknown) {
+    if (error instanceof AdminAuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode })
+    }
     const message = error instanceof Error ? error.message : 'Failed to save banner'
     console.error('Error in POST /api/admin/category-banners:', error)
     return NextResponse.json({ error: message }, { status: 500 })
