@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Metadata } from 'next'
 import CheckoutClient from './CheckoutClient'
 
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function CheckoutPage() {
-  return <CheckoutClient />
+  return (
+    <Suspense>
+      <CheckoutClient />
+    </Suspense>
+  )
 }
