@@ -18,6 +18,7 @@ import {
   DollarSign,
   ImageIcon,
   Users,
+  CreditCard,
 } from 'lucide-react'
 import { useState } from 'react'
 import type { AdminModuleKey } from '@/lib/admin-modules'
@@ -55,6 +56,7 @@ const navItems: NavItem[] = [
   { name: 'Vendors', href: '/admin/vendors', icon: Store, moduleKey: 'vendors' },
   { name: 'Brands', href: '/admin/brands', icon: Tag, moduleKey: 'brands' },
   { name: 'Categories', href: '/admin/categories', icon: Layers, moduleKey: 'categories' },
+  { name: 'Signature Cards', href: '/admin/signature-cards', icon: CreditCard, moduleKey: 'orders' },
   { name: 'Banners', href: '/admin/banners', icon: ImageIcon, moduleKey: 'banners' },
   { name: 'Sales Report', href: '/admin/reports/sales', icon: BarChart3, moduleKey: 'reports' },
   { name: 'Settings', href: '/admin/settings', icon: Settings, moduleKey: 'settings' },

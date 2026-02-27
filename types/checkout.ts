@@ -22,9 +22,11 @@ export const shippingStepSchema = z.object({
 })
 
 export const paymentStepSchema = z.object({
-  paymentMethod: z.enum(['PAYSTATION', 'COD', 'VIRTUAL_CARD']).refine((val) => val, {
+  paymentMethod: z.enum(['PAYSTATION', 'COD', 'SIGNATURE_CARD']).refine((val) => val, {
     message: 'Please select a payment method',
   }),
+  signatureCardNumber: z.string().optional(),
+  discountOtpId: z.string().optional(),
 })
 
 export const checkoutSchema = contactStepSchema

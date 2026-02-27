@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useWishlistStore } from '@/store/wishlistStore'
-import { useVirtualCard } from '@/hooks/useVirtualCard'
+import { useSignatureCard } from '@/hooks/useSignatureCard'
 
 interface OrderSummary {
   id: string
@@ -18,7 +18,7 @@ interface OrderSummary {
 export default function AccountPage() {
   const { userName, userEmail, signOut } = useAuth()
   const wishlistCount = useWishlistStore((s) => s.itemCount)
-  const { card, isLoading: cardLoading, fetchCard, formattedBalance, tierLevel } = useVirtualCard()
+  const { activeCards, isLoading: cardLoading, fetchCards, formattedTotalBalance, highestTierCard } = useSignatureCard()
   const router = useRouter()
   const [orders, setOrders] = useState<OrderSummary[]>([])
   const [orderCount, setOrderCount] = useState(0)
@@ -59,7 +59,7 @@ export default function AccountPage() {
 
     fetchOrders()
     fetchAddressCount()
-    if (userEmail) fetchCard(userEmail)
+    if (userEmail) fetchCards(userEmail)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userEmail])
 
@@ -467,7 +467,7 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Virtual Card */}
+        {/* Signature Card */}
         <div
           style={{
             backgroundColor: '#FFFFFF',
@@ -487,7 +487,7 @@ export default function AccountPage() {
                 whiteSpace: 'nowrap',
               }}
             >
-              Virtual Card
+              Signature Card
             </h2>
             {cardLoading ? (
               <div
@@ -497,7 +497,7 @@ export default function AccountPage() {
                   borderRadius: '4px',
                 }}
               />
-            ) : card ? (
+            ) : activeCards.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <p
                   style={{
@@ -508,7 +508,7 @@ export default function AccountPage() {
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {formattedBalance}
+                  {formattedTotalBalance}
                 </p>
                 <p
                   style={{
@@ -519,7 +519,7 @@ export default function AccountPage() {
                     letterSpacing: '0.05em',
                   }}
                 >
-                  {tierLevel} Tier
+                  {highestTierCard?.category || ''} {activeCards.length > 1 ? `+ ${activeCards.length - 1} more` : ''}
                 </p>
               </div>
             ) : (
@@ -530,12 +530,12 @@ export default function AccountPage() {
                   margin: 0,
                 }}
               >
-                Get your virtual card for exclusive discounts.
+                Get a Signature Card for exclusive discounts.
               </p>
             )}
             <div style={{ marginTop: '20px' }}>
               <Link
-                href="/account/virtual-card"
+                href="/account/signature-card"
                 style={{
                   fontSize: '0.875rem',
                   fontWeight: 600,
@@ -544,7 +544,7 @@ export default function AccountPage() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                {card ? 'Manage Card' : 'Get Your Card'} &rarr;
+                {activeCards.length > 0 ? 'Manage Cards' : 'Get Your Card'} &rarr;
               </Link>
             </div>
           </div>

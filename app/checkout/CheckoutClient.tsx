@@ -4,19 +4,20 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCart } from '@/hooks/useCart'
 import { useAuth } from '@/hooks/useAuth'
-import { useVirtualCard } from '@/hooks/useVirtualCard'
+import { useSignatureCard } from '@/hooks/useSignatureCard'
 import ContactStep from './components/ContactStep'
 import ShippingStep from './components/ShippingStep'
 import PaymentStep from './components/PaymentStep'
 import OrderSummary from './components/OrderSummary'
 import type { ContactStepData, ShippingStepData, PaymentStepData, SavedAddress } from '@/types/checkout'
+import type { SignatureCard } from '@/types/signature-card'
 
 export default function CheckoutClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { items, subtotal } = useCart()
   const { isAuthenticated, userEmail } = useAuth()
-  const { card: virtualCard, fetchCard, discountPercent: vcDiscount } = useVirtualCard()
+  const { activeCards, cardTypes, fetchCards } = useSignatureCard()
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
   const [paymentError, setPaymentError] = useState<string | null>(null)
@@ -28,12 +29,16 @@ export default function CheckoutClient() {
   const [saveAddress, setSaveAddress] = useState(false)
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
 
+  // Signature card OTP state
+  const [selectedSignatureCard, setSelectedSignatureCard] = useState<SignatureCard | null>(null)
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [otpId, setOtpId] = useState<string | null>(null)
+
   // Show payment failure/error message from PayStation callback redirect
   useEffect(() => {
     const paymentStatus = searchParams.get('payment')
     if (paymentStatus === 'failed') {
       setPaymentError('Your payment was not completed. Please try again or choose a different payment method.')
-      // Clean the URL param without a full navigation
       router.replace('/checkout', { scroll: false })
     } else if (paymentStatus === 'error') {
       setPaymentError('Something went wrong during payment processing. Please try again.')
@@ -48,10 +53,10 @@ export default function CheckoutClient() {
     }
   }, [items.length, router])
 
-  // Fetch virtual card for authenticated users
+  // Fetch signature cards for authenticated users
   useEffect(() => {
     if (isAuthenticated && userEmail) {
-      fetchCard(userEmail)
+      fetchCards(userEmail)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, userEmail])
@@ -172,8 +177,8 @@ export default function CheckoutClient() {
         // Redirect to PayStation
         window.location.href = paymentUrl
       } else {
-        // COD and VIRTUAL_CARD both go straight to confirmation
-        // VIRTUAL_CARD payment is processed server-side in create-order
+        // COD and SIGNATURE_CARD both go straight to confirmation
+        // SIGNATURE_CARD payment is processed server-side in create-order
         window.location.href = `/orders/${order.orderNumber}/confirmation?clearCart=true`
       }
     } catch (error) {
@@ -182,6 +187,12 @@ export default function CheckoutClient() {
       setIsProcessing(false)
     }
   }
+
+  // Determine selected card's discount info for OrderSummary
+  const selectedCardCategory = selectedSignatureCard?.category || null
+  const selectedCardConfig = selectedCardCategory
+    ? cardTypes.find((t) => t.category === selectedCardCategory) || null
+    : null
 
   return (
     <div className="min-h-screen bg-white pt-24 lg:pt-32 pb-16">
@@ -242,15 +253,24 @@ export default function CheckoutClient() {
               onEdit={() => setCurrentStep(3)}
               disabled={!shippingData}
               isProcessing={isProcessing}
-              virtualCard={isAuthenticated ? virtualCard : null}
+              signatureCards={isAuthenticated ? activeCards : []}
               orderSubtotal={subtotal}
+              selectedSignatureCard={selectedSignatureCard}
+              onSelectSignatureCard={setSelectedSignatureCard}
+              otpVerified={otpVerified}
+              otpId={otpId}
+              onOtpVerified={(id) => {
+                setOtpVerified(true)
+                setOtpId(id)
+              }}
             />
           </div>
 
           {/* Right: Order Summary */}
           <div className="lg:col-span-1">
             <OrderSummary
-              virtualCardDiscount={paymentData?.paymentMethod === 'VIRTUAL_CARD' ? vcDiscount : 0}
+              signatureCardConfig={paymentData?.paymentMethod === 'SIGNATURE_CARD' ? selectedCardConfig : null}
+              signatureCard={paymentData?.paymentMethod === 'SIGNATURE_CARD' ? selectedSignatureCard : null}
               shippingData={shippingData ? {
                 pathaoCityId: shippingData.pathaoCityId,
                 pathaoZoneId: shippingData.pathaoZoneId,

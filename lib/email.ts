@@ -2,7 +2,10 @@ import { Resend } from 'resend'
 import OrderConfirmationEmail from '@/emails/OrderConfirmation'
 import PaymentReceivedEmail from '@/emails/PaymentReceived'
 import OrderShippedEmail from '@/emails/OrderShipped'
+import SignatureCardWelcomeEmail from '@/emails/SignatureCardWelcome'
+import SignatureCardOTPEmail from '@/emails/SignatureCardOTP'
 import type { OrderWithDetails } from '@/types/order'
+import type { SignatureCard } from '@/types/signature-card'
 
 // Lazy load Resend client to avoid build-time errors
 let resendClient: Resend | null = null
@@ -98,6 +101,86 @@ export async function sendOrderShippedEmail(
     })
 
     if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Send Signature Card welcome email on card activation
+ */
+export async function sendSignatureCardWelcomeEmail(
+  card: SignatureCard,
+  recipientEmail: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resend = getResendClient()
+
+    const maskedCard = `****-****-****-${card.cardNumber.slice(-4)}`
+    const validUntil = card.validUntil
+      ? new Date(card.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+      : 'N/A'
+
+    const discountMap: Record<string, string> = {
+      CROWN: '40% off Aline Fashion, 15% off other brands, Free delivery on all orders',
+      PRIVILEGE: '30% off Aline Fashion, 10% off other brands',
+      CAMPUS: '30% off Aline Fashion, 10% off other brands',
+    }
+
+    const { error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: recipientEmail,
+      subject: `Welcome to Signature ${card.category} - Aline Mart`,
+      react: SignatureCardWelcomeEmail({
+        cardholderName: card.cardholderName,
+        category: card.category,
+        maskedCardNumber: maskedCard,
+        validUntil,
+        discountInfo: discountMap[card.category] || '',
+      }),
+    })
+
+    if (error) {
+      console.error('Failed to send signature card welcome email:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }
+  }
+}
+
+/**
+ * Send Signature Card OTP email
+ */
+export async function sendSignatureCardOTPEmail(
+  otpCode: string,
+  recipientEmail: string,
+  cardholderName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resend = getResendClient()
+
+    const { error } = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: recipientEmail,
+      subject: `Your Verification Code - Aline Mart`,
+      react: SignatureCardOTPEmail({ otpCode, cardholderName }),
+    })
+
+    if (error) {
+      console.error('Failed to send OTP email:', error)
       return { success: false, error: error.message }
     }
 

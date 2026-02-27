@@ -1,19 +1,25 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useCart } from '@/hooks/useCart'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/order-utils'
+import type { CardTypeConfig, SignatureCard } from '@/types/signature-card'
 
 interface OrderSummaryProps {
-  virtualCardDiscount?: number
+  signatureCardConfig?: CardTypeConfig | null
+  signatureCard?: SignatureCard | null
   shippingData?: {
     pathaoCityId?: number
     pathaoZoneId?: number
   }
 }
 
-export default function OrderSummary({ virtualCardDiscount = 0, shippingData }: OrderSummaryProps) {
+export default function OrderSummary({
+  signatureCardConfig = null,
+  signatureCard = null,
+  shippingData,
+}: OrderSummaryProps) {
   const { items, subtotal } = useCart()
   const [shippingCost, setShippingCost] = useState<number | null>(null)
   const [shippingMessage, setShippingMessage] = useState<string | null>(null)
@@ -24,7 +30,6 @@ export default function OrderSummary({ virtualCardDiscount = 0, shippingData }: 
   useEffect(() => {
     if (items.length === 0) return
 
-    // If no Pathao location selected yet, show message instead of fetching
     if (!pathaoCityId || !pathaoZoneId) {
       setShippingCost(null)
       setShippingMessage('Select delivery area')
@@ -68,8 +73,48 @@ export default function OrderSummary({ virtualCardDiscount = 0, shippingData }: 
     return () => controller.abort()
   }, [items, pathaoCityId, pathaoZoneId])
 
-  const discountAmount = virtualCardDiscount > 0 ? subtotal * (virtualCardDiscount / 100) : 0
-  const total = subtotal - discountAmount + (shippingCost ?? 0)
+  // Calculate signature card discounts (client-side preview)
+  const discountPreview = useMemo(() => {
+    if (!signatureCardConfig) return null
+
+    // We don't have brandId info on client side, so show general discount rates
+    // Server will do the actual per-item calculation
+    const alineRate = signatureCardConfig.alineFashionDiscount
+    const otherRate = signatureCardConfig.otherBrandsDiscount
+
+    // For display, show a rough estimate assuming all items are "other brands"
+    // (Server calculates exact amounts per item's actual brand)
+    const estimatedDiscount = subtotal * (otherRate / 100)
+
+    return {
+      alineRate,
+      otherRate,
+      estimatedDiscount,
+      freeDelivery: signatureCardConfig.freeDelivery,
+    }
+  }, [signatureCardConfig, subtotal])
+
+  // Check birthday/anniversary bonus
+  const hasBirthdayBonus = useMemo(() => {
+    if (!signatureCard?.dateOfBirth && !signatureCard?.weddingAnniversary) return false
+    const today = new Date()
+    const todayMonth = today.getMonth() + 1
+    const todayDay = today.getDate()
+
+    if (signatureCard.dateOfBirth) {
+      const dob = new Date(signatureCard.dateOfBirth)
+      if (dob.getMonth() + 1 === todayMonth && dob.getDate() === todayDay) return true
+    }
+    if (signatureCard.weddingAnniversary) {
+      const ann = new Date(signatureCard.weddingAnniversary)
+      if (ann.getMonth() + 1 === todayMonth && ann.getDate() === todayDay) return true
+    }
+    return false
+  }, [signatureCard])
+
+  const effectiveShipping = discountPreview?.freeDelivery ? 0 : (shippingCost ?? 0)
+  const totalDiscountEstimate = discountPreview ? discountPreview.estimatedDiscount + (hasBirthdayBonus ? subtotal * 0.1 : 0) : 0
+  const total = subtotal - totalDiscountEstimate + effectiveShipping
 
   return (
     <div className="border border-gray-200 rounded-lg p-6 bg-white sticky top-4">
@@ -117,29 +162,67 @@ export default function OrderSummary({ virtualCardDiscount = 0, shippingData }: 
           <span className="font-medium">{formatPrice(subtotal)}</span>
         </div>
 
-        {/* Virtual Card Discount */}
-        {virtualCardDiscount > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-green-600">Virtual Card Discount ({virtualCardDiscount}%)</span>
-            <span className="font-medium text-green-600">-{formatPrice(discountAmount)}</span>
-          </div>
+        {/* Signature Card Discounts */}
+        {discountPreview && (
+          <>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">
+                Aline Fashion Discount ({discountPreview.alineRate}%)
+              </span>
+              <span className="font-medium text-green-600">Applied at checkout</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-green-600">
+                Other Items Discount ({discountPreview.otherRate}%)
+              </span>
+              <span className="font-medium text-green-600">
+                ~-{formatPrice(discountPreview.estimatedDiscount)}
+              </span>
+            </div>
+            {hasBirthdayBonus && (
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-600 font-medium">
+                  Birthday/Anniversary Bonus (10%)
+                </span>
+                <span className="font-medium text-amber-600">
+                  ~-{formatPrice(subtotal * 0.1)}
+                </span>
+              </div>
+            )}
+            {discountPreview.freeDelivery && (
+              <div className="flex justify-between text-sm">
+                <span className="text-green-600 font-medium">Free Delivery (Crown Privilege)</span>
+                <span className="font-medium text-green-600">৳0</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Shipping */}
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Shipping</span>
-          {shippingCost !== null ? (
-            <span className="font-medium">{formatPrice(shippingCost)}</span>
-          ) : (
-            <span className="text-gray-400 text-xs">{shippingMessage || 'Calculating...'}</span>
-          )}
-        </div>
+        {!(discountPreview?.freeDelivery) && (
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Shipping</span>
+            {shippingCost !== null ? (
+              <span className="font-medium">{formatPrice(shippingCost)}</span>
+            ) : (
+              <span className="text-gray-400 text-xs">{shippingMessage || 'Calculating...'}</span>
+            )}
+          </div>
+        )}
 
         {/* Total */}
         <div className="flex justify-between text-lg font-bold pt-3 border-t border-gray-200">
           <span>Total</span>
-          <span className="text-burgundy">{formatPrice(total)}</span>
+          <span className="text-burgundy">
+            {discountPreview ? `~${formatPrice(total)}` : formatPrice(subtotal + effectiveShipping)}
+          </span>
         </div>
+
+        {discountPreview && (
+          <p className="text-[10px] text-gray-400">
+            Exact discounts calculated server-side based on each item&apos;s brand.
+          </p>
+        )}
 
         {/* Security Badge */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-4">

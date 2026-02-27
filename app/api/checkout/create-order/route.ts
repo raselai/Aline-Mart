@@ -8,7 +8,15 @@ import { validateStock, decrementStockWithLog } from '@/lib/inventory'
 import { createTransaction } from '@/lib/accounts'
 import { checkoutSchema } from '@/types/checkout'
 import type { CartItem } from '@/types/checkout'
-import { getVirtualCardTiers, calculateTier, deductBalance } from '@/lib/virtual-card'
+import {
+  deductBalance,
+  isOTPTokenValid,
+  isCardValid,
+  getCardTypeConfigs,
+  getAlineFashionBrandId,
+  calculateDiscounts,
+  shouldApplyFreeDelivery,
+} from '@/lib/signature-card'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,14 +62,14 @@ export async function POST(request: NextRequest) {
       0
     )
 
-    // Fetch product weights and cost data for shipping + order items
+    // Fetch product weights, cost data, and brandId for shipping + order items + discount calc
     const productIds = (cartItems as CartItem[]).map((item) => item.productId)
-    const productDataMap: Record<string, { costPrice: number | null; vendor: string | null; weight: number }> = {}
+    const productDataMap: Record<string, { costPrice: number | null; vendor: string | null; weight: number; brandId: number | null }> = {}
 
     if (productIds.length > 0) {
       const { data: products } = await supabase
         .from('Product')
-        .select('id, costPrice, vendor, weight')
+        .select('id, costPrice, vendor, weight, brandId')
         .in('id', productIds)
 
       if (products) {
@@ -70,6 +78,7 @@ export async function POST(request: NextRequest) {
             costPrice: product.costPrice ?? null,
             vendor: product.vendor ?? null,
             weight: parseProductWeight(product.weight),
+            brandId: product.brandId ?? null,
           }
         }
       }
@@ -101,49 +110,93 @@ export async function POST(request: NextRequest) {
       recipient_zone: data.pathaoZoneId,
     })
 
-    const shippingCost = pathaoEstimate.price
+    let shippingCost = pathaoEstimate.price
 
-    // Calculate virtual card discount if applicable (server-side — never trust client)
-    let virtualCardDiscount = 0
-    let virtualCardId: string | null = null
-    if (data.paymentMethod === 'VIRTUAL_CARD') {
-      const { data: existingUser } = await supabase
-        .from('User')
-        .select('id')
-        .eq('email', data.email)
-        .single()
+    // Signature Card: validate card, OTP, calculate discounts
+    let signatureCardDiscount = 0
+    let signatureCardId: string | null = null
+    let discountBreakdownDescription = ''
 
-      if (!existingUser) {
-        return NextResponse.json({ error: 'User not found for virtual card payment' }, { status: 400 })
+    if (data.paymentMethod === 'SIGNATURE_CARD') {
+      const { signatureCardNumber, discountOtpId } = data
+
+      if (!signatureCardNumber) {
+        return NextResponse.json({ error: 'Signature card number is required' }, { status: 400 })
       }
 
-      const { data: vCard } = await supabase
-        .from('VirtualCard')
+      if (!discountOtpId) {
+        return NextResponse.json({ error: 'OTP verification is required' }, { status: 400 })
+      }
+
+      // Look up card
+      const { data: sigCard } = await supabase
+        .from('SignatureCard')
         .select('*')
-        .eq('userId', existingUser.id)
+        .eq('cardNumber', signatureCardNumber)
         .single()
 
-      if (!vCard) {
-        return NextResponse.json({ error: 'Virtual card not found' }, { status: 400 })
+      if (!sigCard) {
+        return NextResponse.json({ error: 'Signature card not found' }, { status: 400 })
       }
 
-      // Server-side tier calculation
-      const tiers = await getVirtualCardTiers()
-      const { discountPercent } = calculateTier(Number(vCard.lifetimeLoaded), tiers)
+      // Check card validity
+      if (!isCardValid(sigCard)) {
+        return NextResponse.json({ error: 'Signature card is expired or inactive' }, { status: 400 })
+      }
 
-      virtualCardDiscount = subtotal * (discountPercent / 100)
-      virtualCardId = vCard.id
+      // Validate OTP token
+      const otpValid = await isOTPTokenValid(discountOtpId, sigCard.id)
+      if (!otpValid) {
+        return NextResponse.json({ error: 'OTP verification has expired or was already used. Please verify again.' }, { status: 400 })
+      }
+
+      signatureCardId = sigCard.id
+
+      // Get Aline Fashion brand ID and card type configs for discount calculation
+      const alineFashionBrandId = await getAlineFashionBrandId()
+      const cardTypes = await getCardTypeConfigs()
+
+      // Build cart items with brandId for discount calculation
+      const itemsForDiscount = (cartItems as CartItem[]).map((item) => ({
+        price: item.price,
+        quantity: item.quantity,
+        brandId: productDataMap[item.productId]?.brandId ?? null,
+      }))
+
+      // Server-side discount calculation using card category
+      const discounts = calculateDiscounts(
+        itemsForDiscount,
+        alineFashionBrandId,
+        sigCard.category,
+        sigCard.dateOfBirth,
+        sigCard.weddingAnniversary,
+        cardTypes
+      )
+
+      signatureCardDiscount = discounts.totalDiscount
+
+      // Build description for logging
+      const parts: string[] = []
+      if (discounts.alineFashionDiscount > 0) parts.push(`Aline Fashion: -৳${discounts.alineFashionDiscount}`)
+      if (discounts.otherBrandsDiscount > 0) parts.push(`Other brands: -৳${discounts.otherBrandsDiscount}`)
+      if (discounts.birthdayBonus > 0) parts.push(`Birthday/Anniversary bonus: -৳${discounts.birthdayBonus}`)
+      discountBreakdownDescription = parts.join(', ')
+
+      // Crown gets free delivery
+      if (shouldApplyFreeDelivery(sigCard.category)) {
+        shippingCost = 0
+      }
 
       // Check sufficient balance (subtotal - discount + shipping)
-      const requiredAmount = subtotal - virtualCardDiscount + shippingCost
-      if (Number(vCard.balance) < requiredAmount) {
+      const requiredAmount = subtotal - signatureCardDiscount + shippingCost
+      if (Number(sigCard.balance) < requiredAmount) {
         return NextResponse.json({
-          error: `Insufficient virtual card balance. Required: ৳${requiredAmount.toFixed(2)}, Available: ৳${Number(vCard.balance).toFixed(2)}`,
+          error: `Insufficient card balance. Required: ৳${requiredAmount.toFixed(2)}, Available: ৳${Number(sigCard.balance).toFixed(2)}`,
         }, { status: 400 })
       }
     }
 
-    const total = subtotal - virtualCardDiscount + shippingCost
+    const total = subtotal - signatureCardDiscount + shippingCost
 
     // Create or get guest user
     let userId: string
@@ -286,10 +339,10 @@ export async function POST(request: NextRequest) {
       throw new Error('Failed to create order items')
     }
 
-    // Decrement stock for COD and VIRTUAL_CARD orders immediately
+    // Decrement stock for COD and SIGNATURE_CARD orders immediately
     // PayStation orders decrement stock in the callback after payment confirmation
     // Skip products without real variants (variantId ending in '-default')
-    if (data.paymentMethod === 'COD' || data.paymentMethod === 'VIRTUAL_CARD') {
+    if (data.paymentMethod === 'COD' || data.paymentMethod === 'SIGNATURE_CARD') {
       const itemsWithVariants = (cartItems as CartItem[])
         .filter(item => !item.variantId.endsWith('-default'))
         .map(item => ({
@@ -306,7 +359,7 @@ export async function POST(request: NextRequest) {
           )
         }
       } catch (stockError) {
-        console.error('Failed to decrement stock for COD order:', stockError)
+        console.error('Failed to decrement stock:', stockError)
         // Don't fail the order - log for manual review
       }
 
@@ -325,28 +378,48 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Virtual Card: deduct balance and mark order as PAID immediately
-      if (data.paymentMethod === 'VIRTUAL_CARD' && virtualCardId) {
+      // Signature Card: deduct balance and mark order as PAID
+      if (data.paymentMethod === 'SIGNATURE_CARD' && signatureCardId) {
         try {
           await deductBalance(
-            virtualCardId,
+            signatureCardId,
             total,
             order.id,
-            `Order ${orderNumber}`
+            `Order ${orderNumber}${discountBreakdownDescription ? ` (${discountBreakdownDescription})` : ''}`
           )
+
+          // Log discount as a separate transaction if any
+          if (signatureCardDiscount > 0) {
+            await supabase.from('CardTransaction').insert({
+              cardId: signatureCardId,
+              type: 'DISCOUNT_USED',
+              amount: signatureCardDiscount,
+              balanceAfter: 0, // Will be overwritten by actual balance but serves as log
+              orderId: order.id,
+              description: `Discount on Order ${orderNumber}: ${discountBreakdownDescription}`,
+            })
+          }
+
+          // Mark OTP as consumed
+          if (data.discountOtpId) {
+            await supabase
+              .from('CardOTP')
+              .update({ usedForOrderId: order.id })
+              .eq('id', data.discountOtpId)
+          }
 
           await supabase.from('Order').update({
             status: 'CONFIRM',
             paymentStatus: 'PAID',
             updatedAt: new Date().toISOString(),
           }).eq('id', order.id)
-        } catch (vcError) {
-          console.error('Failed to deduct virtual card balance:', vcError)
+        } catch (scError) {
+          console.error('Failed to process signature card payment:', scError)
           // Rollback: delete order if payment fails
           await supabase.from('OrderItem').delete().eq('orderId', order.id)
           await supabase.from('Order').delete().eq('id', order.id)
           return NextResponse.json(
-            { error: 'Failed to process virtual card payment. Your balance was not charged.' },
+            { error: 'Failed to process Signature Card payment. Your balance was not charged.' },
             { status: 500 }
           )
         }
