@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin, Phone, ArrowRight } from 'lucide-react'
+import { Instagram, Facebook, Twitter, Youtube, Linkedin, Mail, MapPin, Phone, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 const footerLinks = {
@@ -28,10 +28,11 @@ const footerLinks = {
 }
 
 const socialLinks = [
-  { name: 'Instagram', icon: Instagram, href: 'https://instagram.com' },
-  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com' },
-  { name: 'Twitter', icon: Twitter, href: 'https://twitter.com' },
-  { name: 'YouTube', icon: Youtube, href: 'https://youtube.com' },
+  { name: 'Facebook', icon: Facebook, href: 'https://facebook.com/TheAlineMart' },
+  { name: 'YouTube', icon: Youtube, href: 'https://www.youtube.com/@TheAlineMartBD' },
+  { name: 'Instagram', icon: Instagram, href: 'https://www.instagram.com/thealinemart/' },
+  { name: 'Twitter', icon: Twitter, href: 'https://x.com/TheAlineMart' },
+  { name: 'LinkedIn', icon: Linkedin, href: 'https://www.linkedin.com/in/alinemartbd/' },
 ]
 
 export default function Footer() {
