@@ -36,16 +36,10 @@ export function useCart() {
   const formattedSubtotal = formatPrice(subtotal)
 
   /**
-   * Calculate estimated tax (8% for example)
-   */
-  const estimatedTax = subtotal * 0.08
-  const formattedTax = formatPrice(estimatedTax)
-
-  /**
-   * Calculate total (subtotal + tax)
+   * Calculate total
    * Note: Shipping will be added during checkout
    */
-  const total = subtotal + estimatedTax
+  const total = subtotal
   const formattedTotal = formatPrice(total)
 
   /**
@@ -89,8 +83,6 @@ export function useCart() {
 
     // Formatted values
     formattedSubtotal,
-    estimatedTax,
-    formattedTax,
     total,
     formattedTotal,
 

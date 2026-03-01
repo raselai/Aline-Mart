@@ -10,7 +10,6 @@ export default function CartSummary() {
     items,
     itemCount,
     formattedSubtotal,
-    formattedTax,
     formattedTotal,
     formatPrice,
   } = useCart()
@@ -126,36 +125,6 @@ export default function CartSummary() {
               }}
             >
               Calculated at checkout
-            </span>
-          </div>
-
-          {/* Tax */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'baseline',
-              padding: '10px 0',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '14px',
-                color: '#6B7280',
-                whiteSpace: 'normal',
-                wordBreak: 'normal',
-              }}
-            >
-              Estimated Tax
-            </span>
-            <span
-              style={{
-                fontSize: '14px',
-                fontWeight: 500,
-                color: '#2C2C2C',
-              }}
-            >
-              {formattedTax}
             </span>
           </div>
 

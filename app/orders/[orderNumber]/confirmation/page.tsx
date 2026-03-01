@@ -556,8 +556,7 @@ export default async function OrderConfirmationPage({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                localStorage.removeItem('cart-storage');
-                window.dispatchEvent(new Event('storage'));
+                localStorage.removeItem('aline-mart-cart');
               } catch (e) {
                 console.error('Failed to clear cart:', e);
               }
