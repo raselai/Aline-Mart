@@ -1,4 +1,5 @@
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
+import { render } from '@react-email/render'
 import OrderConfirmationEmail from '@/emails/OrderConfirmation'
 import PaymentReceivedEmail from '@/emails/PaymentReceived'
 import OrderShippedEmail from '@/emails/OrderShipped'
@@ -7,43 +8,44 @@ import SignatureCardOTPEmail from '@/emails/SignatureCardOTP'
 import type { OrderWithDetails } from '@/types/order'
 import type { SignatureCard } from '@/types/signature-card'
 
-// Lazy load Resend client to avoid build-time errors
-let resendClient: Resend | null = null
+// Lazy-load transporter to avoid build-time errors when env vars are missing
+let transporter: nodemailer.Transporter | null = null
 
-function getResendClient(): Resend {
-  if (!resendClient) {
-    // Use placeholder API key during build, real key at runtime
-    const apiKey = process.env.RESEND_API_KEY || 're_placeholder_key_for_build'
-    resendClient = new Resend(apiKey)
+function getTransporter(): nodemailer.Transporter {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: false,
+      auth: {
+        user: process.env.SMTP_USER || '',
+        pass: process.env.SMTP_PASS || '',
+      },
+    })
   }
-  return resendClient
+  return transporter
 }
 
-const FROM_EMAIL = process.env.FROM_EMAIL || 'orders@yourdomain.com'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'support@alinemart.com'
 const FROM_NAME = process.env.FROM_NAME || 'Aline Mart'
 
-/**
- * Send order confirmation email (sent immediately after order creation)
- */
-export async function sendOrderConfirmationEmail(
-  order: OrderWithDetails,
-  recipientEmail: string
-): Promise<{ success: boolean; error?: string }> {
+async function sendEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string
+  subject: string
+  html: string
+}): Promise<{ success: boolean; error?: string }> {
   try {
-    const resend = getResendClient()
-    const { data, error } = await resend.emails.send({
+    const transport = getTransporter()
+    await transport.sendMail({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: recipientEmail,
-      subject: `Order Confirmation - ${order.orderNumber}`,
-      react: OrderConfirmationEmail({ order }),
+      to,
+      subject,
+      html,
     })
-
-    if (error) {
-      console.error('Failed to send order confirmation email:', error)
-      return { success: false, error: error.message }
-    }
-
-    console.log('Order confirmation email sent:', data?.id)
     return { success: true }
   } catch (error) {
     console.error('Email sending error:', error)
@@ -55,32 +57,33 @@ export async function sendOrderConfirmationEmail(
 }
 
 /**
+ * Send order confirmation email (sent immediately after order creation)
+ */
+export async function sendOrderConfirmationEmail(
+  order: OrderWithDetails,
+  recipientEmail: string
+): Promise<{ success: boolean; error?: string }> {
+  const html = await render(OrderConfirmationEmail({ order }))
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Order Confirmation - ${order.orderNumber}`,
+    html,
+  })
+}
+
+/**
  * Send payment received email (sent after PayStation payment confirmed)
  */
 export async function sendPaymentReceivedEmail(
   order: OrderWithDetails,
   recipientEmail: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const resend = getResendClient()
-    const { data, error } = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: recipientEmail,
-      subject: `Payment Received - ${order.orderNumber}`,
-      react: PaymentReceivedEmail({ order }),
-    })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
-  }
+  const html = await render(PaymentReceivedEmail({ order }))
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Payment Received - ${order.orderNumber}`,
+    html,
+  })
 }
 
 /**
@@ -91,26 +94,12 @@ export async function sendOrderShippedEmail(
   recipientEmail: string,
   trackingNumber?: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const resend = getResendClient()
-    const { data, error } = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: recipientEmail,
-      subject: `Your Order Has Been Shipped - ${order.orderNumber}`,
-      react: OrderShippedEmail({ order, trackingNumber }),
-    })
-
-    if (error) {
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
-  }
+  const html = await render(OrderShippedEmail({ order, trackingNumber }))
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Your Order Has Been Shipped - ${order.orderNumber}`,
+    html,
+  })
 }
 
 /**
@@ -120,45 +109,30 @@ export async function sendSignatureCardWelcomeEmail(
   card: SignatureCard,
   recipientEmail: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const resend = getResendClient()
+  const maskedCard = `****-****-****-${card.cardNumber.slice(-4)}`
+  const validUntil = card.validUntil
+    ? new Date(card.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+    : 'N/A'
 
-    const maskedCard = `****-****-****-${card.cardNumber.slice(-4)}`
-    const validUntil = card.validUntil
-      ? new Date(card.validUntil).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
-      : 'N/A'
-
-    const discountMap: Record<string, string> = {
-      CROWN: '40% off Aline Fashion, 15% off other brands, Free delivery on all orders',
-      PRIVILEGE: '30% off Aline Fashion, 10% off other brands',
-      CAMPUS: '30% off Aline Fashion, 10% off other brands',
-    }
-
-    const { error } = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: recipientEmail,
-      subject: `Welcome to Signature ${card.category} - Aline Mart`,
-      react: SignatureCardWelcomeEmail({
-        cardholderName: card.cardholderName,
-        category: card.category,
-        maskedCardNumber: maskedCard,
-        validUntil,
-        discountInfo: discountMap[card.category] || '',
-      }),
-    })
-
-    if (error) {
-      console.error('Failed to send signature card welcome email:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
+  const discountMap: Record<string, string> = {
+    CROWN: '40% off Aline Fashion, 15% off other brands, Free delivery on all orders',
+    PRIVILEGE: '30% off Aline Fashion, 10% off other brands',
+    CAMPUS: '30% off Aline Fashion, 10% off other brands',
   }
+
+  const html = await render(SignatureCardWelcomeEmail({
+    cardholderName: card.cardholderName,
+    category: card.category,
+    maskedCardNumber: maskedCard,
+    validUntil,
+    discountInfo: discountMap[card.category] || '',
+  }))
+
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Welcome to Signature ${card.category} - Aline Mart`,
+    html,
+  })
 }
 
 /**
@@ -169,26 +143,10 @@ export async function sendSignatureCardOTPEmail(
   recipientEmail: string,
   cardholderName: string
 ): Promise<{ success: boolean; error?: string }> {
-  try {
-    const resend = getResendClient()
-
-    const { error } = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: recipientEmail,
-      subject: `Your Verification Code - Aline Mart`,
-      react: SignatureCardOTPEmail({ otpCode, cardholderName }),
-    })
-
-    if (error) {
-      console.error('Failed to send OTP email:', error)
-      return { success: false, error: error.message }
-    }
-
-    return { success: true }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    }
-  }
+  const html = await render(SignatureCardOTPEmail({ otpCode, cardholderName }))
+  return sendEmail({
+    to: recipientEmail,
+    subject: `Your Verification Code - Aline Mart`,
+    html,
+  })
 }

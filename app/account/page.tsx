@@ -71,6 +71,18 @@ export default function AccountPage() {
 
   const displayName = userName || 'there'
 
+  const outlinedBtnStyle: React.CSSProperties = {
+    display: 'inline-block',
+    padding: '10px 24px',
+    border: '1.5px solid #8e2157',
+    borderRadius: '8px',
+    fontSize: '0.875rem',
+    fontWeight: 600,
+    color: '#8e2157',
+    textDecoration: 'none',
+    whiteSpace: 'nowrap',
+  }
+
   return (
     <div
       style={{
@@ -282,16 +294,9 @@ export default function AccountPage() {
             <div style={{ marginTop: '20px' }}>
               <Link
                 href="/account/orders"
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#8e2157',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+                style={outlinedBtnStyle}
               >
-                View All Orders &rarr;
-              </Link>
+                View All Orders              </Link>
             </div>
           </div>
         </div>
@@ -347,16 +352,9 @@ export default function AccountPage() {
             <div style={{ marginTop: '20px' }}>
               <Link
                 href="/account/profile"
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#8e2157',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+                style={outlinedBtnStyle}
               >
-                Edit Profile &rarr;
-              </Link>
+                Edit Profile              </Link>
             </div>
           </div>
         </div>
@@ -400,16 +398,9 @@ export default function AccountPage() {
             <div style={{ marginTop: '20px' }}>
               <Link
                 href="/wishlist"
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#8e2157',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+                style={outlinedBtnStyle}
               >
-                View Wishlist &rarr;
-              </Link>
+                View Wishlist              </Link>
             </div>
           </div>
         </div>
@@ -453,16 +444,9 @@ export default function AccountPage() {
             <div style={{ marginTop: '20px' }}>
               <Link
                 href="/account/addresses"
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#8e2157',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+                style={outlinedBtnStyle}
               >
-                Manage Addresses &rarr;
-              </Link>
+                Manage Addresses              </Link>
             </div>
           </div>
         </div>
@@ -536,16 +520,9 @@ export default function AccountPage() {
             <div style={{ marginTop: '20px' }}>
               <Link
                 href="/account/signature-card"
-                style={{
-                  fontSize: '0.875rem',
-                  fontWeight: 600,
-                  color: '#8e2157',
-                  textDecoration: 'none',
-                  whiteSpace: 'nowrap',
-                }}
+                style={outlinedBtnStyle}
               >
-                {activeCards.length > 0 ? 'Manage Cards' : 'Get Your Card'} &rarr;
-              </Link>
+                {activeCards.length > 0 ? 'Manage Cards' : 'Get Your Card'}              </Link>
             </div>
           </div>
         </div>
