@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import CardBenefits from './CardBenefits'
 import type { CardTypeConfig, SignatureCardCategory } from '@/types/signature-card'
 
 const CARD_IMAGES: Record<string, string> = {
@@ -35,6 +36,7 @@ export default function PurchaseForm({
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showBenefits, setShowBenefits] = useState<SignatureCardCategory | null>(null)
 
   const selectedType = cardTypes.find((t) => t.category === selectedCategory)
 
@@ -133,89 +135,94 @@ export default function PurchaseForm({
 
       {/* Step 1: Select Card Type */}
       {step === 1 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {cardTypes.map((type) => (
-            <button
-              key={type.category}
-              onClick={() => handleSelectCard(type.category)}
-              className="group bg-white rounded-xl shadow-sm overflow-hidden text-left hover:shadow-md transition-shadow border-2 border-transparent"
-              style={{
-                minWidth: '0',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#8e2157' }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent' }}
-            >
-              <div className="relative w-full" style={{ aspectRatio: '1.586' }}>
-                <Image
-                  src={CARD_IMAGES[type.category] || CARD_IMAGES.PRIVILEGE}
-                  alt={type.label}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4">
-                  <p className="text-white font-bold text-lg" style={{ whiteSpace: 'nowrap' }}>
-                    {type.label}
-                  </p>
-                  <p
-                    className="text-white/70 text-xs"
-                    style={{
-                      whiteSpace: 'normal',
-                      wordBreak: 'normal',
-                      overflowWrap: 'normal',
-                    }}
-                  >
-                    {type.description}
-                  </p>
-                </div>
-              </div>
-              <div className="p-4">
-                <p className="text-2xl font-bold" style={{ color: '#8e2157' }}>
-                  ৳{type.price.toLocaleString()}
-                </p>
-                <div className="mt-3 space-y-1.5">
-                  <p
-                    className="text-xs"
-                    style={{
-                      color: '#4B5563',
-                      whiteSpace: 'normal',
-                      wordBreak: 'normal',
-                      overflowWrap: 'normal',
-                    }}
-                  >
-                    <span style={{ color: '#16A34A', fontWeight: 600 }}>{type.alineFashionDiscount}%</span> off Aline Fashion
-                  </p>
-                  <p
-                    className="text-xs"
-                    style={{
-                      color: '#4B5563',
-                      whiteSpace: 'normal',
-                      wordBreak: 'normal',
-                      overflowWrap: 'normal',
-                    }}
-                  >
-                    <span style={{ color: '#16A34A', fontWeight: 600 }}>{type.otherBrandsDiscount}%</span> off other brands
-                  </p>
-                  {type.freeDelivery && (
-                    <p className="text-xs" style={{ color: '#16A34A', fontWeight: 600 }}>
-                      Free delivery on all orders
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {cardTypes.map((type) => (
+              <div
+                key={type.category}
+                className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                style={{ minWidth: '0' }}
+              >
+                <div className="relative w-full" style={{ aspectRatio: '1.586' }}>
+                  <Image
+                    src={CARD_IMAGES[type.category] || CARD_IMAGES.PRIVILEGE}
+                    alt={type.label}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-3 left-4 right-4">
+                    <p className="text-white font-bold text-lg" style={{ whiteSpace: 'nowrap' }}>
+                      {type.label}
                     </p>
-                  )}
-                  <p className="text-xs" style={{ color: '#6B7280' }}>
-                    +10% birthday/anniversary bonus
-                  </p>
+                    <p
+                      className="text-white/70 text-xs"
+                      style={{
+                        whiteSpace: 'normal',
+                        wordBreak: 'normal',
+                        overflowWrap: 'normal',
+                      }}
+                    >
+                      {type.description}
+                    </p>
+                  </div>
                 </div>
-                <div
-                  className="mt-4 text-center text-sm font-semibold group-hover:underline"
-                  style={{ color: '#8e2157' }}
-                >
-                  Select This Card →
+                <div className="p-4">
+                  <p className="text-2xl font-bold" style={{ color: '#8e2157' }}>
+                    ৳{type.price.toLocaleString()}
+                  </p>
+                  {/* Action Buttons */}
+                  <div className="flex gap-3 mt-4">
+                    <button
+                      onClick={() => handleSelectCard(type.category)}
+                      className="flex-1 text-white text-sm font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+                      style={{
+                        background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                      }}
+                    >
+                      Apply Now
+                    </button>
+                    <button
+                      onClick={() => setShowBenefits(type.category)}
+                      className="flex-1 text-white text-sm font-semibold py-2.5 rounded-lg hover:opacity-90 transition-opacity"
+                      style={{
+                        background: 'linear-gradient(135deg, #8e2157 0%, #5c0931 100%)',
+                      }}
+                    >
+                      Benefits
+                    </button>
+                  </div>
                 </div>
               </div>
-            </button>
-          ))}
-        </div>
+            ))}
+          </div>
+
+          {/* Benefits Modal */}
+          {showBenefits && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl w-full max-h-[90vh] overflow-y-auto" style={{ maxWidth: '672px' }}>
+                <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
+                  <h2
+                    className="text-xl font-serif font-bold"
+                    style={{ color: '#111827' }}
+                  >
+                    {showBenefits} Benefits
+                  </h2>
+                  <button
+                    onClick={() => setShowBenefits(null)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                <CardBenefits category={showBenefits} cardTypes={cardTypes} />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Step 2: Cardholder Details */}
