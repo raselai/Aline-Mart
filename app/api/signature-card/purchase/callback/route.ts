@@ -8,69 +8,81 @@ async function handleCallback(request: NextRequest) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   try {
-    // Support both GET (query params) and POST (form body)
-    let status: string | null = null
-    let invoiceNumber: string | null = null
-    let trxId: string | null = null
+    // Read params from URL query string (PayStation sends params in URL for both GET and POST)
+    const searchParams = request.nextUrl.searchParams
+    let status: string | null = searchParams.get('status')
+    let invoiceNumber: string | null = searchParams.get('invoice_number')
+    let trxId: string | null = searchParams.get('trx_id') || searchParams.get('transaction_id')
 
-    if (request.method === 'GET') {
-      const searchParams = request.nextUrl.searchParams
-      status = searchParams.get('status')
-      invoiceNumber = searchParams.get('invoice_number')
-      trxId = searchParams.get('trx_id') || searchParams.get('transaction_id')
-    } else {
+    // Fallback: for POST requests, also try form body / JSON body if URL params are missing
+    if (request.method === 'POST' && (!status || !invoiceNumber)) {
       try {
         const formData = await request.formData()
-        status = formData.get('status') as string | null
-        invoiceNumber = formData.get('invoice_number') as string | null
-        trxId = (formData.get('trx_id') || formData.get('transaction_id')) as string | null
+        status = status || (formData.get('status') as string | null)
+        invoiceNumber = invoiceNumber || (formData.get('invoice_number') as string | null)
+        trxId = trxId || (formData.get('trx_id') || formData.get('transaction_id')) as string | null
       } catch {
         const body = await request.json().catch(() => ({}))
-        status = body.status || null
-        invoiceNumber = body.invoice_number || null
-        trxId = body.trx_id || body.transaction_id || null
+        status = status || body.status || null
+        invoiceNumber = invoiceNumber || body.invoice_number || null
+        trxId = trxId || body.trx_id || body.transaction_id || null
       }
     }
 
+    console.log('[Signature Card Callback] Method:', request.method, 'Params:', { status, invoiceNumber, trxId })
+
     if (!status || !invoiceNumber) {
-      console.error('Signature card callback: missing status or invoice_number')
+      console.error('[Signature Card Callback] Missing status or invoice_number')
       return NextResponse.redirect(`${baseUrl}/account/signature-card?purchase=error`)
     }
 
     // Parse invoice: SIGCARD-{cardId(uuid)}-{price}-{timestamp}
-    // UUID has format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (5 segments)
-    // So full invoice splits as: SIGCARD, then 5 UUID segments, then price, then timestamp = 8 parts
     if (!invoiceNumber.startsWith('SIGCARD-')) {
-      console.error('Signature card callback: invalid invoice format:', invoiceNumber)
+      console.error('[Signature Card Callback] Invalid invoice format:', invoiceNumber)
       return NextResponse.redirect(`${baseUrl}/account/signature-card?purchase=error`)
     }
 
-    // Extract cardId (UUID) from between first "SIGCARD-" and the price-timestamp suffix
-    // Format: SIGCARD-{uuid}-{price}-{timestamp}
-    const withoutPrefix = invoiceNumber.slice('SIGCARD-'.length) // uuid-price-timestamp
-    // UUID is 36 chars (8-4-4-4-12), so extract it directly
+    // Extract cardId (UUID) — UUID is 36 chars (8-4-4-4-12)
+    const withoutPrefix = invoiceNumber.slice('SIGCARD-'.length)
     const cardId = withoutPrefix.slice(0, 36)
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(cardId)) {
-      console.error('Signature card callback: invalid card ID in invoice:', invoiceNumber)
+      console.error('[Signature Card Callback] Invalid card ID in invoice:', invoiceNumber)
       return NextResponse.redirect(`${baseUrl}/account/signature-card?purchase=error`)
     }
 
-    // Server-side verification
+    // Server-side verification (matches checkout callback pattern)
     const isSandbox = process.env.PAYSTATION_SANDBOX_MODE === 'true'
     let verifiedStatus = status
     let verifiedTrxId = trxId || `MOCK-${Date.now()}`
 
-    if (!isSandbox) {
-      const verification = await paystationClient.verifyTransaction(invoiceNumber)
-      if (!verification.success || !verification.data) {
-        return NextResponse.redirect(`${baseUrl}/account/signature-card?purchase=error`)
+    if (isSandbox) {
+      console.log('[Signature Card Callback] Sandbox mode — skipping server-side verification')
+    } else {
+      console.log('[Signature Card Callback] Production mode — verifying transaction:', invoiceNumber)
+      try {
+        const verification = await paystationClient.verifyTransaction(invoiceNumber)
+        console.log('[Signature Card Callback] Verification result:', JSON.stringify(verification))
+
+        if (!verification.success || !verification.data) {
+          console.error('[Signature Card Callback] Verification failed, falling back to callback status:', status)
+          verifiedStatus = status
+        } else {
+          verifiedStatus = verification.data.trx_status
+          verifiedTrxId = verification.data.trx_id
+        }
+      } catch (verifyError) {
+        console.error('[Signature Card Callback] Verification threw error:', verifyError)
+        console.log('[Signature Card Callback] Falling back to callback status:', status)
+        verifiedStatus = status
       }
-      verifiedStatus = verification.data.trx_status
-      verifiedTrxId = verification.data.trx_id
     }
 
-    if (verifiedStatus !== 'Success') {
+    // Case-insensitive success check (PayStation may send "Success", "success", "Successful", etc.)
+    const isSuccess = verifiedStatus?.toLowerCase().includes('success')
+    console.log('[Signature Card Callback] isSuccess:', isSuccess, 'verifiedStatus:', verifiedStatus)
+
+    if (!isSuccess) {
       return NextResponse.redirect(`${baseUrl}/account/signature-card?purchase=failed`)
     }
 

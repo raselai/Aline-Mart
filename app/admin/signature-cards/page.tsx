@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Search } from 'lucide-react'
 
 interface AdminSignatureCard {
@@ -160,9 +160,8 @@ export default function AdminSignatureCardsPage() {
               </thead>
               <tbody>
                 {cards.map((card) => (
-                  <>
+                  <Fragment key={card.id}>
                     <tr
-                      key={card.id}
                       className="border-b hover:bg-gray-50 cursor-pointer"
                       onClick={() => setExpandedCard(expandedCard === card.id ? null : card.id)}
                     >
@@ -225,7 +224,7 @@ export default function AdminSignatureCardsPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('SignatureCard')
       .select('*', { count: 'exact' })
+      .eq('isActive', true)
 
     if (category) {
       query = query.eq('category', category)
