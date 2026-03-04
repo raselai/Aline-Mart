@@ -17,7 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://alinemart.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://www.alinemart.com'),
   title: {
     default: "Aline Mart - Luxury Multi-Brand Marketplace",
     template: "%s | Aline Mart",
