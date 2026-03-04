@@ -13,15 +13,30 @@ export async function GET(request: NextRequest) {
     const supabase = await createServerClient()
 
     // Look up user by email
-    const { data: user } = await supabase
+    let { data: user } = await supabase
       .from('User')
       .select('id')
       .eq('email', email)
       .single()
 
+    // Auto-create User row if authenticated but missing from User table
     if (!user) {
-      const cardTypes = await getCardTypeConfigs()
-      return NextResponse.json({ cards: [], cardTypes })
+      const newId = crypto.randomUUID()
+      const name = email.split('@')[0]
+
+      const { data: newUser, error: insertError } = await supabase
+        .from('User')
+        .insert({ id: newId, email, name })
+        .select('id')
+        .single()
+
+      if (insertError || !newUser) {
+        console.error('Failed to auto-create User row:', insertError)
+        const cardTypes = await getCardTypeConfigs()
+        return NextResponse.json({ cards: [], cardTypes, userId: null })
+      }
+
+      user = newUser
     }
 
     const { data: cards } = await supabase
