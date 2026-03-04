@@ -57,6 +57,10 @@ export default function AdminProductsPage() {
   const [filterStock, setFilterStock] = useState('')
   const [filterVendor, setFilterVendor] = useState('')
   const [exporting, setExporting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const productsPerPage = 25
 
   // Fetch filters on mount
   useEffect(() => {
@@ -64,8 +68,12 @@ export default function AdminProductsPage() {
   }, [])
 
   useEffect(() => {
-    fetchProducts()
+    setCurrentPage(1)
   }, [searchQuery, filterBrand, filterCategory, filterStock, filterVendor])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [currentPage, searchQuery, filterBrand, filterCategory, filterStock, filterVendor])
 
   const fetchFilters = async () => {
     try {
@@ -95,6 +103,8 @@ export default function AdminProductsPage() {
         category: filterCategory,
         stock: filterStock,
         vendor: filterVendor,
+        page: String(currentPage),
+        limit: String(productsPerPage),
       })
 
       const response = await fetch(`/api/admin/products?${params}`)
@@ -102,6 +112,8 @@ export default function AdminProductsPage() {
 
       const data = await response.json()
       setProducts(data.products || [])
+      setTotalProducts(data.total || 0)
+      setTotalPages(data.totalPages || 1)
     } catch (error) {
       console.error('Error fetching products:', error)
     } finally {
@@ -575,19 +587,64 @@ export default function AdminProductsPage() {
         )}
       </div>
 
-      {/* Products Count */}
+      {/* Pagination */}
       {!loading && products.length > 0 && (
-        <div className="mt-4 text-center">
-          <p
-            style={{
-              color: '#6B7280',
-              display: 'block',
-              whiteSpace: 'normal',
-              wordBreak: 'normal'
-            }}
-          >
-            Showing {products.length} product{products.length !== 1 ? 's' : ''}
+        <div className="mt-4 flex items-center justify-between">
+          <p style={{ color: '#6B7280' }}>
+            Showing {(currentPage - 1) * productsPerPage + 1}–{Math.min(currentPage * productsPerPage, totalProducts)} of {totalProducts} products
           </p>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-2 text-sm border rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                style={{ borderColor: '#d1d5db', color: '#2C2C2C' }}
+              >
+                Previous
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(page => {
+                  // Show first, last, current, and neighbors
+                  if (page === 1 || page === totalPages) return true
+                  if (Math.abs(page - currentPage) <= 1) return true
+                  return false
+                })
+                .reduce<(number | string)[]>((acc, page, idx, arr) => {
+                  if (idx > 0 && page - (arr[idx - 1] as number) > 1) {
+                    acc.push('...')
+                  }
+                  acc.push(page)
+                  return acc
+                }, [])
+                .map((item, idx) =>
+                  typeof item === 'string' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2" style={{ color: '#6B7280' }}>...</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setCurrentPage(item)}
+                      className="px-3 py-2 text-sm border rounded-md transition-colors"
+                      style={{
+                        borderColor: item === currentPage ? '#8e2157' : '#d1d5db',
+                        backgroundColor: item === currentPage ? '#8e2157' : 'white',
+                        color: item === currentPage ? 'white' : '#2C2C2C',
+                      }}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 text-sm border rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+                style={{ borderColor: '#d1d5db', color: '#2C2C2C' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
