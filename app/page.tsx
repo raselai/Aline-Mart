@@ -7,7 +7,7 @@ import { Product } from "@/types";
 import { ProductCard } from "@/components/products";
 import HeroCarousel from "./HeroCarousel";
 
-export const revalidate = 300 // Revalidate every 5 minutes
+export const dynamic = 'force-dynamic'
 
 interface HeroSettings {
   tagline?: string
@@ -82,35 +82,20 @@ async function getBrands(): Promise<Brand[]> {
   }
 }
 
+const productSelect = `
+  *,
+  brand:Brand!Product_brandId_fkey (id, name, slug),
+  category:Category!Product_categoryId_fkey (id, name, slug),
+  images:ProductImage (id, url, alt, order),
+  variants:ProductVariant (id, color, size, stock)
+`
+
 async function getHotDeals(): Promise<Product[]> {
   try {
+    // Try products with sale prices first
     const { data, error } = await supabase
       .from('Product')
-      .select(`
-        *,
-        brand:Brand!Product_brandId_fkey (
-          id,
-          name,
-          slug
-        ),
-        category:Category!Product_categoryId_fkey (
-          id,
-          name,
-          slug
-        ),
-        images:ProductImage (
-          id,
-          url,
-          alt,
-          order
-        ),
-        variants:ProductVariant (
-          id,
-          color,
-          size,
-          stock
-        )
-      `)
+      .select(productSelect)
       .not('salePrice', 'is', null)
       .eq('inStock', true)
       .or('status.is.null,status.eq.ACTIVE')
@@ -118,7 +103,19 @@ async function getHotDeals(): Promise<Product[]> {
       .limit(8)
 
     if (error) throw error
-    return (data || []) as Product[]
+    if (data && data.length > 0) return data as Product[]
+
+    // Fallback: show products sorted by price (lowest first) for deal feel
+    const { data: fallback, error: fbError } = await supabase
+      .from('Product')
+      .select(productSelect)
+      .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
+      .order('price', { ascending: true })
+      .limit(8)
+
+    if (fbError) throw fbError
+    return (fallback || []) as Product[]
   } catch (error) {
     console.error('Error fetching hot deals:', error)
     return []
@@ -127,33 +124,10 @@ async function getHotDeals(): Promise<Product[]> {
 
 async function getNewArrivals(): Promise<Product[]> {
   try {
+    // Try products marked as new first
     const { data, error } = await supabase
       .from('Product')
-      .select(`
-        *,
-        brand:Brand!Product_brandId_fkey (
-          id,
-          name,
-          slug
-        ),
-        category:Category!Product_categoryId_fkey (
-          id,
-          name,
-          slug
-        ),
-        images:ProductImage (
-          id,
-          url,
-          alt,
-          order
-        ),
-        variants:ProductVariant (
-          id,
-          color,
-          size,
-          stock
-        )
-      `)
+      .select(productSelect)
       .eq('isNew', true)
       .eq('inStock', true)
       .or('status.is.null,status.eq.ACTIVE')
@@ -161,7 +135,19 @@ async function getNewArrivals(): Promise<Product[]> {
       .limit(8)
 
     if (error) throw error
-    return (data || []) as Product[]
+    if (data && data.length > 0) return data as Product[]
+
+    // Fallback: show most recently added products
+    const { data: fallback, error: fbError } = await supabase
+      .from('Product')
+      .select(productSelect)
+      .eq('inStock', true)
+      .or('status.is.null,status.eq.ACTIVE')
+      .order('createdAt', { ascending: false })
+      .limit(8)
+
+    if (fbError) throw fbError
+    return (fallback || []) as Product[]
   } catch (error) {
     console.error('Error fetching new arrivals:', error)
     return []
@@ -206,31 +192,7 @@ async function getProductsByCategory(categorySlug: string): Promise<Product[]> {
 
     const { data, error } = await supabase
       .from('Product')
-      .select(`
-        *,
-        brand:Brand!Product_brandId_fkey (
-          id,
-          name,
-          slug
-        ),
-        category:Category!Product_categoryId_fkey (
-          id,
-          name,
-          slug
-        ),
-        images:ProductImage (
-          id,
-          url,
-          alt,
-          order
-        ),
-        variants:ProductVariant (
-          id,
-          color,
-          size,
-          stock
-        )
-      `)
+      .select(productSelect)
       .in('categoryId', categoryIds)
       .eq('inStock', true)
       .or('status.is.null,status.eq.ACTIVE')
@@ -252,8 +214,8 @@ export default async function Home() {
     getNewArrivals(),
     getBrands(),
     getHeroSettings(),
-    getProductsByCategory('men'),
-    getProductsByCategory('women'),
+    getProductsByCategory('mens'),
+    getProductsByCategory('womens'),
   ])
 
   return (
