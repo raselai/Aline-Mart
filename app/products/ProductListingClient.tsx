@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ProductGrid, ProductFilters, ProductSorter } from '@/components/products'
 import { Button } from '@/components/ui/button'
@@ -273,53 +273,15 @@ export default function ProductListingClient({
     setCurrentPage(1)
   }
 
-  const handleLoadMore = async () => {
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  const handleLoadMore = () => {
     if (isLoadingMore) return
-
-    setIsLoadingMore(true)
-    const nextPage = currentPage + 1
-
-    try {
-      const params = new URLSearchParams()
-      params.set('page', nextPage.toString())
-      params.set('limit', initialLimit.toString())
-
-      if (selectedCategories.length > 0) {
-        params.set('category', selectedCategories.join(','))
-      }
-      if (selectedBrands.length > 0) {
-        params.set('brand', selectedBrands.join(','))
-      }
-      if (priceRange.min) {
-        params.set('minPrice', priceRange.min)
-      }
-      if (priceRange.max) {
-        params.set('maxPrice', priceRange.max)
-      }
-      if (selectedColors.length > 0) {
-        params.set('color', selectedColors.join(','))
-      }
-      if (selectedSizes.length > 0) {
-        params.set('size', selectedSizes.join(','))
-      }
-      if (sortBy) {
-        params.set('sort', sortBy)
-      }
-      if (initialFilters.search) {
-        params.set('search', initialFilters.search)
-      }
-
-      const res = await fetch(`/api/products?${params.toString()}`)
-      if (!res.ok) throw new Error('Failed to fetch products')
-
-      const response = await res.json()
-      setProducts((prev) => [...prev, ...(response.data || [])])
-      setCurrentPage(nextPage)
-    } catch (error) {
-      console.error('Error loading more products:', error)
-    } finally {
-      setIsLoadingMore(false)
-    }
+    setCurrentPage((prev) => prev + 1)
+    // Scroll to top of product grid after page change
+    setTimeout(() => {
+      gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 100)
   }
 
   // Calculate active filter count
@@ -515,12 +477,14 @@ export default function ProductListingClient({
           </div>
 
           {/* Product Grid */}
-          <ProductGrid
-            products={products}
-            loading={isLoading}
-            hasMore={products.length < total}
-            onLoadMore={handleLoadMore}
-          />
+          <div ref={gridRef}>
+            <ProductGrid
+              products={products}
+              loading={isLoading}
+              hasMore={products.length < total}
+              onLoadMore={handleLoadMore}
+            />
+          </div>
         </div>
       </div>
     </div>

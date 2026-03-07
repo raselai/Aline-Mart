@@ -432,7 +432,7 @@ export default async function Home() {
               </h2>
             </div>
             <Link
-              href="/categories/men"
+              href="/categories/mens"
               className="hidden md:flex items-center gap-2 text-burgundy hover:text-plum transition-colors duration-300 group"
             >
               <span className="font-medium">View All</span>
@@ -460,7 +460,7 @@ export default async function Home() {
           {/* Mobile View All Link */}
           <div className="mt-6 md:hidden text-center">
             <Link
-              href="/categories/men"
+              href="/categories/mens"
               className="inline-flex items-center gap-2 text-burgundy hover:text-plum transition-colors duration-300 font-medium"
             >
               <span>View All Men</span>
@@ -484,7 +484,7 @@ export default async function Home() {
               </h2>
             </div>
             <Link
-              href="/categories/women"
+              href="/categories/womens"
               className="hidden md:flex items-center gap-2 text-burgundy hover:text-plum transition-colors duration-300 group"
             >
               <span className="font-medium">View All</span>
@@ -512,7 +512,7 @@ export default async function Home() {
           {/* Mobile View All Link */}
           <div className="mt-6 md:hidden text-center">
             <Link
-              href="/categories/women"
+              href="/categories/womens"
               className="inline-flex items-center gap-2 text-burgundy hover:text-plum transition-colors duration-300 font-medium"
             >
               <span>View All Women</span>
