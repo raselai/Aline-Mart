@@ -38,3 +38,23 @@ yarn-error.log*
 next-env.d.ts
 
 /app/generated/prisma
+
+# Credentials & secrets
+GoogleAuth.json
+
+# Google verification
+google*.html
+
+# Screenshots & binaries
+ss.jpg
+ss2.jpg
+
+# Windows artifacts
+nul
+parent*
+
+# Log files
+dev-server.log
+
+# Internal planning docs
+CardPlan.md
